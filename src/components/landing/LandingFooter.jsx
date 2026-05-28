@@ -56,8 +56,13 @@ export default function LandingFooter() {
         </div>
       </div>
       <div className="border-t border-[color:var(--gov-border)]">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-center gap-3 px-6 py-4 text-xs text-[color:var(--gov-muted)]">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-4 text-xs text-[color:var(--gov-muted)]">
           <p>© 2026 Municipality of Loreto, Agusan del Sur. All rights reserved.</p>
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="cursor-default">Privacy Policy</span>
+            <span className="cursor-default">Terms of Service</span>
+            <span className="cursor-default">Accessibility Statement</span>
+          </div>
         </div>
       </div>
     </footer>
