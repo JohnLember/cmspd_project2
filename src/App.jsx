@@ -1,12 +1,15 @@
-import { Routes, Route } from "react-router";
+import { AuthProvider } from "./context/AuthContext.jsx";
+import { ThemeProvider } from "./context/ThemeContext.jsx";
+import AppRouter from "./routes/AppRouter.jsx";
 
 function App() {
-
   return (
-   <Routes>
-      <Route path="/" element={<h1 className="text-blue-600">Hello, World!</h1>} />
-   </Routes>
-  )
+    <ThemeProvider>
+      <AuthProvider>
+        <AppRouter />
+      </AuthProvider>
+    </ThemeProvider>
+  );
 }
 
-export default App
+export default App;

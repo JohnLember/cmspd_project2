@@ -1,1 +1,57 @@
 @import "tailwindcss";
+
+@import url("https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&family=Source+Sans+3:wght@300;400;600;700&display=swap");
+
+@layer base {
+	:root {
+		color-scheme: light;
+		--gov-bg: #f6f8fb;
+		--gov-surface: #ffffff;
+		--gov-card: #fdfdff;
+		--gov-text: #0f172a;
+		--gov-muted: #475569;
+		--gov-border: #e2e8f0;
+		--gov-primary: #1d4ed8;
+		--gov-primary-soft: #3b82f6;
+		--gov-accent: #0ea5e9;
+		--gov-shadow: 0 20px 45px -30px rgba(15, 23, 42, 0.45);
+	}
+
+	.dark {
+		color-scheme: dark;
+		--gov-bg: #0b1220;
+		--gov-surface: #0f172a;
+		--gov-card: #111c31;
+		--gov-text: #e2e8f0;
+		--gov-muted: #94a3b8;
+		--gov-border: #1e293b;
+		--gov-primary: #60a5fa;
+		--gov-primary-soft: #38bdf8;
+		--gov-accent: #22d3ee;
+		--gov-shadow: 0 20px 45px -30px rgba(6, 9, 20, 0.7);
+	}
+
+	html,
+	body {
+		height: 100%;
+	}
+
+	body {
+		font-family: "Public Sans", "Source Sans 3", "Segoe UI", sans-serif;
+		background: var(--gov-bg);
+		color: var(--gov-text);
+	}
+}
+
+@layer utilities {
+	.gov-card {
+		background: var(--gov-card);
+		border: 1px solid var(--gov-border);
+		box-shadow: var(--gov-shadow);
+	}
+
+	.gov-surface {
+		background: var(--gov-surface);
+		border: 1px solid var(--gov-border);
+	}
+}
