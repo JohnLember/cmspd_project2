@@ -1,3 +1,17 @@
+import {
+  Accessibility,
+  BadgeCheck,
+  BarChart3,
+  BookOpen,
+  Building2,
+  FileCheck2,
+  Mail,
+  MapPin,
+  Phone,
+  ShieldCheck,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { Link } from "react-router";
 import LandingFooter from "../../components/landing/LandingFooter.jsx";
 import LandingHeader from "../../components/landing/LandingHeader.jsx";
@@ -60,7 +74,7 @@ export default function LandingPage() {
           <div className="mx-auto grid w-full max-w-6xl gap-10 pt-12 lg:grid-cols-[1.15fr_0.85fr]">
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-3 py-1 text-xs font-semibold text-[color:var(--gov-muted)]">
-                <span className="h-2 w-2 rounded-full bg-[color:var(--gov-accent)]" />
+                <Sparkles className="h-3.5 w-3.5 text-[color:var(--gov-accent)]" />
                 Official PDAO service platform
               </div>
               <h1 className="text-4xl font-semibold leading-tight lg:text-5xl">
@@ -91,7 +105,10 @@ export default function LandingPage() {
                     Accredited
                   </p>
                   <p className="text-sm font-semibold text-[color:var(--gov-text)]">
-                    PDAO office network
+                    <span className="inline-flex items-center gap-2">
+                      <BadgeCheck className="h-4 w-4 text-[color:var(--gov-accent)]" />
+                      PDAO office network
+                    </span>
                   </p>
                 </div>
                 <div>
@@ -99,7 +116,10 @@ export default function LandingPage() {
                     Coverage
                   </p>
                   <p className="text-sm font-semibold text-[color:var(--gov-text)]">
-                    Province-wide barangays
+                    <span className="inline-flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-[color:var(--gov-accent)]" />
+                      Province-wide barangays
+                    </span>
                   </p>
                 </div>
               </div>
@@ -137,20 +157,28 @@ export default function LandingPage() {
                 title: "Disconnected data",
                 detail:
                   "Paper-based records delay updates and weaken coordination between PDAO, barangays, and guardians.",
+                icon: FileCheck2,
               },
               {
                 title: "Limited analytics",
                 detail:
                   "Without consolidated reporting, subsidy distribution and disability classifications are harder to track.",
+                icon: BarChart3,
               },
               {
                 title: "Access barriers",
                 detail:
                   "PWD citizens need interfaces that prioritize accessibility, clarity, and reliable updates.",
+                icon: Accessibility,
               },
             ].map((item) => (
               <div key={item.title} className="gov-card rounded-2xl p-6">
-                <h3 className="text-base font-semibold">{item.title}</h3>
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--gov-surface)]">
+                    <item.icon className="h-5 w-5 text-[color:var(--gov-primary)]" />
+                  </span>
+                  <h3 className="text-base font-semibold">{item.title}</h3>
+                </div>
                 <p className="mt-3 text-sm text-[color:var(--gov-muted)]">
                   {item.detail}
                 </p>
@@ -166,7 +194,12 @@ export default function LandingPage() {
         >
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="gov-card rounded-2xl p-6">
-              <h3 className="text-base font-semibold">Mission-driven coordination</h3>
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--gov-surface)]">
+                  <ShieldCheck className="h-5 w-5 text-[color:var(--gov-primary)]" />
+                </span>
+                <h3 className="text-base font-semibold">Mission-driven coordination</h3>
+              </div>
               <p className="mt-3 text-sm text-[color:var(--gov-muted)]">
                 The portal unifies registration, subsidy management, and
                 reporting so every stakeholder has a single, trusted source of
@@ -174,13 +207,27 @@ export default function LandingPage() {
                 data handling.
               </p>
               <ul className="mt-4 space-y-2 text-sm text-[color:var(--gov-muted)]">
-                <li>Centralized PWD profiles and guardian links</li>
-                <li>Barangay-level reporting and monitoring</li>
-                <li>Secure audit trails for compliance</li>
+                <li className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-[color:var(--gov-accent)]" />
+                  Centralized PWD profiles and guardian links
+                </li>
+                <li className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-[color:var(--gov-accent)]" />
+                  Barangay-level reporting and monitoring
+                </li>
+                <li className="flex items-center gap-2">
+                  <FileCheck2 className="h-4 w-4 text-[color:var(--gov-accent)]" />
+                  Secure audit trails for compliance
+                </li>
               </ul>
             </div>
             <div className="gov-card rounded-2xl p-6">
-              <h3 className="text-base font-semibold">Accessibility focus</h3>
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--gov-surface)]">
+                  <Accessibility className="h-5 w-5 text-[color:var(--gov-primary)]" />
+                </span>
+                <h3 className="text-base font-semibold">Accessibility focus</h3>
+              </div>
               <p className="mt-3 text-sm text-[color:var(--gov-muted)]">
                 WCAG-inspired layouts, larger typography, and high-contrast
                 interfaces keep the system inclusive for PWD users.
@@ -204,19 +251,27 @@ export default function LandingPage() {
                 name: "PDAO Operations",
                 quote:
                   "Unified dashboards help us validate subsidies faster and keep barangay teams aligned.",
+                icon: Building2,
               },
               {
                 name: "Barangay Coordinators",
                 quote:
                   "We finally have a single portal to track updates without manual follow-ups.",
+                icon: Users,
               },
               {
                 name: "Guardian Support",
                 quote:
                   "Notifications and digital IDs reduce repeated visits and save time.",
+                icon: ShieldCheck,
               },
             ].map((item) => (
               <div key={item.name} className="gov-card rounded-2xl p-6">
+                <div className="flex items-center justify-between">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--gov-surface)]">
+                    <item.icon className="h-5 w-5 text-[color:var(--gov-primary)]" />
+                  </span>
+                </div>
                 <p className="text-sm text-[color:var(--gov-muted)]">“{item.quote}”</p>
                 <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gov-accent)]">
                   {item.name}
@@ -238,6 +293,9 @@ export default function LandingPage() {
                   {item.label}
                 </p>
                 <p className="mt-2 text-2xl font-semibold">{item.value}</p>
+                <p className="mt-2 text-xs uppercase tracking-[0.2em] text-[color:var(--gov-accent)]">
+                  Updated quarterly
+                </p>
               </div>
             ))}
           </div>
@@ -251,7 +309,12 @@ export default function LandingPage() {
           <div className="grid gap-6 lg:grid-cols-3">
             {blogItems.map((item) => (
               <div key={item.title} className="gov-card rounded-2xl p-6">
-                <h3 className="text-base font-semibold">{item.title}</h3>
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--gov-surface)]">
+                    <BookOpen className="h-5 w-5 text-[color:var(--gov-primary)]" />
+                  </span>
+                  <h3 className="text-base font-semibold">{item.title}</h3>
+                </div>
                 <p className="mt-3 text-sm text-[color:var(--gov-muted)]">
                   {item.excerpt}
                 </p>
@@ -274,7 +337,12 @@ export default function LandingPage() {
           <div className="grid gap-4 lg:grid-cols-2">
             {faqs.map((item) => (
               <div key={item.question} className="gov-card rounded-2xl p-6">
-                <h3 className="text-base font-semibold">{item.question}</h3>
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--gov-surface)]">
+                    <ShieldCheck className="h-5 w-5 text-[color:var(--gov-primary)]" />
+                  </span>
+                  <h3 className="text-base font-semibold">{item.question}</h3>
+                </div>
                 <p className="mt-3 text-sm text-[color:var(--gov-muted)]">
                   {item.answer}
                 </p>
@@ -333,13 +401,24 @@ export default function LandingPage() {
               </form>
             </div>
             <div className="gov-card rounded-2xl p-6">
-              <h3 className="text-base font-semibold">Program office</h3>
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--gov-surface)]">
+                  <MapPin className="h-5 w-5 text-[color:var(--gov-primary)]" />
+                </span>
+                <h3 className="text-base font-semibold">Program office</h3>
+              </div>
               <p className="mt-3 text-sm text-[color:var(--gov-muted)]">
                 Provincial Capitol Complex, PDAO Office, City of Batangas
               </p>
               <div className="mt-4 space-y-2 text-sm text-[color:var(--gov-muted)]">
-                <p>Hotline: (043) 123-4567</p>
-                <p>Email: support@pdao.gov.ph</p>
+                <p className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-[color:var(--gov-accent)]" />
+                  Hotline: (043) 123-4567
+                </p>
+                <p className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-[color:var(--gov-accent)]" />
+                  Email: support@pdao.gov.ph
+                </p>
                 <p>Office hours: Monday - Friday, 8:00 AM - 5:00 PM</p>
               </div>
             </div>
