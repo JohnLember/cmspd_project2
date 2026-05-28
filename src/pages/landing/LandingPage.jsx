@@ -92,12 +92,6 @@ export default function LandingPage() {
                 >
                   Access the portal
                 </Link>
-                <Link
-                  to="/app"
-                  className="rounded-full border border-[color:var(--gov-border)] px-6 py-3 text-sm font-semibold text-[color:var(--gov-text)] transition hover:-translate-y-0.5"
-                >
-                  View dashboard preview
-                </Link>
               </div>
               <div className="flex flex-wrap gap-6 text-sm text-[color:var(--gov-muted)]">
                 <div>

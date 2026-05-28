@@ -50,12 +50,6 @@ export default function LandingHeader() {
           >
             Sign in
           </Link>
-          <Link
-            to="/app"
-            className="rounded-full bg-[color:var(--gov-primary)] px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5"
-          >
-            Dashboard
-          </Link>
         </div>
       </div>
     </header>
