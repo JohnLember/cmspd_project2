@@ -1,4 +1,5 @@
 import { Accessibility, ShieldCheck, Sparkles } from "lucide-react";
+import { Link } from "react-router";
 import pdaoLogo from "../../assets/pdao_logo.png";
 
 const roles = ["PDAO Staff", "Guardian", "PWD Beneficiary"];
@@ -11,8 +12,8 @@ export default function LoginHeader() {
         <div className="absolute bottom-0 left-0 h-60 w-60 rounded-full bg-[radial-gradient(circle,_rgba(14,165,233,0.18),_transparent_70%)]" />
       </div>
       <div className="relative space-y-6">
-        <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-card)] p-2">
+        <Link to="/" className="flex items-center gap-4">
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl">
             <img
               src={pdaoLogo}
               alt="PDAO seal"
@@ -29,7 +30,7 @@ export default function LoginHeader() {
               Disabilities
             </h1>
           </div>
-        </div>
+        </Link>
         <p className="text-sm text-[color:var(--gov-muted)]">
           A secure and accessible platform for monitoring, managing, and
           supporting Persons with Disabilities in the community.
@@ -39,10 +40,11 @@ export default function LoginHeader() {
             <ShieldCheck className="mt-0.5 h-5 w-5 text-[color:var(--gov-primary)]" />
             <div>
               <p className="text-sm font-semibold text-[color:var(--gov-text)]">
-                Government-grade security
+                Protected citizen records
               </p>
               <p className="text-xs">
-                Access logging, role-based controls, and secure data handling.
+                Your information is kept private and only visible to authorized
+                personnel.
               </p>
             </div>
           </div>
@@ -50,10 +52,11 @@ export default function LoginHeader() {
             <Accessibility className="mt-0.5 h-5 w-5 text-[color:var(--gov-primary)]" />
             <div>
               <p className="text-sm font-semibold text-[color:var(--gov-text)]">
-                Accessibility-first design
+                Designed for easy access
               </p>
               <p className="text-xs">
-                WCAG-inspired layouts, clear typography, and high contrast.
+                Clear text, strong contrast, and simple navigation for all
+                users.
               </p>
             </div>
           </div>
