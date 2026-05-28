@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router";
 import AdminLayout from "../layouts/AdminLayout.jsx";
 import AuthLayout from "../layouts/AuthLayout.jsx";
 import DashboardLayout from "../layouts/DashboardLayout.jsx";
+import LandingPage from "../pages/landing/LandingPage.jsx";
 import Login from "../pages/auth/Login.jsx";
 import ForgotPassword from "../pages/auth/ForgotPassword.jsx";
 import GuardianDashboard from "../pages/dashboard/GuardianDashboard.jsx";
@@ -14,13 +15,15 @@ import ProtectedRoute from "./ProtectedRoute.jsx";
 export default function AppRouter() {
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
+
       <Route path="/auth" element={<AuthLayout />}>
         <Route path="login" element={<Login />} />
         <Route path="forgot-password" element={<ForgotPassword />} />
       </Route>
 
       <Route
-        path="/"
+        path="/app"
         element={
           <ProtectedRoute allowRoles={["pdao", "pwd", "guardian"]}>
             <DashboardLayout />
