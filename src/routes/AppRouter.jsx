@@ -16,12 +16,16 @@ const PdaoDashboard = lazy(() => import("../pages/dashboard/PdaoDashboard.jsx"))
 const PwdDashboard = lazy(() => import("../pages/dashboard/PwdDashboard.jsx"));
 const Settings = lazy(() => import("../pages/settings/Settings.jsx"));
 const NotFound = lazy(() => import("../pages/system/NotFound.jsx"));
+const BeneficiaryApply = lazy(
+  () => import("../pages/beneficiary/BeneficiaryApply.jsx")
+);
 
 export default function AppRouter() {
   return (
     <Suspense fallback={<LoadingScreen />}>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/beneficiary-apply" element={<BeneficiaryApply />} />
 
         <Route path="/auth" element={<AuthLayout />}>
           <Route path="login" element={<Login />} />
