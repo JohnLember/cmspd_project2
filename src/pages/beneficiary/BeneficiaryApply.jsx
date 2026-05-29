@@ -112,32 +112,27 @@ export default function BeneficiaryApply() {
                 <legend className="text-sm font-semibold text-[color:var(--gov-text)]">
                   Application details
                 </legend>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="text-sm font-medium" htmlFor="app-type">
-                      Application type
+                <div>
+                  <p className="text-sm font-medium">Application type</p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
+                      <input
+                        type="radio"
+                        name="app-type"
+                        value="new"
+                        className="h-4 w-4"
+                      />
+                      New Applicant
                     </label>
-                    <select
-                      id="app-type"
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
-                      defaultValue=""
-                    >
-                      <option value="" disabled>
-                        Select type
-                      </option>
-                      <option value="new">New Applicant</option>
-                      <option value="renewal">Renewal</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium" htmlFor="app-date">
-                      Date of application
+                    <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
+                      <input
+                        type="radio"
+                        name="app-type"
+                        value="renewal"
+                        className="h-4 w-4"
+                      />
+                      Renewal
                     </label>
-                    <input
-                      id="app-date"
-                      type="date"
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
-                    />
                   </div>
                 </div>
               </fieldset>
@@ -219,34 +214,57 @@ export default function BeneficiaryApply() {
                       <option value="prefer-not">Prefer not to say</option>
                     </select>
                   </div>
-                  <div>
+                  <div className="sm:col-span-2">
                     <label className="text-sm font-medium" htmlFor="civil-status">
                       Civil status
                     </label>
-                    <select
-                      id="civil-status"
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
-                      defaultValue=""
-                    >
-                      <option value="" disabled>
-                        Select status
-                      </option>
-                      <option value="single">Single</option>
-                      <option value="married">Married</option>
-                      <option value="widowed">Widowed</option>
-                      <option value="separated">Separated</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium" htmlFor="nationality">
-                      Nationality
-                    </label>
-                    <input
-                      id="nationality"
-                      type="text"
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
-                      placeholder="Filipino"
-                    />
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
+                        <input
+                          type="radio"
+                          name="civil-status"
+                          value="single"
+                          className="h-4 w-4"
+                        />
+                        Single
+                      </label>
+                      <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
+                        <input
+                          type="radio"
+                          name="civil-status"
+                          value="married"
+                          className="h-4 w-4"
+                        />
+                        Married
+                      </label>
+                      <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
+                        <input
+                          type="radio"
+                          name="civil-status"
+                          value="widowed"
+                          className="h-4 w-4"
+                        />
+                        Widowed
+                      </label>
+                      <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
+                        <input
+                          type="radio"
+                          name="civil-status"
+                          value="separated"
+                          className="h-4 w-4"
+                        />
+                        Separated
+                      </label>
+                      <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
+                        <input
+                          type="radio"
+                          name="civil-status"
+                          value="cohabitation"
+                          className="h-4 w-4"
+                        />
+                        Cohabitation (Live-in)
+                      </label>
+                    </div>
                   </div>
                 </div>
               </fieldset>
