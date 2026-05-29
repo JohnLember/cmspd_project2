@@ -15,6 +15,11 @@ const GuardianDashboard = lazy(
 const PdaoDashboard = lazy(() => import("../pages/dashboard/PdaoDashboard.jsx"));
 const PwdDashboard = lazy(() => import("../pages/dashboard/PwdDashboard.jsx"));
 const PwdManagement = lazy(() => import("../pages/pwd/PwdManagement.jsx"));
+const Applications = lazy(() => import("../pages/applications/Applications.jsx"));
+const Reports = lazy(() => import("../pages/reports/Reports.jsx"));
+const Notifications = lazy(
+  () => import("../pages/notifications/Notifications.jsx")
+);
 const Settings = lazy(() => import("../pages/settings/Settings.jsx"));
 const NotFound = lazy(() => import("../pages/system/NotFound.jsx"));
 const BeneficiaryApply = lazy(
@@ -48,6 +53,9 @@ export default function AppRouter() {
           <Route path="pwd" element={<PwdManagement />} />
           <Route path="pwd/dashboard" element={<PwdDashboard />} />
           <Route path="guardian" element={<GuardianDashboard />} />
+          <Route path="applications" element={<Applications />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="notifications" element={<Notifications />} />
           <Route path="settings" element={<Settings />} />
         </Route>
 
