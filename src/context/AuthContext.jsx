@@ -16,6 +16,7 @@ export function AuthProvider({ children }) {
     () => ({
       user,
       setUser,
+      logout: () => setUser(null),
       isAuthenticated: Boolean(user),
       role: user?.role ?? "guest",
     }),
