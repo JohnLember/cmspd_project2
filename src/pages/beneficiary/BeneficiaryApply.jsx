@@ -18,6 +18,9 @@ export default function BeneficiaryApply() {
     { title: "Family & References", description: "Contacts" },
   ];
   const [activeStep, setActiveStep] = useState(0);
+  const [showOtherDisability, setShowOtherDisability] = useState(false);
+  const [showOtherInborn, setShowOtherInborn] = useState(false);
+  const [showOtherAcquired, setShowOtherAcquired] = useState(false);
 
   const goNext = () =>
     setActiveStep((current) => Math.min(current + 1, steps.length - 1));
@@ -275,77 +278,145 @@ export default function BeneficiaryApply() {
                 <legend className="text-sm font-semibold text-[color:var(--gov-text)]">
                   Disability profile
                 </legend>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4">
                   <div>
-                    <label className="text-sm font-medium" htmlFor="disability-type">
-                      Type of disability
-                    </label>
-                    <select
-                      id="disability-type"
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
-                      defaultValue=""
-                    >
-                      <option value="" disabled>
-                        Select type
-                      </option>
-                      <option value="physical">Physical</option>
-                      <option value="visual">Visual</option>
-                      <option value="hearing">Hearing</option>
-                      <option value="speech">Speech</option>
-                      <option value="psychosocial">Psychosocial</option>
-                      <option value="intellectual">Intellectual</option>
-                      <option value="multiple">Multiple</option>
-                      <option value="other">Other</option>
-                    </select>
+                    <p className="text-sm font-medium">Type of disability</p>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      {[
+                        { value: "deaf", label: "Deaf or Hard of Hearing" },
+                        { value: "intellectual", label: "Intellectual Disability" },
+                        { value: "learning", label: "Learning Disability" },
+                        { value: "mental", label: "Mental Disability" },
+                        { value: "physical", label: "Physical Disability (Orthopedic)" },
+                        { value: "psychosocial", label: "Psychosocial Disability" },
+                        { value: "speech", label: "Speech and Language Impairment" },
+                        { value: "visual", label: "Visual Disability" },
+                        { value: "cancer", label: "Cancer (RA11215)" },
+                        { value: "rare", label: "Rare Disease (RA10747)" },
+                        { value: "other", label: "Other" },
+                      ].map((item) => (
+                        <label
+                          key={item.value}
+                          className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                        >
+                          <input
+                            type="checkbox"
+                            name="disability-type"
+                            value={item.value}
+                            className="h-4 w-4"
+                            onChange={(event) => {
+                              if (item.value === "other") {
+                                setShowOtherDisability(event.target.checked);
+                              }
+                            }}
+                          />
+                          {item.label}
+                        </label>
+                      ))}
+                    </div>
                   </div>
+                  {showOtherDisability ? (
+                    <div>
+                      <label className="text-sm font-medium" htmlFor="disability-detail">
+                        Other disability details
+                      </label>
+                      <input
+                        id="disability-detail"
+                        type="text"
+                        className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                        placeholder="Specify if applicable"
+                      />
+                    </div>
+                  ) : null}
                   <div>
-                    <label className="text-sm font-medium" htmlFor="disability-detail">
-                      Other disability details
-                    </label>
-                    <input
-                      id="disability-detail"
-                      type="text"
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
-                      placeholder="Specify if applicable"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium" htmlFor="cause-inborn">
+                    <p className="text-sm font-medium">
                       Cause of disability (Cognitive / Inborn)
-                    </label>
-                    <select
-                      id="cause-inborn"
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
-                      defaultValue=""
-                    >
-                      <option value="" disabled>
-                        Select cause
-                      </option>
-                      <option value="congenital">Congenital</option>
-                      <option value="autism">Autism</option>
-                      <option value="down-syndrome">Down Syndrome</option>
-                      <option value="cerebral-palsy">Cerebral Palsy</option>
-                      <option value="other">Other</option>
-                    </select>
+                    </p>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      {[
+                        { value: "autism", label: "Autism" },
+                        { value: "adhd", label: "ADHD" },
+                        { value: "cerebral-palsy", label: "Cerebral Palsy" },
+                        { value: "down-syndrome", label: "Down Syndrome" },
+                        { value: "other", label: "Other" },
+                      ].map((item) => (
+                        <label
+                          key={item.value}
+                          className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                        >
+                          <input
+                            type="checkbox"
+                            name="cause-inborn"
+                            value={item.value}
+                            className="h-4 w-4"
+                            onChange={(event) => {
+                              if (item.value === "other") {
+                                setShowOtherInborn(event.target.checked);
+                              }
+                            }}
+                          />
+                          {item.label}
+                        </label>
+                      ))}
+                    </div>
                   </div>
+                  {showOtherInborn ? (
+                    <div>
+                      <label className="text-sm font-medium" htmlFor="cause-inborn-other">
+                        Other inborn cause details
+                      </label>
+                      <input
+                        id="cause-inborn-other"
+                        type="text"
+                        className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                        placeholder="Specify if applicable"
+                      />
+                    </div>
+                  ) : null}
                   <div>
-                    <label className="text-sm font-medium" htmlFor="cause-acquired">
+                    <p className="text-sm font-medium">
                       Cause of disability (Acquired)
-                    </label>
-                    <select
-                      id="cause-acquired"
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
-                      defaultValue=""
-                    >
-                      <option value="" disabled>
-                        Select cause
-                      </option>
-                      <option value="illness">Illness</option>
-                      <option value="injury">Injury</option>
-                      <option value="accident">Accident</option>
-                      <option value="other">Other</option>
-                    </select>
+                    </p>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      {[
+                        { value: "chronic-illness", label: "Chronic Illness" },
+                        { value: "cerebral-palsy", label: "Cerebral Palsy" },
+                        { value: "injury", label: "Injury" },
+                        { value: "other", label: "Other" },
+                      ].map((item) => (
+                        <label
+                          key={item.value}
+                          className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                        >
+                          <input
+                            type="checkbox"
+                            name="cause-acquired"
+                            value={item.value}
+                            className="h-4 w-4"
+                            onChange={(event) => {
+                              if (item.value === "other") {
+                                setShowOtherAcquired(event.target.checked);
+                              }
+                            }}
+                          />
+                          {item.label}
+                        </label>
+                      ))}
+                    </div>
                   </div>
+                  {showOtherAcquired ? (
+                    <div>
+                      <label className="text-sm font-medium" htmlFor="cause-acquired-other">
+                        Other acquired cause details
+                      </label>
+                      <input
+                        id="cause-acquired-other"
+                        type="text"
+                        className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                        placeholder="Specify if applicable"
+                      />
+                    </div>
+                  ) : null}
                 </div>
               </fieldset>
             ) : null}
@@ -513,21 +584,51 @@ export default function BeneficiaryApply() {
                       <option value="government">Government</option>
                       <option value="private">Private</option>
                       <option value="ngo">NGO / Cooperative</option>
-                      <option value="other">Other</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium" htmlFor="occupation">
-                      Occupation
-                    </label>
-                    <input
-                      id="occupation"
-                      type="text"
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
-                      placeholder="e.g., Farmer, Teacher"
-                    />
+                  <div className="sm:col-span-2">
+                    <p className="text-sm font-medium">Occupation</p>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      {[
+                        { value: "managers", label: "Managers" },
+                        { value: "professionals", label: "Professionals" },
+                        {
+                          value: "technicians",
+                          label: "Technicians and Associate Professionals",
+                        },
+                        { value: "clerical", label: "Clerical Support Workers" },
+                        { value: "service-sales", label: "Service and Sales Workers" },
+                        {
+                          value: "skilled-agri",
+                          label: "Skilled Agricultural, Forestry and Fishery Workers",
+                        },
+                        {
+                          value: "craft-trade",
+                          label: "Craft and Related Trade Workers",
+                        },
+                        {
+                          value: "plant-machine",
+                          label: "Plant and Machine Operators and Assemblers",
+                        },
+                        { value: "elementary", label: "Elementary Occupations" },
+                        { value: "armed-forces", label: "Armed Forces Occupations" },
+                      ].map((item) => (
+                        <label
+                          key={item.value}
+                          className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                        >
+                          <input
+                            type="radio"
+                            name="occupation"
+                            value={item.value}
+                            className="h-4 w-4"
+                          />
+                          {item.label}
+                        </label>
+                      ))}
+                    </div>
                   </div>
-                  <div>
+                  <div className="sm:col-span-2">
                     <label className="text-sm font-medium" htmlFor="occupation-other">
                       Other, specify
                     </label>
