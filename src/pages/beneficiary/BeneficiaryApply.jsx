@@ -645,69 +645,253 @@ export default function BeneficiaryApply() {
             {activeStep === 5 ? (
               <fieldset className="space-y-4">
                 <legend className="text-sm font-semibold text-[color:var(--gov-text)]">
-                  Family and references
+                  Family, organization, and references
                 </legend>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="text-sm font-medium" htmlFor="guardian-name">
-                      Guardian or family representative
+                  <div className="sm:col-span-2">
+                    <label className="text-sm font-medium" htmlFor="org-affiliated">
+                      Organization affiliated
                     </label>
                     <input
-                      id="guardian-name"
+                      id="org-affiliated"
                       type="text"
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
-                      placeholder="Full name"
+                      placeholder="Organization name"
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium" htmlFor="guardian-relationship">
-                      Relationship
+                    <label className="text-sm font-medium" htmlFor="contact-person">
+                      Contact person
                     </label>
                     <input
-                      id="guardian-relationship"
+                      id="contact-person"
                       type="text"
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
-                      placeholder="Mother, Father, Spouse"
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium" htmlFor="guardian-contact">
-                      Guardian contact number
+                    <label className="text-sm font-medium" htmlFor="tel-nos">
+                      Tel. nos.
                     </label>
                     <input
-                      id="guardian-contact"
+                      id="tel-nos"
                       type="tel"
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
-                  <div>
-                    <label className="text-sm font-medium" htmlFor="household-count">
-                      Household members
+                  <div className="sm:col-span-2">
+                    <label className="text-sm font-medium" htmlFor="office-address">
+                      Office address
                     </label>
                     <input
-                      id="household-count"
-                      type="number"
-                      min="1"
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium" htmlFor="reference-name">
-                      Emergency contact name
-                    </label>
-                    <input
-                      id="reference-name"
+                      id="office-address"
                       type="text"
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium" htmlFor="reference-contact">
-                      Emergency contact number
+                    <label className="text-sm font-medium" htmlFor="sss-no">
+                      SSS no.
                     </label>
                     <input
-                      id="reference-contact"
-                      type="tel"
+                      id="sss-no"
+                      type="text"
+                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="gis-no">
+                      GIS no.
+                    </label>
+                    <input
+                      id="gis-no"
+                      type="text"
+                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="pagibig-no">
+                      PAG-IBIG no.
+                    </label>
+                    <input
+                      id="pagibig-no"
+                      type="text"
+                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="psn-no">
+                      PSN no.
+                    </label>
+                    <input
+                      id="psn-no"
+                      type="text"
+                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="philhealth-no">
+                      PhilHealth no.
+                    </label>
+                    <input
+                      id="philhealth-no"
+                      type="text"
+                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="father-last">
+                      Father's name (last name)
+                    </label>
+                    <input
+                      id="father-last"
+                      type="text"
+                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="father-first">
+                      Father's name (first name)
+                    </label>
+                    <input
+                      id="father-first"
+                      type="text"
+                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="father-middle">
+                      Father's name (middle name)
+                    </label>
+                    <input
+                      id="father-middle"
+                      type="text"
+                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="mother-last">
+                      Mother's name (last name)
+                    </label>
+                    <input
+                      id="mother-last"
+                      type="text"
+                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="mother-first">
+                      Mother's name (first name)
+                    </label>
+                    <input
+                      id="mother-first"
+                      type="text"
+                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="mother-middle">
+                      Mother's name (middle name)
+                    </label>
+                    <input
+                      id="mother-middle"
+                      type="text"
+                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="guardian-last">
+                      Guardian's name (last name)
+                    </label>
+                    <input
+                      id="guardian-last"
+                      type="text"
+                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="guardian-first">
+                      Guardian's name (first name)
+                    </label>
+                    <input
+                      id="guardian-first"
+                      type="text"
+                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="guardian-middle">
+                      Guardian's name (middle name)
+                    </label>
+                    <input
+                      id="guardian-middle"
+                      type="text"
+                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-sm font-medium">Accomplished by</p>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {[
+                      { value: "applicant", label: "Applicant" },
+                      { value: "guardian", label: "Guardian" },
+                      { value: "representative", label: "Representative" },
+                    ].map((item) => (
+                      <label
+                        key={item.value}
+                        className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      >
+                        <input
+                          type="radio"
+                          name="accomplished-by"
+                          value={item.value}
+                          className="h-4 w-4"
+                        />
+                        {item.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="accomp-last">
+                      Accomplished by (last name)
+                    </label>
+                    <input
+                      id="accomp-last"
+                      type="text"
+                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="accomp-first">
+                      Accomplished by (first name)
+                    </label>
+                    <input
+                      id="accomp-first"
+                      type="text"
+                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="accomp-middle">
+                      Accomplished by (middle name)
+                    </label>
+                    <input
+                      id="accomp-middle"
+                      type="text"
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
