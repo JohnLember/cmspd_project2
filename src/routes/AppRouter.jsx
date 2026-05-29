@@ -14,6 +14,7 @@ const GuardianDashboard = lazy(
 );
 const PdaoDashboard = lazy(() => import("../pages/dashboard/PdaoDashboard.jsx"));
 const PwdDashboard = lazy(() => import("../pages/dashboard/PwdDashboard.jsx"));
+const PwdManagement = lazy(() => import("../pages/pwd/PwdManagement.jsx"));
 const Settings = lazy(() => import("../pages/settings/Settings.jsx"));
 const NotFound = lazy(() => import("../pages/system/NotFound.jsx"));
 const BeneficiaryApply = lazy(
@@ -44,7 +45,8 @@ export default function AppRouter() {
           <Route path="pdao" element={<AdminLayout />}>
             <Route index element={<PdaoDashboard />} />
           </Route>
-          <Route path="pwd" element={<PwdDashboard />} />
+          <Route path="pwd" element={<PwdManagement />} />
+          <Route path="pwd/dashboard" element={<PwdDashboard />} />
           <Route path="guardian" element={<GuardianDashboard />} />
           <Route path="settings" element={<Settings />} />
         </Route>
