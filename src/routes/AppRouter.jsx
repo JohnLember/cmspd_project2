@@ -15,6 +15,20 @@ const GuardianDashboard = lazy(
 const PdaoDashboard = lazy(() => import("../pages/dashboard/PdaoDashboard.jsx"));
 const PwdDashboard = lazy(() => import("../pages/dashboard/PwdDashboard.jsx"));
 const PwdManagement = lazy(() => import("../pages/pwd/PwdManagement.jsx"));
+const PwdLayout = lazy(() => import("../layouts/PwdLayout.jsx"));
+const PwdBeneficiaryDashboard = lazy(
+  () => import("../pages/pwd-beneficiary/PwdBeneficiaryDashboard.jsx")
+);
+const PwdDigitalId = lazy(
+  () => import("../pages/pwd-beneficiary/PwdDigitalId.jsx")
+);
+const PwdSubsidyStatus = lazy(
+  () => import("../pages/pwd-beneficiary/PwdSubsidyStatus.jsx")
+);
+const PwdAnnouncements = lazy(
+  () => import("../pages/pwd-beneficiary/PwdAnnouncements.jsx")
+);
+const PwdProfile = lazy(() => import("../pages/pwd-beneficiary/PwdProfile.jsx"));
 const Applications = lazy(() => import("../pages/applications/Applications.jsx"));
 const Reports = lazy(() => import("../pages/reports/Reports.jsx"));
 const Notifications = lazy(
@@ -57,6 +71,21 @@ export default function AppRouter() {
           <Route path="reports" element={<Reports />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="settings" element={<Settings />} />
+        </Route>
+
+        <Route
+          path="/app/pwd-beneficiary"
+          element={
+            <ProtectedRoute allowRoles={["pwd"]}>
+              <PwdLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<PwdBeneficiaryDashboard />} />
+          <Route path="digital-id" element={<PwdDigitalId />} />
+          <Route path="subsidy-status" element={<PwdSubsidyStatus />} />
+          <Route path="announcements" element={<PwdAnnouncements />} />
+          <Route path="profile" element={<PwdProfile />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

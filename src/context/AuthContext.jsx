@@ -1,30 +1,6 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext } from "react";
 
-const AuthContext = createContext(null);
-
-const demoUser = {
-  id: "demo-user",
-  name: "Maria Santos",
-  role: "pdao",
-  email: "maria.santos@pdao.gov.ph",
-};
-
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(demoUser);
-
-  const value = useMemo(
-    () => ({
-      user,
-      setUser,
-      logout: () => setUser(null),
-      isAuthenticated: Boolean(user),
-      role: user?.role ?? "guest",
-    }),
-    [user]
-  );
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
+export const AuthContext = createContext(null);
 
 export function useAuth() {
   const context = useContext(AuthContext);
