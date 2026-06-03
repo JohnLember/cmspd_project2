@@ -7,7 +7,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 const roleRedirects = {
   pdao: "/app/pdao",
   guardian: "/app/guardian",
-  pwd: "/app/pwd",
+  pwd: "/app/pwd-beneficiary",
 };
 
 export default function LoginForm() {

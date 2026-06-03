@@ -55,7 +55,7 @@ export default function AppRouter() {
         <Route
           path="/app"
           element={
-            <ProtectedRoute allowRoles={["pdao", "pwd", "guardian"]}>
+            <ProtectedRoute allowRoles={["pdao"]}>
               <DashboardLayout />
             </ProtectedRoute>
           }
