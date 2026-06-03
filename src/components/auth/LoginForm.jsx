@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import PasswordInput from "./PasswordInput.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 const roleRedirects = {
   pdao: "/app/pdao",
@@ -11,6 +12,7 @@ const roleRedirects = {
 
 export default function LoginForm() {
   const navigate = useNavigate();
+  const { signIn } = useAuth();
   const [formError, setFormError] = useState("");
   const {
     register,
@@ -24,9 +26,16 @@ export default function LoginForm() {
     },
   });
 
-  const onSubmit = async () => {
+  const onSubmit = async ({ email, password }) => {
     setFormError("");
-    setFormError("Sign-in is not yet connected. Please try again later.");
+
+    try {
+      const user = await signIn({ email, password });
+      const redirectPath = roleRedirects[user?.role] || "/app";
+      navigate(redirectPath, { replace: true });
+    } catch (error) {
+      setFormError(error?.message || "Unable to sign in. Please try again.");
+    }
   };
 
   return (
