@@ -22,6 +22,81 @@ export default function BeneficiaryApply() {
   const [showOtherInborn, setShowOtherInborn] = useState(false);
   const [showOtherAcquired, setShowOtherAcquired] = useState(false);
 
+  const [formData, setFormData] = useState({
+    // Step 0: Application Details
+    appType: "",
+    // Step 1: Personal Information
+    firstName: "",
+    lastName: "",
+    middleName: "",
+    suffix: "",
+    birthdate: "",
+    gender: "",
+    civilStatus: "",
+    // Step 2: Disability Profile
+    disabilityTypes: [],
+    disabilityDetail: "",
+    causeInborn: [],
+    causeInbornOther: "",
+    causeAcquired: [],
+    causeAcquiredOther: "",
+    // Step 3: Address & Contact
+    street: "",
+    barangay: "",
+    municipality: "",
+    province: "",
+    postal: "",
+    contactNumber: "",
+    emailAddress: "",
+    // Step 4: Education & Employment
+    education: "",
+    employmentStatus: "",
+    employmentType: "",
+    employmentCategory: "",
+    occupation: "",
+    occupationOther: "",
+    // Step 5: Family & References
+    orgAffiliated: "",
+    contactPerson: "",
+    telNos: "",
+    officeAddress: "",
+    sssNo: "",
+    gisNo: "",
+    pagibigNo: "",
+    psnNo: "",
+    philhealthNo: "",
+    fatherLast: "",
+    fatherFirst: "",
+    fatherMiddle: "",
+    motherLast: "",
+    motherFirst: "",
+    motherMiddle: "",
+    guardianLast: "",
+    guardianFirst: "",
+    guardianMiddle: "",
+    accomplishedBy: "",
+    accompLast: "",
+    accompFirst: "",
+    accompMiddle: "",
+  });
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCheckboxChange = (e, fieldName) => {
+    const { value, checked } = e.target;
+    setFormData((prev) => {
+      const currentArray = prev[fieldName] || [];
+      if (checked) {
+        return { ...prev, [fieldName]: [...currentArray, value] };
+      } else {
+        return { ...prev, [fieldName]: currentArray.filter((v) => v !== value) };
+      }
+    });
+  };
+
   const goNext = () =>
     setActiveStep((current) => Math.min(current + 1, steps.length - 1));
   const goPrevious = () => setActiveStep((current) => Math.max(current - 1, 0));
@@ -121,8 +196,10 @@ export default function BeneficiaryApply() {
                     <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
                       <input
                         type="radio"
-                        name="app-type"
+                        name="appType"
                         value="new"
+                        checked={formData.appType === "new"}
+                        onChange={handleInputChange}
                         className="h-4 w-4"
                       />
                       New Applicant
@@ -130,8 +207,10 @@ export default function BeneficiaryApply() {
                     <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
                       <input
                         type="radio"
-                        name="app-type"
+                        name="appType"
                         value="renewal"
+                        checked={formData.appType === "renewal"}
+                        onChange={handleInputChange}
                         className="h-4 w-4"
                       />
                       Renewal
@@ -154,6 +233,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="first-name"
                       type="text"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                       placeholder="Juan"
                     />
@@ -165,6 +247,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="last-name"
                       type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                       placeholder="Dela Cruz"
                     />
@@ -176,6 +261,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="middle-name"
                       type="text"
+                      name="middleName"
+                      value={formData.middleName}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -186,6 +274,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="suffix"
                       type="text"
+                      name="suffix"
+                      value={formData.suffix}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                       placeholder="Jr., Sr., III"
                     />
@@ -197,6 +288,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="birthdate"
                       type="date"
+                      name="birthdate"
+                      value={formData.birthdate}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -206,12 +300,12 @@ export default function BeneficiaryApply() {
                     </label>
                     <select
                       id="gender"
+                      name="gender"
+                      value={formData.gender}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
-                      defaultValue=""
                     >
-                      <option value="" disabled>
-                        Select sex
-                      </option>
+                      <option value="">Select sex</option>
                       <option value="female">Female</option>
                       <option value="male">Male</option>
                       <option value="prefer-not">Prefer not to say</option>
@@ -225,8 +319,10 @@ export default function BeneficiaryApply() {
                       <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
                         <input
                           type="radio"
-                          name="civil-status"
+                          name="civilStatus"
                           value="single"
+                          checked={formData.civilStatus === "single"}
+                          onChange={handleInputChange}
                           className="h-4 w-4"
                         />
                         Single
@@ -234,8 +330,10 @@ export default function BeneficiaryApply() {
                       <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
                         <input
                           type="radio"
-                          name="civil-status"
+                          name="civilStatus"
                           value="married"
+                          checked={formData.civilStatus === "married"}
+                          onChange={handleInputChange}
                           className="h-4 w-4"
                         />
                         Married
@@ -243,8 +341,10 @@ export default function BeneficiaryApply() {
                       <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
                         <input
                           type="radio"
-                          name="civil-status"
+                          name="civilStatus"
                           value="widowed"
+                          checked={formData.civilStatus === "widowed"}
+                          onChange={handleInputChange}
                           className="h-4 w-4"
                         />
                         Widowed
@@ -252,8 +352,10 @@ export default function BeneficiaryApply() {
                       <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
                         <input
                           type="radio"
-                          name="civil-status"
+                          name="civilStatus"
                           value="separated"
+                          checked={formData.civilStatus === "separated"}
+                          onChange={handleInputChange}
                           className="h-4 w-4"
                         />
                         Separated
@@ -261,8 +363,10 @@ export default function BeneficiaryApply() {
                       <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
                         <input
                           type="radio"
-                          name="civil-status"
+                          name="civilStatus"
                           value="cohabitation"
+                          checked={formData.civilStatus === "cohabitation"}
+                          onChange={handleInputChange}
                           className="h-4 w-4"
                         />
                         Cohabitation (Live-in)
@@ -301,14 +405,15 @@ export default function BeneficiaryApply() {
                         >
                           <input
                             type="checkbox"
-                            name="disability-type"
-                            value={item.value}
-                            className="h-4 w-4"
-                            onChange={(event) => {
+                            checked={formData.disabilityTypes.includes(item.value)}
+                            onChange={(e) => {
+                              handleCheckboxChange(e, "disabilityTypes");
                               if (item.value === "other") {
-                                setShowOtherDisability(event.target.checked);
+                                setShowOtherDisability(e.target.checked);
                               }
                             }}
+                            value={item.value}
+                            className="h-4 w-4"
                           />
                           {item.label}
                         </label>
@@ -323,6 +428,9 @@ export default function BeneficiaryApply() {
                       <input
                         id="disability-detail"
                         type="text"
+                        name="disabilityDetail"
+                        value={formData.disabilityDetail}
+                        onChange={handleInputChange}
                         className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                         placeholder="Specify if applicable"
                       />
@@ -346,14 +454,15 @@ export default function BeneficiaryApply() {
                         >
                           <input
                             type="checkbox"
-                            name="cause-inborn"
-                            value={item.value}
-                            className="h-4 w-4"
-                            onChange={(event) => {
+                            checked={formData.causeInborn.includes(item.value)}
+                            onChange={(e) => {
+                              handleCheckboxChange(e, "causeInborn");
                               if (item.value === "other") {
-                                setShowOtherInborn(event.target.checked);
+                                setShowOtherInborn(e.target.checked);
                               }
                             }}
+                            value={item.value}
+                            className="h-4 w-4"
                           />
                           {item.label}
                         </label>
@@ -368,6 +477,9 @@ export default function BeneficiaryApply() {
                       <input
                         id="cause-inborn-other"
                         type="text"
+                        name="causeInbornOther"
+                        value={formData.causeInbornOther}
+                        onChange={handleInputChange}
                         className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                         placeholder="Specify if applicable"
                       />
@@ -390,14 +502,15 @@ export default function BeneficiaryApply() {
                         >
                           <input
                             type="checkbox"
-                            name="cause-acquired"
-                            value={item.value}
-                            className="h-4 w-4"
-                            onChange={(event) => {
+                            checked={formData.causeAcquired.includes(item.value)}
+                            onChange={(e) => {
+                              handleCheckboxChange(e, "causeAcquired");
                               if (item.value === "other") {
-                                setShowOtherAcquired(event.target.checked);
+                                setShowOtherAcquired(e.target.checked);
                               }
                             }}
+                            value={item.value}
+                            className="h-4 w-4"
                           />
                           {item.label}
                         </label>
@@ -412,6 +525,9 @@ export default function BeneficiaryApply() {
                       <input
                         id="cause-acquired-other"
                         type="text"
+                        name="causeAcquiredOther"
+                        value={formData.causeAcquiredOther}
+                        onChange={handleInputChange}
                         className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                         placeholder="Specify if applicable"
                       />
@@ -434,6 +550,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="street"
                       type="text"
+                      name="street"
+                      value={formData.street}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                       placeholder="House no., street, sitio"
                     />
@@ -445,6 +564,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="barangay"
                       type="text"
+                      name="barangay"
+                      value={formData.barangay}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -455,6 +577,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="municipality"
                       type="text"
+                      name="municipality"
+                      value={formData.municipality}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                       placeholder="Loreto"
                     />
@@ -466,6 +591,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="province"
                       type="text"
+                      name="province"
+                      value={formData.province}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                       placeholder="Agusan del Sur"
                     />
@@ -477,6 +605,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="postal"
                       type="text"
+                      name="postal"
+                      value={formData.postal}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -487,6 +618,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="contact-number"
                       type="tel"
+                      name="contactNumber"
+                      value={formData.contactNumber}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                       placeholder="09xx xxx xxxx"
                     />
@@ -498,6 +632,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="email-address"
                       type="email"
+                      name="emailAddress"
+                      value={formData.emailAddress}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                       placeholder="name@example.com"
                     />
@@ -518,12 +655,12 @@ export default function BeneficiaryApply() {
                     </label>
                     <select
                       id="education"
+                      name="education"
+                      value={formData.education}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
-                      defaultValue=""
                     >
-                      <option value="" disabled>
-                        Select attainment
-                      </option>
+                      <option value="">Select attainment</option>
                       <option value="none">No formal education</option>
                       <option value="elementary">Elementary</option>
                       <option value="high-school">High School</option>
@@ -539,12 +676,12 @@ export default function BeneficiaryApply() {
                     </label>
                     <select
                       id="employment-status"
+                      name="employmentStatus"
+                      value={formData.employmentStatus}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
-                      defaultValue=""
                     >
-                      <option value="" disabled>
-                        Select status
-                      </option>
+                      <option value="">Select status</option>
                       <option value="employed">Employed</option>
                       <option value="self-employed">Self-employed</option>
                       <option value="unemployed">Unemployed</option>
@@ -557,12 +694,12 @@ export default function BeneficiaryApply() {
                     </label>
                     <select
                       id="employment-type"
+                      name="employmentType"
+                      value={formData.employmentType}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
-                      defaultValue=""
                     >
-                      <option value="" disabled>
-                        Select type
-                      </option>
+                      <option value="">Select type</option>
                       <option value="full-time">Full-time</option>
                       <option value="part-time">Part-time</option>
                       <option value="contractual">Contractual</option>
@@ -575,12 +712,12 @@ export default function BeneficiaryApply() {
                     </label>
                     <select
                       id="employment-category"
+                      name="employmentCategory"
+                      value={formData.employmentCategory}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
-                      defaultValue=""
                     >
-                      <option value="" disabled>
-                        Select category
-                      </option>
+                      <option value="">Select category</option>
                       <option value="government">Government</option>
                       <option value="private">Private</option>
                       <option value="ngo">NGO / Cooperative</option>
@@ -621,6 +758,8 @@ export default function BeneficiaryApply() {
                             type="radio"
                             name="occupation"
                             value={item.value}
+                            checked={formData.occupation === item.value}
+                            onChange={handleInputChange}
                             className="h-4 w-4"
                           />
                           {item.label}
@@ -635,6 +774,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="occupation-other"
                       type="text"
+                      name="occupationOther"
+                      value={formData.occupationOther}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -655,6 +797,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="org-affiliated"
                       type="text"
+                      name="orgAffiliated"
+                      value={formData.orgAffiliated}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                       placeholder="Organization name"
                     />
@@ -666,6 +811,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="contact-person"
                       type="text"
+                      name="contactPerson"
+                      value={formData.contactPerson}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -676,6 +824,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="tel-nos"
                       type="tel"
+                      name="telNos"
+                      value={formData.telNos}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -686,6 +837,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="office-address"
                       type="text"
+                      name="officeAddress"
+                      value={formData.officeAddress}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -696,6 +850,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="sss-no"
                       type="text"
+                      name="sssNo"
+                      value={formData.sssNo}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -706,6 +863,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="gis-no"
                       type="text"
+                      name="gisNo"
+                      value={formData.gisNo}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -716,6 +876,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="pagibig-no"
                       type="text"
+                      name="pagibigNo"
+                      value={formData.pagibigNo}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -726,6 +889,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="psn-no"
                       type="text"
+                      name="psnNo"
+                      value={formData.psnNo}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -736,6 +902,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="philhealth-no"
                       type="text"
+                      name="philhealthNo"
+                      value={formData.philhealthNo}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -749,6 +918,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="father-last"
                       type="text"
+                      name="fatherLast"
+                      value={formData.fatherLast}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -759,6 +931,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="father-first"
                       type="text"
+                      name="fatherFirst"
+                      value={formData.fatherFirst}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -769,6 +944,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="father-middle"
                       type="text"
+                      name="fatherMiddle"
+                      value={formData.fatherMiddle}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -782,6 +960,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="mother-last"
                       type="text"
+                      name="motherLast"
+                      value={formData.motherLast}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -792,6 +973,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="mother-first"
                       type="text"
+                      name="motherFirst"
+                      value={formData.motherFirst}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -802,6 +986,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="mother-middle"
                       type="text"
+                      name="motherMiddle"
+                      value={formData.motherMiddle}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -815,6 +1002,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="guardian-last"
                       type="text"
+                      name="guardianLast"
+                      value={formData.guardianLast}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -825,6 +1015,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="guardian-first"
                       type="text"
+                      name="guardianFirst"
+                      value={formData.guardianFirst}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -835,6 +1028,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="guardian-middle"
                       type="text"
+                      name="guardianMiddle"
+                      value={formData.guardianMiddle}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -854,8 +1050,10 @@ export default function BeneficiaryApply() {
                       >
                         <input
                           type="radio"
-                          name="accomplished-by"
+                          name="accomplishedBy"
                           value={item.value}
+                          checked={formData.accomplishedBy === item.value}
+                          onChange={handleInputChange}
                           className="h-4 w-4"
                         />
                         {item.label}
@@ -872,6 +1070,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="accomp-last"
                       type="text"
+                      name="accompLast"
+                      value={formData.accompLast}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -882,6 +1083,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="accomp-first"
                       type="text"
+                      name="accompFirst"
+                      value={formData.accompFirst}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
@@ -892,6 +1096,9 @@ export default function BeneficiaryApply() {
                     <input
                       id="accomp-middle"
                       type="text"
+                      name="accompMiddle"
+                      value={formData.accompMiddle}
+                      onChange={handleInputChange}
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                     />
                   </div>
