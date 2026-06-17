@@ -9,6 +9,34 @@ const requirements = [
   "Recent 2x2 photo",
 ];
 
+// Visual markers for form labels.
+const Req = () => <span className="text-red-600"> *</span>;
+const Optional = () => (
+  <span className="ml-1 text-xs font-normal text-[color:var(--gov-muted)]">
+    (optional)
+  </span>
+);
+
+// Required fields per step, as [fieldName, humanLabel]. Step 2 (disability
+// profile) has array/conditional rules handled separately in getMissingLabels.
+const requiredFieldsByStep = {
+  0: [["appType", "Application type"]],
+  1: [
+    ["firstName", "First name"],
+    ["lastName", "Last name"],
+    ["birthdate", "Birthdate"],
+    ["gender", "Sex"],
+    ["civilStatus", "Civil status"],
+  ],
+  3: [
+    ["street", "Complete address"],
+    ["barangay", "Barangay"],
+    ["municipality", "Municipality"],
+    ["province", "Province"],
+    ["contactNumber", "Mobile number"],
+  ],
+};
+
 export default function BeneficiaryApply() {
   const steps = [
     { title: "Application Details", description: "Application type" },
@@ -95,19 +123,75 @@ export default function BeneficiaryApply() {
     });
   };
 
-  const goNext = () =>
-    setActiveStep((current) => Math.min(current + 1, steps.length - 1));
-  const goPrevious = () => setActiveStep((current) => Math.max(current - 1, 0));
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [applicationNumber, setApplicationNumber] = useState("");
+  const [stepError, setStepError] = useState("");
+
+  // Returns the human labels of required fields still missing on a given step.
+  const getMissingLabels = (step) => {
+    const missing = [];
+    (requiredFieldsByStep[step] || []).forEach(([field, label]) => {
+      if (!String(formData[field] || "").trim()) missing.push(label);
+    });
+    if (step === 2) {
+      if (formData.disabilityTypes.length === 0) {
+        missing.push("Type of disability");
+      } else if (
+        formData.disabilityTypes.includes("other") &&
+        !formData.disabilityDetail.trim()
+      ) {
+        missing.push("Other disability details");
+      }
+      if (
+        formData.causeInborn.includes("other") &&
+        !formData.causeInbornOther.trim()
+      ) {
+        missing.push("Other inborn cause details");
+      }
+      if (
+        formData.causeAcquired.includes("other") &&
+        !formData.causeAcquiredOther.trim()
+      ) {
+        missing.push("Other acquired cause details");
+      }
+    }
+    return missing;
+  };
+
+  const goNext = () => {
+    const missing = getMissingLabels(activeStep);
+    if (missing.length) {
+      setStepError(`Please complete the required field(s): ${missing.join(", ")}.`);
+      return;
+    }
+    setStepError("");
+    setActiveStep((current) => Math.min(current + 1, steps.length - 1));
+  };
+  const goPrevious = () => {
+    setStepError("");
+    setActiveStep((current) => Math.max(current - 1, 0));
+  };
 
   const handleSubmit = async () => {
     // Only ever runs from an explicit Submit click on the last step.
     if (activeStep !== steps.length - 1 || isSubmitting) return;
 
+    // Validate every step; jump to the first one with missing required fields.
+    for (let step = 0; step < steps.length; step += 1) {
+      const missing = getMissingLabels(step);
+      if (missing.length) {
+        setActiveStep(step);
+        setStepError(
+          `Please complete the required field(s) in "${steps[step].title}": ${missing.join(
+            ", "
+          )}.`
+        );
+        return;
+      }
+    }
+    setStepError("");
     setSubmitError("");
     setIsSubmitting(true);
     try {
@@ -174,8 +258,9 @@ export default function BeneficiaryApply() {
             <div>
               <h2 className="text-xl font-semibold">Application form</h2>
               <p className="mt-2 text-sm text-[color:var(--gov-muted)]">
-                Complete each section to submit your request. Required fields
-                will be validated once online submission is enabled.
+                Complete each section to submit your request. Fields marked with
+                an asterisk (<span className="text-red-600">*</span>) are
+                required.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -210,7 +295,10 @@ export default function BeneficiaryApply() {
                   Application details
                 </legend>
                 <div>
-                  <p className="text-sm font-medium">Application type</p>
+                  <p className="text-sm font-medium">
+                    Application type
+                    <Req />
+                  </p>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
                       <input
@@ -248,6 +336,7 @@ export default function BeneficiaryApply() {
                   <div>
                     <label className="text-sm font-medium" htmlFor="first-name">
                       First name
+                      <Req />
                     </label>
                     <input
                       id="first-name"
@@ -262,6 +351,7 @@ export default function BeneficiaryApply() {
                   <div>
                     <label className="text-sm font-medium" htmlFor="last-name">
                       Last name
+                      <Req />
                     </label>
                     <input
                       id="last-name"
@@ -276,6 +366,7 @@ export default function BeneficiaryApply() {
                   <div>
                     <label className="text-sm font-medium" htmlFor="middle-name">
                       Middle name
+                      <Optional />
                     </label>
                     <input
                       id="middle-name"
@@ -289,6 +380,7 @@ export default function BeneficiaryApply() {
                   <div>
                     <label className="text-sm font-medium" htmlFor="suffix">
                       Suffix
+                      <Optional />
                     </label>
                     <input
                       id="suffix"
@@ -303,6 +395,7 @@ export default function BeneficiaryApply() {
                   <div>
                     <label className="text-sm font-medium" htmlFor="birthdate">
                       Birthdate
+                      <Req />
                     </label>
                     <input
                       id="birthdate"
@@ -316,6 +409,7 @@ export default function BeneficiaryApply() {
                   <div>
                     <label className="text-sm font-medium" htmlFor="gender">
                       Sex
+                      <Req />
                     </label>
                     <select
                       id="gender"
@@ -333,6 +427,7 @@ export default function BeneficiaryApply() {
                   <div className="sm:col-span-2">
                     <label className="text-sm font-medium" htmlFor="civil-status">
                       Civil status
+                      <Req />
                     </label>
                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
                       <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
@@ -403,7 +498,10 @@ export default function BeneficiaryApply() {
                 </legend>
                 <div className="grid gap-4">
                   <div>
-                    <p className="text-sm font-medium">Type of disability</p>
+                    <p className="text-sm font-medium">
+                      Type of disability
+                      <Req />
+                    </p>
                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
                       {[
                         { value: "deaf", label: "Deaf or Hard of Hearing" },
@@ -446,6 +544,7 @@ export default function BeneficiaryApply() {
                     <div>
                       <label className="text-sm font-medium" htmlFor="disability-detail">
                         Other disability details
+                        <Req />
                       </label>
                       <input
                         id="disability-detail"
@@ -461,6 +560,7 @@ export default function BeneficiaryApply() {
                   <div>
                     <p className="text-sm font-medium">
                       Cause of disability (Cognitive / Inborn)
+                      <Optional />
                     </p>
                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
                       {[
@@ -498,6 +598,7 @@ export default function BeneficiaryApply() {
                     <div>
                       <label className="text-sm font-medium" htmlFor="cause-inborn-other">
                         Other inborn cause details
+                        <Req />
                       </label>
                       <input
                         id="cause-inborn-other"
@@ -513,6 +614,7 @@ export default function BeneficiaryApply() {
                   <div>
                     <p className="text-sm font-medium">
                       Cause of disability (Acquired)
+                      <Optional />
                     </p>
                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
                       {[
@@ -549,6 +651,7 @@ export default function BeneficiaryApply() {
                     <div>
                       <label className="text-sm font-medium" htmlFor="cause-acquired-other">
                         Other acquired cause details
+                        <Req />
                       </label>
                       <input
                         id="cause-acquired-other"
@@ -574,6 +677,7 @@ export default function BeneficiaryApply() {
                   <div className="sm:col-span-2">
                     <label className="text-sm font-medium" htmlFor="street">
                       Complete address
+                      <Req />
                     </label>
                     <input
                       id="street"
@@ -588,6 +692,7 @@ export default function BeneficiaryApply() {
                   <div>
                     <label className="text-sm font-medium" htmlFor="barangay">
                       Barangay
+                      <Req />
                     </label>
                     <input
                       id="barangay"
@@ -601,6 +706,7 @@ export default function BeneficiaryApply() {
                   <div>
                     <label className="text-sm font-medium" htmlFor="municipality">
                       Municipality
+                      <Req />
                     </label>
                     <input
                       id="municipality"
@@ -615,6 +721,7 @@ export default function BeneficiaryApply() {
                   <div>
                     <label className="text-sm font-medium" htmlFor="province">
                       Province
+                      <Req />
                     </label>
                     <input
                       id="province"
@@ -629,6 +736,7 @@ export default function BeneficiaryApply() {
                   <div>
                     <label className="text-sm font-medium" htmlFor="postal">
                       Postal code
+                      <Optional />
                     </label>
                     <input
                       id="postal"
@@ -642,6 +750,7 @@ export default function BeneficiaryApply() {
                   <div>
                     <label className="text-sm font-medium" htmlFor="contact-number">
                       Mobile number
+                      <Req />
                     </label>
                     <input
                       id="contact-number"
@@ -656,6 +765,7 @@ export default function BeneficiaryApply() {
                   <div>
                     <label className="text-sm font-medium" htmlFor="email-address">
                       Email address
+                      <Optional />
                     </label>
                     <input
                       id="email-address"
@@ -675,6 +785,7 @@ export default function BeneficiaryApply() {
               <fieldset className="space-y-4">
                 <legend className="text-sm font-semibold text-[color:var(--gov-text)]">
                   Educational and employment background
+                  <Optional />
                 </legend>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
@@ -816,6 +927,7 @@ export default function BeneficiaryApply() {
               <fieldset className="space-y-4">
                 <legend className="text-sm font-semibold text-[color:var(--gov-text)]">
                   Family, organization, and references
+                  <Optional />
                 </legend>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="sm:col-span-2">
@@ -1132,6 +1244,12 @@ export default function BeneficiaryApply() {
                   </div>
                 </div>
               </fieldset>
+            ) : null}
+
+            {stepError ? (
+              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                {stepError}
+              </div>
             ) : null}
 
             {submitError ? (
