@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
+import { submitApplication } from "../../services/supabase/applications.js";
 
 const requirements = [
   "Barangay certificate or endorsement",
@@ -98,6 +99,33 @@ export default function BeneficiaryApply() {
     setActiveStep((current) => Math.min(current + 1, steps.length - 1));
   const goPrevious = () => setActiveStep((current) => Math.max(current - 1, 0));
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [applicationNumber, setApplicationNumber] = useState("");
+
+  const handleSubmit = async () => {
+    // Only ever runs from an explicit Submit click on the last step.
+    if (activeStep !== steps.length - 1 || isSubmitting) return;
+
+    setSubmitError("");
+    setIsSubmitting(true);
+    try {
+      const { applicationNumber: reference, error } = await submitApplication(
+        formData
+      );
+      if (error) throw error;
+      setApplicationNumber(reference);
+      setIsSubmitted(true);
+    } catch (error) {
+      setSubmitError(
+        error?.message || "Unable to submit your application. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[color:var(--gov-bg)] px-6 py-10 text-[color:var(--gov-text)]">
       <div className="mx-auto w-full max-w-4xl space-y-8">
@@ -114,12 +142,6 @@ export default function BeneficiaryApply() {
             communication channels.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              to="/auth/login"
-              className="rounded-full bg-[color:var(--gov-primary)] px-5 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5"
-            >
-              Sign in to submit
-            </Link>
             <Link
               to="/"
               className="rounded-full border border-[color:var(--gov-border)] px-5 py-2.5 text-sm font-semibold text-[color:var(--gov-text)] transition hover:-translate-y-0.5"
@@ -181,7 +203,7 @@ export default function BeneficiaryApply() {
             </div>
           </div>
 
-          <form className="mt-6 space-y-6">
+          <form className="mt-6 space-y-6" onSubmit={(e) => e.preventDefault()}>
             {activeStep === 0 ? (
               <fieldset className="space-y-4">
                 <legend className="text-sm font-semibold text-[color:var(--gov-text)]">
@@ -1112,44 +1134,65 @@ export default function BeneficiaryApply() {
               </fieldset>
             ) : null}
 
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={goPrevious}
-                className="rounded-full border border-[color:var(--gov-border)] px-4 py-2 text-sm font-semibold text-[color:var(--gov-text)] transition hover:-translate-y-0.5"
-                disabled={activeStep === 0}
-              >
-                Previous
-              </button>
-              <div className="flex gap-2">
-                {activeStep < steps.length - 1 ? (
-                  <button
-                    type="button"
-                    onClick={goNext}
-                    className="rounded-full bg-[color:var(--gov-primary)] px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5"
-                  >
-                    Next step
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="rounded-full bg-[color:var(--gov-primary)] px-4 py-2 text-sm font-semibold text-white opacity-70"
-                  >
-                    Submit application
-                  </button>
-                )}
+            {submitError ? (
+              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                {submitError}
               </div>
-            </div>
-          </form>
-        </section>
+            ) : null}
 
-        <section className="gov-card rounded-3xl p-6 lg:p-8">
-          <h2 className="text-xl font-semibold">Next steps</h2>
-          <p className="mt-2 text-sm text-[color:var(--gov-muted)]">
-            Online applications will be available once authentication is fully
-            enabled. For now, please visit the PDAO office or coordinate with
-            your barangay coordinator.
-          </p>
+            {isSubmitted ? (
+              <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-4 text-sm text-green-700">
+                <p className="font-semibold">Application submitted</p>
+                <p className="mt-1">
+                  Please keep your application number. You will need it to follow
+                  up on your application.
+                </p>
+                <div className="mt-3 rounded-xl border border-green-300 bg-white px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-green-700">
+                    Application number
+                  </p>
+                  <p className="mt-1 text-lg font-bold tracking-wider text-green-800">
+                    {applicationNumber}
+                  </p>
+                </div>
+                <p className="mt-3 text-xs">
+                  PDAO staff will review your application and provide updates
+                  through the portal and official channels.
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={goPrevious}
+                  className="rounded-full border border-[color:var(--gov-border)] px-4 py-2 text-sm font-semibold text-[color:var(--gov-text)] transition hover:-translate-y-0.5"
+                  disabled={activeStep === 0}
+                >
+                  Previous
+                </button>
+                <div className="flex gap-2">
+                  {activeStep < steps.length - 1 ? (
+                    <button
+                      type="button"
+                      onClick={goNext}
+                      className="rounded-full bg-[color:var(--gov-primary)] px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5"
+                    >
+                      Next step
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleSubmit}
+                      disabled={isSubmitting}
+                      className="rounded-full bg-[color:var(--gov-primary)] px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      {isSubmitting ? "Submitting..." : "Submit application"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </form>
         </section>
       </div>
     </div>
