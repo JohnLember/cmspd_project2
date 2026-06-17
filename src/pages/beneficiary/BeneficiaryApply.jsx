@@ -18,9 +18,6 @@ export default function BeneficiaryApply() {
     { title: "Family & References", description: "Contacts" },
   ];
   const [activeStep, setActiveStep] = useState(0);
-  const [showOtherDisability, setShowOtherDisability] = useState(false);
-  const [showOtherInborn, setShowOtherInborn] = useState(false);
-  const [showOtherAcquired, setShowOtherAcquired] = useState(false);
 
   const [formData, setFormData] = useState({
     // Step 0: Application Details
@@ -408,8 +405,11 @@ export default function BeneficiaryApply() {
                             checked={formData.disabilityTypes.includes(item.value)}
                             onChange={(e) => {
                               handleCheckboxChange(e, "disabilityTypes");
-                              if (item.value === "other") {
-                                setShowOtherDisability(e.target.checked);
+                              if (item.value === "other" && !e.target.checked) {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  disabilityDetail: "",
+                                }));
                               }
                             }}
                             value={item.value}
@@ -420,7 +420,7 @@ export default function BeneficiaryApply() {
                       ))}
                     </div>
                   </div>
-                  {showOtherDisability ? (
+                  {formData.disabilityTypes.includes("other") ? (
                     <div>
                       <label className="text-sm font-medium" htmlFor="disability-detail">
                         Other disability details
@@ -457,8 +457,11 @@ export default function BeneficiaryApply() {
                             checked={formData.causeInborn.includes(item.value)}
                             onChange={(e) => {
                               handleCheckboxChange(e, "causeInborn");
-                              if (item.value === "other") {
-                                setShowOtherInborn(e.target.checked);
+                              if (item.value === "other" && !e.target.checked) {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  causeInbornOther: "",
+                                }));
                               }
                             }}
                             value={item.value}
@@ -469,7 +472,7 @@ export default function BeneficiaryApply() {
                       ))}
                     </div>
                   </div>
-                  {showOtherInborn ? (
+                  {formData.causeInborn.includes("other") ? (
                     <div>
                       <label className="text-sm font-medium" htmlFor="cause-inborn-other">
                         Other inborn cause details
@@ -505,8 +508,11 @@ export default function BeneficiaryApply() {
                             checked={formData.causeAcquired.includes(item.value)}
                             onChange={(e) => {
                               handleCheckboxChange(e, "causeAcquired");
-                              if (item.value === "other") {
-                                setShowOtherAcquired(e.target.checked);
+                              if (item.value === "other" && !e.target.checked) {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  causeAcquiredOther: "",
+                                }));
                               }
                             }}
                             value={item.value}
@@ -517,7 +523,7 @@ export default function BeneficiaryApply() {
                       ))}
                     </div>
                   </div>
-                  {showOtherAcquired ? (
+                  {formData.causeAcquired.includes("other") ? (
                     <div>
                       <label className="text-sm font-medium" htmlFor="cause-acquired-other">
                         Other acquired cause details

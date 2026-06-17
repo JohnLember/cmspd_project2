@@ -2,19 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { AuthContext } from "./AuthContext.jsx";
 import {
   getAuthSession,
+  mapSessionUser,
   onAuthStateChange,
   signInWithEmail,
   signOut as supabaseSignOut,
 } from "../services/supabase/auth.js";
-
-const mapSessionUser = (user) => ({
-  id: user.id,
-  email: user.email,
-  role: user.user_metadata?.role || "guest",
-  fullName:
-    user.user_metadata?.full_name || user.user_metadata?.name || "",
-  avatarUrl: user.user_metadata?.avatar_url || "",
-});
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -64,7 +56,7 @@ export function AuthProvider({ children }) {
       signIn,
       logout,
       isAuthenticated: Boolean(user),
-      role: user?.role ?? "guest",
+      role: user?.role ?? null,
     }),
     [user]
   );

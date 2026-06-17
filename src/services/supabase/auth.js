@@ -1,9 +1,9 @@
 import { supabase } from "./client.js";
 
-const mapSessionUser = (user) => ({
+export const mapSessionUser = (user) => ({
   id: user.id,
   email: user.email,
-  role: user.user_metadata?.role || "pwd",
+  role: user.user_metadata?.role ?? null,
   fullName:
     user.user_metadata?.full_name || user.user_metadata?.name || "",
   avatarUrl: user.user_metadata?.avatar_url || "",
