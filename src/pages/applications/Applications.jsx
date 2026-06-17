@@ -1,28 +1,78 @@
-const applications = [
-  {
-    id: "APP-2041",
-    name: "Maria Santos",
-    type: "New Applicant",
-    barangay: "Brgy. San Roque",
-    status: "For review",
-  },
-  {
-    id: "APP-2068",
-    name: "Juan Dela Cruz",
-    type: "Renewal",
-    barangay: "Brgy. San Isidro",
-    status: "Pending documents",
-  },
-  {
-    id: "APP-2089",
-    name: "Ana Reyes",
-    type: "New Applicant",
-    barangay: "Brgy. San Vicente",
-    status: "Validated",
-  },
-];
+import { useEffect, useMemo, useState } from "react";
+import {
+  getApplications,
+  updateApplicationStatus,
+} from "../../services/supabase/applications.js";
+
+const STATUS_OPTIONS = ["pending", "approved", "rejected"];
+
+const typeLabel = (value) =>
+  value === "renewal" ? "Renewal" : value === "new" ? "New Applicant" : "—";
+
+const displayId = (row) =>
+  row.application_number || `APP-${row.id.slice(0, 8).toUpperCase()}`;
 
 export default function Applications() {
+  const [applications, setApplications] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [updatingId, setUpdatingId] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      const { applications: rows, error: fetchError } = await getApplications();
+      if (!isMounted) return;
+      if (fetchError) {
+        setError(fetchError.message || "Unable to load applications.");
+      } else {
+        setApplications(rows);
+      }
+      setIsLoading(false);
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return applications.filter((row) => {
+      const appType = row.data?.appType ?? "";
+      const matchesSearch =
+        !term ||
+        (row.applicant_name || "").toLowerCase().includes(term) ||
+        displayId(row).toLowerCase().includes(term);
+      const matchesType = typeFilter === "all" || appType === typeFilter;
+      const matchesStatus =
+        statusFilter === "all" || (row.status || "pending") === statusFilter;
+      return matchesSearch && matchesType && matchesStatus;
+    });
+  }, [applications, search, typeFilter, statusFilter]);
+
+  const handleStatusChange = async (row, status) => {
+    const previous = row.status;
+    setUpdatingId(row.id);
+    // Optimistic update.
+    setApplications((prev) =>
+      prev.map((item) => (item.id === row.id ? { ...item, status } : item))
+    );
+    const { error: updateError } = await updateApplicationStatus(row.id, status);
+    if (updateError) {
+      // Roll back on failure.
+      setApplications((prev) =>
+        prev.map((item) =>
+          item.id === row.id ? { ...item, status: previous } : item
+        )
+      );
+      setError(updateError.message || "Unable to update status.");
+    }
+    setUpdatingId(null);
+  };
+
   return (
     <div className="space-y-6">
       <section className="gov-card rounded-2xl p-6">
@@ -37,12 +87,9 @@ export default function Applications() {
               statuses.
             </p>
           </div>
-          <button
-            type="button"
-            className="rounded-full bg-[color:var(--gov-primary)] px-4 py-2 text-xs font-semibold text-white transition hover:-translate-y-0.5"
-          >
-            Create Application
-          </button>
+          <span className="rounded-full border border-[color:var(--gov-border)] px-4 py-2 text-xs font-semibold text-[color:var(--gov-muted)]">
+            {applications.length} total
+          </span>
         </div>
       </section>
 
@@ -51,28 +98,40 @@ export default function Applications() {
           <div className="flex flex-wrap gap-3">
             <input
               type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by name or ID"
               className="rounded-full border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-2 text-sm"
             />
-            <select className="rounded-full border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-2 text-sm">
-              <option>All types</option>
-              <option>New Applicant</option>
-              <option>Renewal</option>
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="rounded-full border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-2 text-sm"
+            >
+              <option value="all">All types</option>
+              <option value="new">New Applicant</option>
+              <option value="renewal">Renewal</option>
             </select>
-            <select className="rounded-full border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-2 text-sm">
-              <option>All statuses</option>
-              <option>For review</option>
-              <option>Pending documents</option>
-              <option>Validated</option>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="rounded-full border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-2 text-sm"
+            >
+              <option value="all">All statuses</option>
+              {STATUS_OPTIONS.map((status) => (
+                <option key={status} value={status}>
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </option>
+              ))}
             </select>
           </div>
-          <button
-            type="button"
-            className="rounded-full border border-[color:var(--gov-border)] px-4 py-2 text-xs font-semibold"
-          >
-            Export list
-          </button>
         </div>
+
+        {error ? (
+          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </div>
+        ) : null}
 
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-left text-sm">
@@ -83,31 +142,50 @@ export default function Applications() {
                 <th className="pb-3">Type</th>
                 <th className="pb-3">Barangay</th>
                 <th className="pb-3">Status</th>
-                <th className="pb-3">Action</th>
               </tr>
             </thead>
             <tbody className="text-[color:var(--gov-text)]">
-              {applications.map((row) => (
-                <tr key={row.id} className="border-t border-[color:var(--gov-border)]">
-                  <td className="py-3">{row.id}</td>
-                  <td className="py-3">{row.name}</td>
-                  <td className="py-3">{row.type}</td>
-                  <td className="py-3">{row.barangay}</td>
-                  <td className="py-3">
-                    <span className="rounded-full border border-[color:var(--gov-border)] px-3 py-1 text-xs">
-                      {row.status}
-                    </span>
-                  </td>
-                  <td className="py-3">
-                    <button
-                      type="button"
-                      className="text-xs font-semibold text-[color:var(--gov-accent)]"
-                    >
-                      Review
-                    </button>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} className="py-6 text-center text-[color:var(--gov-muted)]">
+                    Loading applications…
                   </td>
                 </tr>
-              ))}
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-6 text-center text-[color:var(--gov-muted)]">
+                    {applications.length === 0
+                      ? "No applications submitted yet."
+                      : "No applications match your filters."}
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((row) => (
+                  <tr
+                    key={row.id}
+                    className="border-t border-[color:var(--gov-border)]"
+                  >
+                    <td className="py-3 font-mono text-xs">{displayId(row)}</td>
+                    <td className="py-3">{row.applicant_name || "—"}</td>
+                    <td className="py-3">{typeLabel(row.data?.appType)}</td>
+                    <td className="py-3">{row.barangay || "—"}</td>
+                    <td className="py-3">
+                      <select
+                        value={row.status || "pending"}
+                        disabled={updatingId === row.id}
+                        onChange={(e) => handleStatusChange(row, e.target.value)}
+                        className="rounded-full border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-3 py-1 text-xs disabled:opacity-60"
+                      >
+                        {STATUS_OPTIONS.map((status) => (
+                          <option key={status} value={status}>
+                            {status.charAt(0).toUpperCase() + status.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

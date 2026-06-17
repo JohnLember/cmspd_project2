@@ -44,3 +44,24 @@ export async function submitApplication(formData) {
 
   return { applicationNumber: error ? null : applicationNumber, error };
 }
+
+// PDAO staff: list every application, newest first. RLS restricts this to the
+// pdao role (see migration fix_applications_rls_pdao_role).
+export async function getApplications() {
+  const { data, error } = await supabase
+    .from("applications")
+    .select("*")
+    .order("submitted_at", { ascending: false });
+
+  return { applications: data ?? [], error };
+}
+
+// PDAO staff: change an application's review status.
+export async function updateApplicationStatus(id, status) {
+  const { error } = await supabase
+    .from("applications")
+    .update({ status })
+    .eq("id", id);
+
+  return { error };
+}
