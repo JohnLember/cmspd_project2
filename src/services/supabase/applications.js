@@ -65,3 +65,28 @@ export async function updateApplicationStatus(id, status) {
 
   return { error };
 }
+
+// PDAO staff: approve an application. Runs the approve-application edge function,
+// which creates the PWD auth account (email from the applicant name, password
+// from last name + year), links it to the application, and sets status=approved.
+// Returns { result: { email, password, pwdUserId }, error }.
+export async function approveApplication(applicationId) {
+  const { data, error } = await supabase.functions.invoke("approve-application", {
+    body: { applicationId },
+  });
+
+  if (error) {
+    // Non-2xx responses surface as FunctionsHttpError; the JSON body (with our
+    // `error` message) lives on error.context, not in `data`.
+    let message = error.message;
+    try {
+      const body = await error.context?.json?.();
+      if (body?.error) message = body.error;
+    } catch {
+      // keep the generic message
+    }
+    return { result: null, error: { message } };
+  }
+
+  return { result: data, error: null };
+}

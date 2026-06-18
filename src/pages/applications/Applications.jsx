@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  approveApplication,
   getApplications,
   updateApplicationStatus,
 } from "../../services/supabase/applications.js";
@@ -16,6 +17,7 @@ export default function Applications() {
   const [applications, setApplications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -53,22 +55,40 @@ export default function Applications() {
     });
   }, [applications, search, typeFilter, statusFilter]);
 
+  const rollback = (id, previous) =>
+    setApplications((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, status: previous } : item))
+    );
+
   const handleStatusChange = async (row, status) => {
     const previous = row.status;
+    setError("");
+    setNotice("");
     setUpdatingId(row.id);
     // Optimistic update.
     setApplications((prev) =>
       prev.map((item) => (item.id === row.id ? { ...item, status } : item))
     );
-    const { error: updateError } = await updateApplicationStatus(row.id, status);
-    if (updateError) {
-      // Roll back on failure.
-      setApplications((prev) =>
-        prev.map((item) =>
-          item.id === row.id ? { ...item, status: previous } : item
-        )
-      );
-      setError(updateError.message || "Unable to update status.");
+
+    if (status === "approved") {
+      // Approval also provisions the applicant's PWD login account.
+      const { result, error: approveError } = await approveApplication(row.id);
+      if (approveError) {
+        rollback(row.id, previous);
+        setError(approveError.message || "Unable to approve application.");
+      } else {
+        setNotice(
+          `Approved. PWD account created for ${
+            row.applicant_name || "applicant"
+          } — email: ${result.email} · temporary password: ${result.password}`
+        );
+      }
+    } else {
+      const { error: updateError } = await updateApplicationStatus(row.id, status);
+      if (updateError) {
+        rollback(row.id, previous);
+        setError(updateError.message || "Unable to update status.");
+      }
     }
     setUpdatingId(null);
   };
@@ -130,6 +150,12 @@ export default function Applications() {
         {error ? (
           <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
             {error}
+          </div>
+        ) : null}
+
+        {notice ? (
+          <div className="mt-4 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+            {notice}
           </div>
         ) : null}
 

@@ -1,6 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { submitApplication } from "../../services/supabase/applications.js";
+import { getLoretoBarangays } from "../../services/psgc.js";
+
+// The system serves Loreto, Agusan del Sur only; these are fixed.
+const FIXED_MUNICIPALITY = "Loreto";
+const FIXED_PROVINCE = "Agusan del Sur";
+const FIXED_POSTAL = "8507";
 
 const requirements = [
   "Barangay certificate or endorsement",
@@ -37,6 +43,14 @@ const requiredFieldsByStep = {
   ],
 };
 
+// PH mobile: 11 digits starting 09, or +639 followed by 9 digits.
+const PH_MOBILE_RE = /^(09\d{9}|\+639\d{9})$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const normalizePhone = (value) => (value || "").replace(/[\s-]/g, "");
+const isValidPhone = (value) => PH_MOBILE_RE.test(normalizePhone(value));
+const isValidEmail = (value) => EMAIL_RE.test((value || "").trim());
+
 export default function BeneficiaryApply() {
   const steps = [
     { title: "Application Details", description: "Application type" },
@@ -66,12 +80,12 @@ export default function BeneficiaryApply() {
     causeInbornOther: "",
     causeAcquired: [],
     causeAcquiredOther: "",
-    // Step 3: Address & Contact
+    // Step 3: Address & Contact (municipality/province/postal are fixed)
     street: "",
     barangay: "",
-    municipality: "",
-    province: "",
-    postal: "",
+    municipality: FIXED_MUNICIPALITY,
+    province: FIXED_PROVINCE,
+    postal: FIXED_POSTAL,
     contactNumber: "",
     emailAddress: "",
     // Step 4: Education & Employment
@@ -128,42 +142,79 @@ export default function BeneficiaryApply() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [applicationNumber, setApplicationNumber] = useState("");
   const [stepError, setStepError] = useState("");
+  const [barangays, setBarangays] = useState([]);
+  const [barangaysError, setBarangaysError] = useState("");
+  const [isLoadingBarangays, setIsLoadingBarangays] = useState(true);
 
-  // Returns the human labels of required fields still missing on a given step.
-  const getMissingLabels = (step) => {
-    const missing = [];
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const names = await getLoretoBarangays();
+        if (isMounted) setBarangays(names);
+      } catch (error) {
+        if (isMounted) {
+          setBarangaysError(
+            error?.message || "Unable to load barangays. Please try again."
+          );
+        }
+      } finally {
+        if (isMounted) setIsLoadingBarangays(false);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Returns human-readable validation errors for a given step (missing required
+  // fields plus format problems on phone/email).
+  const getStepErrors = (step) => {
+    const errors = [];
     (requiredFieldsByStep[step] || []).forEach(([field, label]) => {
-      if (!String(formData[field] || "").trim()) missing.push(label);
+      if (!String(formData[field] || "").trim()) {
+        errors.push(`${label} is required`);
+      }
     });
     if (step === 2) {
       if (formData.disabilityTypes.length === 0) {
-        missing.push("Type of disability");
+        errors.push("Type of disability is required");
       } else if (
         formData.disabilityTypes.includes("other") &&
         !formData.disabilityDetail.trim()
       ) {
-        missing.push("Other disability details");
+        errors.push("Other disability details is required");
       }
       if (
         formData.causeInborn.includes("other") &&
         !formData.causeInbornOther.trim()
       ) {
-        missing.push("Other inborn cause details");
+        errors.push("Other inborn cause details is required");
       }
       if (
         formData.causeAcquired.includes("other") &&
         !formData.causeAcquiredOther.trim()
       ) {
-        missing.push("Other acquired cause details");
+        errors.push("Other acquired cause details is required");
       }
     }
-    return missing;
+    if (step === 3) {
+      // contactNumber is already flagged above when empty; only format-check
+      // when something was entered.
+      if (formData.contactNumber.trim() && !isValidPhone(formData.contactNumber)) {
+        errors.push("Enter a valid mobile number (e.g. 09171234567)");
+      }
+      if (formData.emailAddress.trim() && !isValidEmail(formData.emailAddress)) {
+        errors.push("Enter a valid email address");
+      }
+    }
+    return errors;
   };
 
   const goNext = () => {
-    const missing = getMissingLabels(activeStep);
-    if (missing.length) {
-      setStepError(`Please complete the required field(s): ${missing.join(", ")}.`);
+    const errors = getStepErrors(activeStep);
+    if (errors.length) {
+      setStepError(`Please fix: ${errors.join(" • ")}.`);
       return;
     }
     setStepError("");
@@ -178,15 +229,13 @@ export default function BeneficiaryApply() {
     // Only ever runs from an explicit Submit click on the last step.
     if (activeStep !== steps.length - 1 || isSubmitting) return;
 
-    // Validate every step; jump to the first one with missing required fields.
+    // Validate every step; jump to the first one with errors.
     for (let step = 0; step < steps.length; step += 1) {
-      const missing = getMissingLabels(step);
-      if (missing.length) {
+      const errors = getStepErrors(step);
+      if (errors.length) {
         setActiveStep(step);
         setStepError(
-          `Please complete the required field(s) in "${steps[step].title}": ${missing.join(
-            ", "
-          )}.`
+          `Please fix in "${steps[step].title}": ${errors.join(" • ")}.`
         );
         return;
       }
@@ -694,57 +743,72 @@ export default function BeneficiaryApply() {
                       Barangay
                       <Req />
                     </label>
-                    <input
+                    <select
                       id="barangay"
-                      type="text"
                       name="barangay"
                       value={formData.barangay}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
-                    />
+                      disabled={isLoadingBarangays || Boolean(barangaysError)}
+                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm disabled:opacity-60"
+                    >
+                      <option value="">
+                        {isLoadingBarangays
+                          ? "Loading barangays…"
+                          : "Select barangay"}
+                      </option>
+                      {barangays.map((name) => (
+                        <option key={name} value={name}>
+                          {name}
+                        </option>
+                      ))}
+                    </select>
+                    {barangaysError ? (
+                      <p className="mt-2 text-xs text-red-600">{barangaysError}</p>
+                    ) : null}
                   </div>
                   <div>
                     <label className="text-sm font-medium" htmlFor="municipality">
                       Municipality
-                      <Req />
                     </label>
                     <input
                       id="municipality"
                       type="text"
                       name="municipality"
                       value={formData.municipality}
-                      onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
-                      placeholder="Loreto"
+                      readOnly
+                      aria-readonly="true"
+                      tabIndex={-1}
+                      className="mt-2 w-full cursor-not-allowed rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-card)] px-4 py-3 text-sm text-[color:var(--gov-muted)]"
                     />
                   </div>
                   <div>
                     <label className="text-sm font-medium" htmlFor="province">
                       Province
-                      <Req />
                     </label>
                     <input
                       id="province"
                       type="text"
                       name="province"
                       value={formData.province}
-                      onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
-                      placeholder="Agusan del Sur"
+                      readOnly
+                      aria-readonly="true"
+                      tabIndex={-1}
+                      className="mt-2 w-full cursor-not-allowed rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-card)] px-4 py-3 text-sm text-[color:var(--gov-muted)]"
                     />
                   </div>
                   <div>
                     <label className="text-sm font-medium" htmlFor="postal">
                       Postal code
-                      <Optional />
                     </label>
                     <input
                       id="postal"
                       type="text"
                       name="postal"
                       value={formData.postal}
-                      onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      readOnly
+                      aria-readonly="true"
+                      tabIndex={-1}
+                      className="mt-2 w-full cursor-not-allowed rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-card)] px-4 py-3 text-sm text-[color:var(--gov-muted)]"
                     />
                   </div>
                   <div>
@@ -758,9 +822,19 @@ export default function BeneficiaryApply() {
                       name="contactNumber"
                       value={formData.contactNumber}
                       onChange={handleInputChange}
+                      aria-invalid={
+                        Boolean(formData.contactNumber.trim()) &&
+                        !isValidPhone(formData.contactNumber)
+                      }
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                       placeholder="09xx xxx xxxx"
                     />
+                    {formData.contactNumber.trim() &&
+                    !isValidPhone(formData.contactNumber) ? (
+                      <p className="mt-2 text-xs text-red-600">
+                        Enter a valid mobile number (e.g. 09171234567).
+                      </p>
+                    ) : null}
                   </div>
                   <div>
                     <label className="text-sm font-medium" htmlFor="email-address">
@@ -773,9 +847,19 @@ export default function BeneficiaryApply() {
                       name="emailAddress"
                       value={formData.emailAddress}
                       onChange={handleInputChange}
+                      aria-invalid={
+                        Boolean(formData.emailAddress.trim()) &&
+                        !isValidEmail(formData.emailAddress)
+                      }
                       className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
                       placeholder="name@example.com"
                     />
+                    {formData.emailAddress.trim() &&
+                    !isValidEmail(formData.emailAddress) ? (
+                      <p className="mt-2 text-xs text-red-600">
+                        Enter a valid email address.
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               </fieldset>
