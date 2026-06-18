@@ -1,4 +1,5 @@
 import { disabilityLabel } from "../../constants/disability.js";
+import DigitalIdCard from "./DigitalIdCard.jsx";
 
 const Row = ({ label, value }) => (
   <div>
@@ -29,7 +30,7 @@ export default function PwdDetailModal({ profile, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
-      <div className="gov-card max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl p-6">
+      <div className="gov-card max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-3xl p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-4">
             {profile.avatar_url ? (
@@ -91,6 +92,15 @@ export default function PwdDetailModal({ profile, onClose }) {
             label="Application status"
             value={profile.application?.status}
           />
+        </div>
+
+        <div className="mt-8">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-[color:var(--gov-muted)]">
+            Digital ID
+          </h3>
+          <div className="mt-3">
+            <DigitalIdCard profile={profile} />
+          </div>
         </div>
       </div>
     </div>

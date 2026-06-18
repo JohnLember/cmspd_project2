@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router";
 import { getProfiles } from "../../services/supabase/profile.js";
 import { disabilityLabel } from "../../constants/disability.js";
 import PwdDetailModal from "../../components/pwd/PwdDetailModal.jsx";
@@ -95,12 +94,6 @@ export default function PwdManagement() {
               ))}
             </select>
           </div>
-          <Link
-            to="/beneficiary-apply"
-            className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gov-accent)]"
-          >
-            View beneficiary intake
-          </Link>
         </div>
 
         {error ? (

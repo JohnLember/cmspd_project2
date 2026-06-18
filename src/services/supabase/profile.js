@@ -57,7 +57,7 @@ export async function getProfiles() {
   const { data, error } = await supabase
     .from("profiles")
     .select(
-      "*, application:application_id(application_number, status, subsidy_type)"
+      "*, application:application_id(application_number, status, subsidy_type, approval, submitted_at)"
     )
     .order("created_at", { ascending: false });
   return { profiles: data ?? [], error };
