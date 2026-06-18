@@ -51,6 +51,18 @@ export async function getMyProfile() {
   return { profile: inserted, user, error: null };
 }
 
+// PDAO staff: list all registered PWD profiles with their source application.
+// RLS restricts this to the pdao role.
+export async function getProfiles() {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select(
+      "*, application:application_id(application_number, status, subsidy_type)"
+    )
+    .order("created_at", { ascending: false });
+  return { profiles: data ?? [], error };
+}
+
 export async function updateProfile(id, fields) {
   const { error } = await supabase.from("profiles").update(fields).eq("id", id);
   return { error };
