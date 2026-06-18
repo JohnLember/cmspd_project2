@@ -4,6 +4,7 @@ import {
   getApplications,
   updateApplicationStatus,
 } from "../../services/supabase/applications.js";
+import ApproveApplicationModal from "../../components/applications/ApproveApplicationModal.jsx";
 
 const STATUS_OPTIONS = ["pending", "approved", "rejected"];
 
@@ -22,6 +23,9 @@ export default function Applications() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [updatingId, setUpdatingId] = useState(null);
+  const [approveTarget, setApproveTarget] = useState(null);
+  const [isApproving, setIsApproving] = useState(false);
+  const [approveError, setApproveError] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -61,36 +65,52 @@ export default function Applications() {
     );
 
   const handleStatusChange = async (row, status) => {
-    const previous = row.status;
     setError("");
     setNotice("");
+    if (status === "approved") {
+      // Approval requires the signature + officers modal; defer until confirm.
+      setApproveError("");
+      setApproveTarget(row);
+      return;
+    }
+    const previous = row.status;
     setUpdatingId(row.id);
-    // Optimistic update.
     setApplications((prev) =>
       prev.map((item) => (item.id === row.id ? { ...item, status } : item))
     );
-
-    if (status === "approved") {
-      // Approval also provisions the applicant's PWD login account.
-      const { result, error: approveError } = await approveApplication(row.id);
-      if (approveError) {
-        rollback(row.id, previous);
-        setError(approveError.message || "Unable to approve application.");
-      } else {
-        setNotice(
-          `Approved. PWD account created for ${
-            row.applicant_name || "applicant"
-          } — email: ${result.email} · temporary password: ${result.password}`
-        );
-      }
-    } else {
-      const { error: updateError } = await updateApplicationStatus(row.id, status);
-      if (updateError) {
-        rollback(row.id, previous);
-        setError(updateError.message || "Unable to update status.");
-      }
+    const { error: updateError } = await updateApplicationStatus(row.id, status);
+    if (updateError) {
+      rollback(row.id, previous);
+      setError(updateError.message || "Unable to update status.");
     }
     setUpdatingId(null);
+  };
+
+  const handleConfirmApprove = async (details) => {
+    if (!approveTarget) return;
+    setApproveError("");
+    setIsApproving(true);
+    const { result, error: approveErr } = await approveApplication(
+      approveTarget.id,
+      details
+    );
+    if (approveErr) {
+      setApproveError(approveErr.message || "Unable to approve application.");
+      setIsApproving(false);
+      return;
+    }
+    setApplications((prev) =>
+      prev.map((item) =>
+        item.id === approveTarget.id ? { ...item, status: "approved" } : item
+      )
+    );
+    setNotice(
+      `Approved. PWD account created for ${
+        approveTarget.applicant_name || "applicant"
+      } — email: ${result.email} · temporary password: ${result.password}`
+    );
+    setIsApproving(false);
+    setApproveTarget(null);
   };
 
   return (
@@ -216,6 +236,18 @@ export default function Applications() {
           </table>
         </div>
       </section>
+
+      {approveTarget ? (
+        <ApproveApplicationModal
+          applicantName={approveTarget.applicant_name}
+          isSubmitting={isApproving}
+          error={approveError}
+          onCancel={() => {
+            if (!isApproving) setApproveTarget(null);
+          }}
+          onConfirm={handleConfirmApprove}
+        />
+      ) : null}
     </div>
   );
 }

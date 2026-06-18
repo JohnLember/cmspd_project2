@@ -68,11 +68,13 @@ export async function updateApplicationStatus(id, status) {
 
 // PDAO staff: approve an application. Runs the approve-application edge function,
 // which creates the PWD auth account (email from the applicant name, password
-// from last name + year), links it to the application, and sets status=approved.
+// from last name + year), links it to the application, stores the approval
+// record (signature + officers), and sets status=approved.
+// `approval` = { signature, processingOfficer, approvingOfficer }.
 // Returns { result: { email, password, pwdUserId }, error }.
-export async function approveApplication(applicationId) {
+export async function approveApplication(applicationId, approval = {}) {
   const { data, error } = await supabase.functions.invoke("approve-application", {
-    body: { applicationId },
+    body: { applicationId, ...approval },
   });
 
   if (error) {
