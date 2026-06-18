@@ -55,3 +55,20 @@
 		border: 1px solid var(--gov-border);
 	}
 }
+
+/* When printing the digital ID, hide the app chrome and keep the card colors. */
+@media print {
+	header,
+	aside {
+		display: none !important;
+	}
+
+	body {
+		background: #ffffff;
+	}
+
+	* {
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+	}
+}

@@ -10,9 +10,12 @@ export async function getMyProfile() {
     return { profile: null, user: null, error: { message: "Not signed in." } };
   }
 
+  const profileSelect =
+    "*, application:application_id(application_number, status, approval, submitted_at)";
+
   const { data: existing, error } = await supabase
     .from("profiles")
-    .select("*")
+    .select(profileSelect)
     .eq("id", user.id)
     .maybeSingle();
   if (error) return { profile: null, user, error };
@@ -45,7 +48,7 @@ export async function getMyProfile() {
   const { data: inserted, error: insertError } = await supabase
     .from("profiles")
     .insert(seed)
-    .select()
+    .select(profileSelect)
     .single();
   if (insertError) return { profile: seed, user, error: insertError };
   return { profile: inserted, user, error: null };
