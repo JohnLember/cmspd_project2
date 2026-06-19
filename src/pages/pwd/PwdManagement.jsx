@@ -4,7 +4,9 @@ import { disabilityLabel } from "../../constants/disability.js";
 import PwdDetailModal from "../../components/pwd/PwdDetailModal.jsx";
 
 const displayId = (row) =>
-  row.application?.application_number || `PWD-${row.id.slice(0, 8).toUpperCase()}`;
+  row.pwd_id_number ||
+  row.application?.application_number ||
+  `PWD-${row.id.slice(0, 8).toUpperCase()}`;
 
 export default function PwdManagement() {
   const [profiles, setProfiles] = useState([]);

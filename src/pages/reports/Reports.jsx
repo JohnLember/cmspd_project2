@@ -95,7 +95,9 @@ export default function Reports() {
   const label = (t) => DISABILITY_LABELS[t] || "Unspecified";
 
   const pwdId = (p) =>
-    p.application?.application_number || `PWD-${p.id.slice(0, 8).toUpperCase()}`;
+    p.pwd_id_number ||
+    p.application?.application_number ||
+    `PWD-${p.id.slice(0, 8).toUpperCase()}`;
 
   // Registered PWDs matching the chosen barangay + disability-type filters.
   const exportMatches = useMemo(() => {

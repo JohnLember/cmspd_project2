@@ -33,7 +33,8 @@ const Seal = ({ label }) => (
 export default function DigitalIdCard({ profile }) {
   const data = profile.data ?? {};
   const approval = profile.application?.approval ?? null;
-  const idNo = profile.application?.application_number || "—";
+  const idNo =
+    profile.pwd_id_number || profile.application?.application_number || "—";
   const issued = fmtDate(
     approval?.approvedAt || profile.application?.submitted_at || profile.created_at
   );
