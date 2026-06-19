@@ -22,9 +22,6 @@ const PwdBeneficiaryDashboard = lazy(
 const PwdDigitalId = lazy(
   () => import("../pages/pwd-beneficiary/PwdDigitalId.jsx")
 );
-const PwdSubsidyStatus = lazy(
-  () => import("../pages/pwd-beneficiary/PwdSubsidyStatus.jsx")
-);
 const PwdAnnouncements = lazy(
   () => import("../pages/pwd-beneficiary/PwdAnnouncements.jsx")
 );
@@ -80,7 +77,6 @@ export default function AppRouter() {
         >
           <Route index element={<PwdBeneficiaryDashboard />} />
           <Route path="digital-id" element={<PwdDigitalId />} />
-          <Route path="subsidy-status" element={<PwdSubsidyStatus />} />
           <Route path="announcements" element={<PwdAnnouncements />} />
           <Route path="profile" element={<PwdProfile />} />
         </Route>

@@ -1,4 +1,4 @@
-import { BadgeCheck, Bell, FileText, IdCard, User } from "lucide-react";
+import { BadgeCheck, Bell, IdCard, User } from "lucide-react";
 
 export const pwdNavigationItems = [
   {
@@ -11,11 +11,6 @@ export const pwdNavigationItems = [
     label: "Digital ID",
     to: "/app/pwd-beneficiary/digital-id",
     icon: IdCard,
-  },
-  {
-    label: "Subsidy Status",
-    to: "/app/pwd-beneficiary/subsidy-status",
-    icon: FileText,
   },
   {
     label: "Announcements",

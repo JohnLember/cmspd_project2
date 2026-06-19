@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import BarChartCard from "../../components/charts/BarChartCard.jsx";
 import StatCard from "../../components/cards/StatCard.jsx";
+import ExportReportModal from "../../components/reports/ExportReportModal.jsx";
 import { getProfiles } from "../../services/supabase/profile.js";
-import { DISABILITY_LABELS } from "../../constants/disability.js";
+import { DISABILITY_LABELS, disabilityLabel } from "../../constants/disability.js";
 
 const UNSPECIFIED = "Unspecified";
 
@@ -22,6 +23,9 @@ export default function Reports() {
   const [profiles, setProfiles] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showExport, setShowExport] = useState(false);
+  const [exportBarangay, setExportBarangay] = useState("all");
+  const [exportType, setExportType] = useState("all");
 
   useEffect(() => {
     let isMounted = true;
@@ -90,19 +94,39 @@ export default function Reports() {
 
   const label = (t) => DISABILITY_LABELS[t] || "Unspecified";
 
-  const exportCsv = () => {
-    const header = ["Barangay", ...report.typeColumns.map(label), "Total"];
-    const body = report.barangays.map((b) => [
-      b,
-      ...report.typeColumns.map((t) => report.byBarangay[b].types[t] || 0),
-      report.byBarangay[b].total,
+  const pwdId = (p) =>
+    p.application?.application_number || `PWD-${p.id.slice(0, 8).toUpperCase()}`;
+
+  // Registered PWDs matching the chosen barangay + disability-type filters.
+  const exportMatches = useMemo(() => {
+    return profiles.filter((p) => {
+      const b = (p.barangay || "").trim() || UNSPECIFIED;
+      const types = Array.isArray(p.data?.disabilityTypes)
+        ? p.data.disabilityTypes
+        : [];
+      const effectiveTypes = types.length ? types : ["unspecified"];
+      const matchBarangay = exportBarangay === "all" || b === exportBarangay;
+      const matchType = exportType === "all" || effectiveTypes.includes(exportType);
+      return matchBarangay && matchType;
+    });
+  }, [profiles, exportBarangay, exportType]);
+
+  const handleExport = () => {
+    const header = ["PWD ID", "Name", "Barangay", "Disability type(s)", "Mobile"];
+    const body = exportMatches.map((p) => [
+      pwdId(p),
+      p.full_name || "",
+      (p.barangay || "").trim() || UNSPECIFIED,
+      disabilityLabel(p.data?.disabilityTypes),
+      p.contact_number || "",
     ]);
-    const totals = [
-      "All barangays",
-      ...report.typeColumns.map((t) => report.typeCounts[t] || 0),
-      report.total,
-    ];
-    downloadCsv("pwd-report-per-barangay.csv", [header, ...body, totals]);
+    const slug = (v) =>
+      v === "all" ? "all" : String(v).toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    downloadCsv(
+      `pwd-report-${slug(exportBarangay)}-${slug(exportType)}.csv`,
+      [header, ...body]
+    );
+    setShowExport(false);
   };
 
   return (
@@ -123,7 +147,7 @@ export default function Reports() {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={exportCsv}
+              onClick={() => setShowExport(true)}
               disabled={isLoading || report.total === 0}
               className="rounded-full border border-[color:var(--gov-border)] px-4 py-2 text-xs font-semibold disabled:opacity-50"
             >
@@ -228,6 +252,20 @@ export default function Reports() {
           </section>
         </>
       )}
+
+      {showExport ? (
+        <ExportReportModal
+          barangays={report.barangays}
+          typeColumns={report.typeColumns}
+          barangay={exportBarangay}
+          type={exportType}
+          matchCount={exportMatches.length}
+          onBarangayChange={setExportBarangay}
+          onTypeChange={setExportType}
+          onExport={handleExport}
+          onClose={() => setShowExport(false)}
+        />
+      ) : null}
     </div>
   );
 }

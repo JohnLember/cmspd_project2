@@ -13,11 +13,6 @@ const COMMANDS = [
     label: "Digital ID",
   },
   {
-    keywords: ["subsidy", "subsidies", "assistance", "payout", "status"],
-    to: "/app/pwd-beneficiary/subsidy-status",
-    label: "Subsidy Status",
-  },
-  {
     keywords: ["announcement", "announcements", "news", "advisory", "advisories"],
     to: "/app/pwd-beneficiary/announcements",
     label: "Announcements",
@@ -83,8 +78,7 @@ export default function VoiceNav() {
       )}
       {listening ? (
         <div className="rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-3 py-1 text-[10px] text-[color:var(--gov-muted)] shadow">
-          Try: “dashboard”, “digital ID”, “subsidy”, “announcements”, “profile”,
-          “log out”
+          Try: “dashboard”, “digital ID”, “announcements”, “profile”, “log out”
         </div>
       ) : null}
       <button

@@ -1,6 +1,5 @@
 import { disabilityLabel } from "../../constants/disability.js";
 import DigitalIdCard from "./DigitalIdCard.jsx";
-import SubsidiesSection from "./SubsidiesSection.jsx";
 
 const Row = ({ label, value }) => (
   <div>
@@ -94,8 +93,6 @@ export default function PwdDetailModal({ profile, onClose }) {
             value={profile.application?.status}
           />
         </div>
-
-        <SubsidiesSection pwdId={profile.id} />
 
         <div className="mt-8">
           <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-[color:var(--gov-muted)]">

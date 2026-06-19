@@ -1351,7 +1351,6 @@ export default function BeneficiaryApply() {
                     {[
                       { value: "applicant", label: "Applicant" },
                       { value: "guardian", label: "Guardian" },
-                      { value: "representative", label: "Representative" },
                     ].map((item) => (
                       <label
                         key={item.value}
