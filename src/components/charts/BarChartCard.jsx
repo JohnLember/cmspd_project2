@@ -22,7 +22,12 @@ export default function BarChartCard({ title, data, subtitle = "Last 6 months" }
           <BarChart data={data} barSize={24}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--gov-border)" />
             <XAxis dataKey="name" stroke="var(--gov-muted)" fontSize={12} />
-            <YAxis stroke="var(--gov-muted)" fontSize={12} />
+            <YAxis
+              stroke="var(--gov-muted)"
+              fontSize={12}
+              allowDecimals={false}
+            />
+
             <Tooltip
               cursor={{ fill: "rgba(148, 163, 184, 0.15)" }}
               contentStyle={{
