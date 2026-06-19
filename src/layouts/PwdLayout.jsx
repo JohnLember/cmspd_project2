@@ -1,6 +1,7 @@
 import { Outlet } from "react-router";
 import Navbar from "../components/ui/Navbar.jsx";
 import PwdSidebar from "../components/ui/PwdSidebar.jsx";
+import VoiceNav from "../components/ui/VoiceNav.jsx";
 
 export default function PwdLayout() {
   return (
@@ -14,6 +15,7 @@ export default function PwdLayout() {
           </main>
         </div>
       </div>
+      <VoiceNav />
     </div>
   );
 }
