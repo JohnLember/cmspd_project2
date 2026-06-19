@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { submitApplication } from "../../services/supabase/applications.js";
 import { getLoretoBarangays } from "../../services/psgc.js";
+import { useSpeechRecognition } from "../../hooks/useSpeechRecognition.js";
 
 // The system serves Loreto, Agusan del Sur only; these are fixed.
 const FIXED_MUNICIPALITY = "Loreto";
@@ -149,6 +150,46 @@ export default function BeneficiaryApply() {
   const [barangays, setBarangays] = useState([]);
   const [barangaysError, setBarangaysError] = useState("");
   const [isLoadingBarangays, setIsLoadingBarangays] = useState(true);
+
+  // Voice dictation (Web Speech API). Types into the last-focused text field.
+  const {
+    isSupported: voiceSupported,
+    listening,
+    error: voiceError,
+    start: startDictation,
+    stop: stopDictation,
+  } = useSpeechRecognition({ lang: "en-PH" });
+  const [activeField, setActiveField] = useState(null);
+
+  const handleFieldFocus = (e) => {
+    const el = e.target;
+    const isText =
+      el.tagName === "TEXTAREA" ||
+      ["text", "tel", "email", "search"].includes(el.type);
+    if (el.name && isText) {
+      setActiveField({
+        name: el.name,
+        label: el.labels?.[0]?.textContent?.trim() || el.name,
+      });
+    }
+  };
+
+  const handleDictate = () => {
+    if (listening) {
+      stopDictation();
+      return;
+    }
+    if (!activeField) return;
+    startDictation((text) => {
+      setFormData((prev) => {
+        const existing = prev[activeField.name] || "";
+        return {
+          ...prev,
+          [activeField.name]: existing ? `${existing} ${text}` : text,
+        };
+      });
+    });
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -341,7 +382,43 @@ export default function BeneficiaryApply() {
             </div>
           </div>
 
-          <form className="mt-6 space-y-6" onSubmit={(e) => e.preventDefault()}>
+          <form
+            className="mt-6 space-y-6"
+            onSubmit={(e) => e.preventDefault()}
+            onFocusCapture={handleFieldFocus}
+          >
+            {voiceSupported ? (
+              <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3">
+                <button
+                  type="button"
+                  onClick={handleDictate}
+                  aria-label={listening ? "Stop dictation" : "Start dictation"}
+                  className={`rounded-full px-4 py-2 text-sm font-semibold text-white transition ${
+                    listening
+                      ? "animate-pulse bg-red-600"
+                      : "bg-[color:var(--gov-primary)]"
+                  }`}
+                >
+                  {listening ? "● Listening… tap to stop" : "🎤 Dictate"}
+                </button>
+                <p className="text-xs text-[color:var(--gov-muted)]">
+                  {activeField
+                    ? `Dictating into: ${activeField.label}`
+                    : "Tap a text field, then tap Dictate and speak."}
+                </p>
+                {voiceError ? (
+                  <span className="text-xs text-red-600">
+                    Mic error: {voiceError}
+                  </span>
+                ) : null}
+              </div>
+            ) : (
+              <p className="rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-xs text-[color:var(--gov-muted)]">
+                Voice input isn’t supported in this browser. Use Chrome or Edge to
+                fill the form by voice.
+              </p>
+            )}
+
             {activeStep === 0 ? (
               <fieldset className="space-y-4">
                 <legend className="text-sm font-semibold text-[color:var(--gov-text)]">
