@@ -8,14 +8,14 @@ import {
   YAxis,
 } from "recharts";
 
-export default function BarChartCard({ title, data }) {
+export default function BarChartCard({ title, data, subtitle = "Last 6 months" }) {
   return (
     <div className="gov-card rounded-2xl p-5">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-[color:var(--gov-text)]">
           {title}
         </h3>
-        <span className="text-xs text-[color:var(--gov-muted)]">Last 6 months</span>
+        <span className="text-xs text-[color:var(--gov-muted)]">{subtitle}</span>
       </div>
       <div className="mt-4 h-56">
         <ResponsiveContainer width="100%" height="100%">
