@@ -104,10 +104,13 @@ export default function Applications() {
         item.id === approveTarget.id ? { ...item, status: "approved" } : item
       )
     );
+    const guardianLine = result.guardian
+      ? ` · Guardian account — email: ${result.guardian.email} · password: ${result.guardian.password}`
+      : "";
     setNotice(
-      `Approved. PWD account created for ${
+      `Approved. PWD account for ${
         approveTarget.applicant_name || "applicant"
-      } — email: ${result.email} · temporary password: ${result.password}`
+      } — email: ${result.email} · temporary password: ${result.password}${guardianLine}`
     );
     setIsApproving(false);
     setApproveTarget(null);

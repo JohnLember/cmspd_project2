@@ -41,6 +41,10 @@ const requiredFieldsByStep = {
     ["province", "Province"],
     ["contactNumber", "Mobile number"],
   ],
+  5: [
+    ["guardianLast", "Guardian last name"],
+    ["guardianFirst", "Guardian first name"],
+  ],
 };
 
 // PH mobile: 11 digits starting 09, or +639 followed by 9 digits.
@@ -1011,7 +1015,9 @@ export default function BeneficiaryApply() {
               <fieldset className="space-y-4">
                 <legend className="text-sm font-semibold text-[color:var(--gov-text)]">
                   Family, organization, and references
-                  <Optional />
+                  <span className="ml-1 text-xs font-normal text-[color:var(--gov-muted)]">
+                    (guardian required; other fields optional)
+                  </span>
                 </legend>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="sm:col-span-2">
@@ -1222,6 +1228,7 @@ export default function BeneficiaryApply() {
                   <div>
                     <label className="text-sm font-medium" htmlFor="guardian-last">
                       Guardian's name (last name)
+                      <Req />
                     </label>
                     <input
                       id="guardian-last"
@@ -1235,6 +1242,7 @@ export default function BeneficiaryApply() {
                   <div>
                     <label className="text-sm font-medium" htmlFor="guardian-first">
                       Guardian's name (first name)
+                      <Req />
                     </label>
                     <input
                       id="guardian-first"
