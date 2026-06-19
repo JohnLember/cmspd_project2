@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 import {
   approveApplication,
   getApplications,
@@ -116,6 +117,97 @@ export default function Applications() {
     setApproveTarget(null);
   };
 
+  const confirmReject = (row) => {
+    toast(
+      ({ closeToast }) => (
+        <div className="space-y-3 text-sm text-[color:var(--gov-text)]">
+          <p className="font-semibold">Reject application?</p>
+          <p className="text-xs text-[color:var(--gov-muted)]">
+            Reject {row.applicant_name || "this applicant"}’s application? You can
+            reconsider it later.
+          </p>
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={closeToast}
+              className="rounded-full border border-[color:var(--gov-border)] px-3 py-1 text-xs font-semibold"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                handleStatusChange(row, "rejected");
+                closeToast();
+              }}
+              className="rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white"
+            >
+              Reject
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        closeButton: false,
+        autoClose: false,
+        closeOnClick: false,
+        className: "gov-card rounded-2xl border border-[color:var(--gov-border)]",
+      }
+    );
+  };
+
+  // Status is a lifecycle, not a free toggle: pending → Approve/Reject;
+  // approved is locked (it provisioned accounts); rejected can be reconsidered.
+  const renderStatus = (row) => {
+    const status = row.status || "pending";
+    const busy = updatingId === row.id;
+
+    if (status === "approved") {
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+          ✓ Approved
+        </span>
+      );
+    }
+    if (status === "rejected") {
+      return (
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+            Rejected
+          </span>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => handleStatusChange(row, "pending")}
+            className="text-xs font-semibold text-[color:var(--gov-accent)] disabled:opacity-60"
+          >
+            Reconsider
+          </button>
+        </div>
+      );
+    }
+    return (
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => handleStatusChange(row, "approved")}
+          className="rounded-full bg-[color:var(--gov-primary)] px-3 py-1 text-xs font-semibold text-white disabled:opacity-60"
+        >
+          Approve
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => confirmReject(row)}
+          className="rounded-full border border-[color:var(--gov-border)] px-3 py-1 text-xs font-semibold disabled:opacity-60"
+        >
+          Reject
+        </button>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <section className="gov-card rounded-2xl p-6">
@@ -218,20 +310,7 @@ export default function Applications() {
                     <td className="py-3">{row.applicant_name || "—"}</td>
                     <td className="py-3">{typeLabel(row.data?.appType)}</td>
                     <td className="py-3">{row.barangay || "—"}</td>
-                    <td className="py-3">
-                      <select
-                        value={row.status || "pending"}
-                        disabled={updatingId === row.id}
-                        onChange={(e) => handleStatusChange(row, e.target.value)}
-                        className="rounded-full border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-3 py-1 text-xs disabled:opacity-60"
-                      >
-                        {STATUS_OPTIONS.map((status) => (
-                          <option key={status} value={status}>
-                            {status.charAt(0).toUpperCase() + status.slice(1)}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
+                    <td className="py-3">{renderStatus(row)}</td>
                   </tr>
                 ))
               )}
