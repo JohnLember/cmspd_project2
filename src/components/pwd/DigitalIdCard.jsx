@@ -148,7 +148,14 @@ export default function DigitalIdCard({ profile }) {
         </p>
 
         <div className="mt-4 text-center">
-          <p className="font-bold uppercase">
+          {approval?.approvingSignature ? (
+            <img
+              src={approval.approvingSignature}
+              alt="Approving officer signature"
+              className="mx-auto h-10 object-contain"
+            />
+          ) : null}
+          <p className="font-bold uppercase underline">
             {officerName(approval?.approvingOfficer) || "—"}
           </p>
           <p className="text-[9px]">Approving Officer</p>
