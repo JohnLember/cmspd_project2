@@ -12,6 +12,6 @@ export const navigationItems = [
   { label: "PWD Management", to: "/app/pwd", icon: UserCircle2 },
   { label: "Applications", to: "/app/applications", icon: ClipboardList },
   { label: "Reports", to: "/app/reports", icon: FileText },
-  { label: "Notifications", to: "/app/notifications", icon: Bell },
+  { label: "Announcements", to: "/app/notifications", icon: Bell },
   { label: "Settings", to: "/app/settings", icon: Settings },
 ];

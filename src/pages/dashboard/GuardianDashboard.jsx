@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getMyWards } from "../../services/supabase/guardians.js";
 import { disabilityLabel } from "../../constants/disability.js";
 import DigitalIdCard from "../../components/pwd/DigitalIdCard.jsx";
+import AnnouncementsFeed from "../../components/ui/AnnouncementsFeed.jsx";
 
 export default function GuardianDashboard() {
   const [wards, setWards] = useState([]);
@@ -123,6 +124,16 @@ export default function GuardianDashboard() {
           );
         })
       )}
+
+      <section className="gov-card rounded-2xl p-6">
+        <h3 className="text-base font-semibold">Announcements</h3>
+        <p className="mt-1 text-sm text-[color:var(--gov-muted)]">
+          Updates from PDAO.
+        </p>
+        <div className="mt-4">
+          <AnnouncementsFeed emptyText="No announcements from PDAO yet." />
+        </div>
+      </section>
     </div>
   );
 }
