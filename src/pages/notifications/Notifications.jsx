@@ -4,6 +4,7 @@ import {
   createAnnouncement,
   deleteAnnouncement,
   getAnnouncements,
+  updateAnnouncement,
 } from "../../services/supabase/announcements.js";
 
 const fmt = (iso) =>
@@ -24,6 +25,10 @@ export default function Notifications() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [posting, setPosting] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editBody, setEditBody] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -60,6 +65,40 @@ export default function Notifications() {
       toast.success("Announcement posted to PWDs and guardians.");
     }
     setPosting(false);
+  };
+
+  const startEdit = (item) => {
+    setEditingId(item.id);
+    setEditTitle(item.title);
+    setEditBody(item.body);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditTitle("");
+    setEditBody("");
+  };
+
+  const saveEdit = async (id) => {
+    if (!editTitle.trim() || !editBody.trim()) {
+      toast.error("Title and message are required.");
+      return;
+    }
+    setSavingEdit(true);
+    const { announcement, error: editError } = await updateAnnouncement(id, {
+      title: editTitle.trim(),
+      body: editBody.trim(),
+    });
+    if (editError) {
+      toast.error(editError.message || "Unable to save changes.");
+    } else {
+      setAnnouncements((prev) =>
+        prev.map((a) => (a.id === id ? announcement : a))
+      );
+      cancelEdit();
+      toast.success("Announcement updated.");
+    }
+    setSavingEdit(false);
   };
 
   const confirmDelete = (item) => {
@@ -171,26 +210,72 @@ export default function Notifications() {
                 key={item.id}
                 className="rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-4"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-[color:var(--gov-text)]">
-                      {item.title}
-                    </p>
-                    <p className="mt-1 whitespace-pre-line text-xs text-[color:var(--gov-muted)]">
-                      {item.body}
-                    </p>
+                {editingId === item.id ? (
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-3 py-2 text-sm font-semibold"
+                    />
+                    <textarea
+                      rows={3}
+                      value={editBody}
+                      onChange={(e) => setEditBody(e.target.value)}
+                      className="w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-3 py-2 text-sm"
+                    />
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={cancelEdit}
+                        disabled={savingEdit}
+                        className="rounded-full border border-[color:var(--gov-border)] px-3 py-1 text-xs font-semibold disabled:opacity-60"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => saveEdit(item.id)}
+                        disabled={savingEdit}
+                        className="rounded-full bg-[color:var(--gov-primary)] px-3 py-1 text-xs font-semibold text-white disabled:opacity-60"
+                      >
+                        {savingEdit ? "Saving…" : "Save"}
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => confirmDelete(item)}
-                    className="shrink-0 text-xs font-semibold text-red-600"
-                  >
-                    Delete
-                  </button>
-                </div>
-                <p className="mt-3 text-xs text-[color:var(--gov-muted)]">
-                  {fmt(item.created_at)}
-                </p>
+                ) : (
+                  <>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-[color:var(--gov-text)]">
+                          {item.title}
+                        </p>
+                        <p className="mt-1 whitespace-pre-line text-xs text-[color:var(--gov-muted)]">
+                          {item.body}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => startEdit(item)}
+                          className="text-xs font-semibold text-[color:var(--gov-accent)]"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => confirmDelete(item)}
+                          className="text-xs font-semibold text-red-600"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                    <p className="mt-3 text-xs text-[color:var(--gov-muted)]">
+                      {fmt(item.created_at)}
+                    </p>
+                  </>
+                )}
               </div>
             ))
           )}

@@ -22,6 +22,16 @@ export async function createAnnouncement({ title, body }) {
   return { announcement: data ?? null, error };
 }
 
+export async function updateAnnouncement(id, { title, body }) {
+  const { data, error } = await supabase
+    .from("announcements")
+    .update({ title, body })
+    .eq("id", id)
+    .select()
+    .single();
+  return { announcement: data ?? null, error };
+}
+
 export async function deleteAnnouncement(id) {
   const { error } = await supabase.from("announcements").delete().eq("id", id);
   return { error };
