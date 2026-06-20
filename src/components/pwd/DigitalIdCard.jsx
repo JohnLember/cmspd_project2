@@ -152,7 +152,7 @@ export default function DigitalIdCard({ profile }) {
             <img
               src={approval.approvingSignature}
               alt="Approving officer signature"
-              className="mx-23 h-10 object-contain"
+              className="mx-auto h-10 object-contain"
             />
           ) : null}
           <p className="font-bold uppercase underline">
