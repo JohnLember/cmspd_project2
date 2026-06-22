@@ -105,3 +105,19 @@ export async function updateAccountPassword(password) {
   const { error } = await supabase.auth.updateUser({ password });
   return { error };
 }
+
+// Email verification via Resend (Edge Functions). The functions return 200 with
+// an { ok, error } body, so we surface that to the caller as { ok, error }.
+export async function sendEmailOtp() {
+  const { data, error } = await supabase.functions.invoke("send-email-otp");
+  if (error) return { ok: false, error: error.message };
+  return { ok: Boolean(data?.ok), sentTo: data?.sentTo, error: data?.error ?? null };
+}
+
+export async function verifyEmailOtp(code) {
+  const { data, error } = await supabase.functions.invoke("verify-email-otp", {
+    body: { code },
+  });
+  if (error) return { ok: false, error: error.message };
+  return { ok: Boolean(data?.ok), error: data?.error ?? null };
+}

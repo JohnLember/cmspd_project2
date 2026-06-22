@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
 import {
   getMyProfile,
+  sendEmailOtp,
   updateAccountEmail,
   updateAccountPassword,
   updateProfile,
   uploadAvatar,
+  verifyEmailOtp,
 } from "../../services/supabase/profile.js";
 
 const SEX_OPTIONS = [
@@ -60,6 +63,15 @@ export default function PwdProfile() {
   const [account, setAccount] = useState({ email: "", password: "" });
   const [savingAccount, setSavingAccount] = useState(false);
   const [accountMsg, setAccountMsg] = useState("");
+
+  // Personal email verification (code sent via Resend).
+  const [otp, setOtp] = useState({
+    open: false,
+    code: "",
+    sending: false,
+    verifying: false,
+    msg: "",
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -180,6 +192,46 @@ export default function PwdProfile() {
     setAccountMsg(messages.length ? messages.join(" ") : "No changes to save.");
     setSavingAccount(false);
   };
+
+  const sendCode = async () => {
+    setOtp((p) => ({ ...p, sending: true, msg: "" }));
+    const { ok, sentTo, error } = await sendEmailOtp();
+    if (!ok) {
+      setOtp((p) => ({ ...p, sending: false, msg: error || "Unable to send code." }));
+    } else {
+      setOtp((p) => ({
+        ...p,
+        sending: false,
+        msg: `A 6-digit code was sent to ${sentTo}. It expires in 10 minutes.`,
+      }));
+    }
+  };
+
+  const startEmailVerify = async () => {
+    setOtp({ open: true, code: "", sending: false, verifying: false, msg: "" });
+    await sendCode();
+  };
+
+  const confirmCode = async () => {
+    if (!/^\d{6}$/.test(otp.code.trim())) {
+      setOtp((p) => ({ ...p, msg: "Enter the 6-digit code." }));
+      return;
+    }
+    setOtp((p) => ({ ...p, verifying: true, msg: "" }));
+    const { ok, error } = await verifyEmailOtp(otp.code.trim());
+    if (!ok) {
+      setOtp((p) => ({ ...p, verifying: false, msg: error || "Verification failed." }));
+    } else {
+      setProfile((prev) => ({ ...prev, personal_email_verified: true }));
+      setOtp({ open: false, code: "", sending: false, verifying: false, msg: "" });
+      toast.success("Your personal email has been verified.");
+    }
+  };
+
+  // Verification requires a saved (not just typed) personal email.
+  const emailUnsaved = form.personal_email !== (profile?.personal_email ?? "");
+  const canVerifyEmail =
+    Boolean(profile?.personal_email) && !personalEmailVerified;
 
   if (isLoading) {
     return (
@@ -316,6 +368,82 @@ export default function PwdProfile() {
               className={fieldClass}
               placeholder="name@example.com"
             />
+            {canVerifyEmail && !otp.open ? (
+              <div className="mt-2">
+                {emailUnsaved ? (
+                  <p className="text-xs text-amber-600">
+                    Save your changes first, then verify this email.
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={startEmailVerify}
+                    className="text-xs font-semibold text-[color:var(--gov-accent)]"
+                  >
+                    Verify this email
+                  </button>
+                )}
+              </div>
+            ) : null}
+            {otp.open ? (
+              <div className="mt-3 rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] p-3">
+                <p className="text-xs font-medium text-[color:var(--gov-text)]">
+                  Enter the 6-digit code sent to your email
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={otp.code}
+                    onChange={(e) =>
+                      setOtp((p) => ({
+                        ...p,
+                        code: e.target.value.replace(/\D/g, "").slice(0, 6),
+                      }))
+                    }
+                    className="w-32 rounded-lg border border-[color:var(--gov-border)] bg-white px-3 py-2 text-sm tracking-[0.3em]"
+                    placeholder="000000"
+                  />
+                  <button
+                    type="button"
+                    onClick={confirmCode}
+                    disabled={otp.verifying}
+                    className="rounded-full bg-[color:var(--gov-primary)] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                  >
+                    {otp.verifying ? "Verifying…" : "Confirm"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={sendCode}
+                    disabled={otp.sending}
+                    className="text-xs font-semibold text-[color:var(--gov-accent)] disabled:opacity-60"
+                  >
+                    {otp.sending ? "Sending…" : "Resend code"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOtp({
+                        open: false,
+                        code: "",
+                        sending: false,
+                        verifying: false,
+                        msg: "",
+                      })
+                    }
+                    className="text-xs font-semibold text-[color:var(--gov-muted)]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                {otp.msg ? (
+                  <p className="mt-2 text-xs text-[color:var(--gov-muted)]">
+                    {otp.msg}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
           <div>
             <label className="text-sm font-medium" htmlFor="birthdate">
