@@ -80,12 +80,13 @@
 		--text-3xl: 1.875rem;
 		--text-4xl: 2.25rem;
 
-		/* Motion */
-		--ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-		--ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-		--dur-fast: 120ms;
-		--dur: 180ms;
-		--dur-slow: 240ms;
+		/* Motion — strong custom curves (built-in easings are too weak) */
+		--ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+		--ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+		--ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+		--dur-fast: 130ms;
+		--dur: 190ms;
+		--dur-slow: 260ms;
 
 		/* Semantic z-index scale */
 		--z-dropdown: 1000;
@@ -144,6 +145,7 @@
 
 	html {
 		-webkit-text-size-adjust: 100%;
+		scroll-behavior: smooth;
 	}
 
 	html,
@@ -234,6 +236,15 @@
 		background: var(--gov-elevated);
 		border-radius: var(--radius-xl);
 		box-shadow: var(--elev-2);
+		/* Modals are not anchored to a trigger — scale in from center. */
+		transform-origin: center;
+		animation: gov-pop var(--dur) var(--ease-out);
+	}
+	@keyframes gov-pop {
+		from {
+			opacity: 0;
+			transform: scale(0.96);
+		}
 	}
 
 	/* Buttons — single shape everywhere, ≥44px, full state set */
@@ -254,8 +265,8 @@
 			color var(--dur) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 		user-select: none;
 	}
-	.btn:active {
-		transform: translateY(1px);
+	.btn:active:not(:disabled) {
+		transform: scale(0.97);
 	}
 	.btn:disabled,
 	.btn[aria-disabled="true"] {
@@ -427,7 +438,7 @@
 		animation: gov-fade var(--dur) var(--ease-out);
 	}
 	.gov-drawer {
-		animation: gov-slide-in var(--dur-slow) var(--ease-out);
+		animation: gov-slide-in 300ms var(--ease-drawer);
 	}
 	@keyframes gov-fade {
 		from {
@@ -441,9 +452,58 @@
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.gov-backdrop,
-		.gov-drawer {
+		.gov-drawer,
+		.gov-overlay {
 			animation: none;
 		}
+	}
+
+	/* Tabular figures for data — stat values, tables, IDs line up cleanly */
+	.tnum {
+		font-variant-numeric: tabular-nums;
+		font-feature-settings: "tnum";
+	}
+
+	/* One-time staggered entrance. Gated on no-preference so reduced-motion
+	   leaves children at their natural (visible) state — never blank. */
+	@media (prefers-reduced-motion: no-preference) {
+		.gov-stagger > * {
+			animation: gov-fade-up 600ms var(--ease-out) both;
+		}
+		.gov-stagger > *:nth-child(2) {
+			animation-delay: 70ms;
+		}
+		.gov-stagger > *:nth-child(3) {
+			animation-delay: 140ms;
+		}
+		.gov-stagger > *:nth-child(4) {
+			animation-delay: 210ms;
+		}
+		.gov-stagger > *:nth-child(5) {
+			animation-delay: 280ms;
+		}
+	}
+	@keyframes gov-fade-up {
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+	}
+
+	/* FAQ disclosure: gentle reveal of the answer when opened */
+	@media (prefers-reduced-motion: no-preference) {
+		details[open] > .faq-answer {
+			animation: gov-fade-up var(--dur) var(--ease-out);
+		}
+	}
+
+	/* Pressable card — subtle physical feedback on tap */
+	.card-press {
+		transition: border-color var(--dur) var(--ease-out),
+			transform var(--dur-fast) var(--ease-out);
+	}
+	.card-press:active {
+		transform: scale(0.99);
 	}
 
 	/* Skeleton loading shimmer */

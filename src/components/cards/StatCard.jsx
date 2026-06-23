@@ -11,7 +11,7 @@ export default function StatCard({ label, value, hint, icon: Icon, tone = "prima
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-medium text-[color:var(--gov-muted)]">{label}</p>
-          <p className="mt-2 text-3xl font-semibold tracking-[-0.01em] text-[color:var(--gov-text)]">
+          <p className="tnum mt-2 text-3xl font-semibold tracking-[-0.01em] text-[color:var(--gov-text)]">
             {value}
           </p>
         </div>

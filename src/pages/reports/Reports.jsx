@@ -213,7 +213,7 @@ export default function Reports() {
               Barangay × disability type
             </h3>
             <div className="mt-4 overflow-x-auto">
-              <table className="w-full border-collapse text-left text-sm">
+              <table className="tnum w-full border-collapse text-left text-sm">
                 <thead>
                   <tr className="border-b border-[color:var(--gov-border)] text-xs font-semibold text-[color:var(--gov-muted)]">
                     <th className="pb-3 pr-4 font-semibold">Barangay</th>

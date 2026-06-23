@@ -39,7 +39,7 @@ export default function PwdBeneficiaryDashboard() {
       <section className="grid gap-4 md:grid-cols-2">
         <Link
           to="/app/pwd-beneficiary/digital-id"
-          className="group gov-card flex items-center justify-between gap-4 p-5 transition-colors hover:border-[color:var(--gov-primary)]"
+          className="group card-press gov-card flex items-center justify-between gap-4 p-5 hover:border-[color:var(--gov-primary)]"
         >
           <div className="flex items-center gap-4">
             <span className="grid h-12 w-12 place-items-center rounded-[var(--radius-md)] bg-[color:var(--gov-primary-soft)] text-[color:var(--gov-primary)]">
@@ -64,7 +64,7 @@ export default function PwdBeneficiaryDashboard() {
 
         <Link
           to="/app/pwd-beneficiary/profile"
-          className="group gov-card flex items-center justify-between gap-4 p-5 transition-colors hover:border-[color:var(--gov-primary)]"
+          className="group card-press gov-card flex items-center justify-between gap-4 p-5 hover:border-[color:var(--gov-primary)]"
         >
           <div className="flex items-center gap-4">
             <span className="grid h-12 w-12 place-items-center rounded-[var(--radius-md)] bg-[color:var(--gov-primary-soft)] text-[color:var(--gov-primary)]">

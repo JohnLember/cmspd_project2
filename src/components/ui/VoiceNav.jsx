@@ -88,7 +88,7 @@ export default function VoiceNav() {
         aria-label={listening ? "Stop voice navigation" : "Start voice navigation"}
         aria-pressed={listening}
         title="Voice navigation"
-        className={`relative grid h-14 w-14 place-items-center rounded-full text-[color:var(--gov-on-primary)] shadow-[var(--elev-2)] transition-colors ${
+        className={`relative grid h-14 w-14 place-items-center rounded-full text-[color:var(--gov-on-primary)] shadow-[var(--elev-2)] transition-[transform,background-color] duration-[var(--dur)] ease-[var(--ease-out)] active:scale-95 ${
           listening
             ? "bg-[color:var(--gov-danger)]"
             : "bg-[color:var(--gov-primary)] hover:bg-[color:var(--gov-primary-hover)]"

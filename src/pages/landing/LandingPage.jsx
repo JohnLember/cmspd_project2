@@ -104,7 +104,7 @@ export default function LandingPage() {
       <main className="space-y-20 px-4 pb-20 pt-12 sm:px-6 sm:space-y-24">
         {/* Hero */}
         <section className="mx-auto grid w-full max-w-6xl items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="space-y-6">
+          <div className="gov-stagger space-y-6">
             <span className="inline-flex items-center gap-2 rounded-full bg-[color:var(--gov-primary-soft)] px-3 py-1 text-sm font-medium text-[color:var(--gov-primary)]">
               <MapPin className="h-4 w-4" aria-hidden="true" />
               Municipality of Loreto · Agusan del Sur
@@ -259,7 +259,7 @@ export default function LandingPage() {
                     +
                   </span>
                 </summary>
-                <p className="px-6 pb-5 text-[color:var(--gov-muted)]">{item.answer}</p>
+                <p className="faq-answer px-6 pb-5 text-[color:var(--gov-muted)]">{item.answer}</p>
               </details>
             ))}
           </div>
