@@ -53,6 +53,8 @@ export default function PwdProfile() {
     birthdate: "",
     sex: "",
     civil_status: "",
+    contactPerson: "",
+    telNos: "",
   });
 
   const [savingProfile, setSavingProfile] = useState(false);
@@ -92,6 +94,8 @@ export default function PwdProfile() {
           birthdate: row.birthdate ?? "",
           sex: row.sex ?? "",
           civil_status: row.civil_status ?? "",
+          contactPerson: row.data?.contactPerson ?? "",
+          telNos: row.data?.telNos ?? "",
         });
         setAccount({ email: authUser.email ?? "", password: "" });
       }
@@ -115,8 +119,11 @@ export default function PwdProfile() {
     // Changing the mobile or personal email invalidates any prior verification.
     const contactChanged = form.contact_number !== (profile.contact_number ?? "");
     const emailChanged = form.personal_email !== (profile.personal_email ?? "");
+    // contactPerson / telNos live in the profile's `data` JSON, not as columns.
+    const { contactPerson, telNos, ...columns } = form;
     const updates = {
-      ...form,
+      ...columns,
+      data: { ...(profile.data ?? {}), contactPerson, telNos },
       ...(contactChanged ? { contact_verified: false } : {}),
       ...(emailChanged ? { personal_email_verified: false } : {}),
     };
@@ -518,6 +525,42 @@ export default function PwdProfile() {
               value={form.barangay}
               onChange={handleField}
               className={fieldClass}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <h4 className="text-sm font-semibold text-[color:var(--gov-text)]">
+              In case of emergency, please notify
+            </h4>
+            <p className="mt-1 text-xs text-[color:var(--gov-muted)]">
+              This appears on the back of your Digital PWD ID.
+            </p>
+          </div>
+          <div>
+            <label className="text-sm font-medium" htmlFor="contactPerson">
+              Emergency contact person
+            </label>
+            <input
+              id="contactPerson"
+              name="contactPerson"
+              type="text"
+              value={form.contactPerson}
+              onChange={handleField}
+              className={fieldClass}
+              placeholder="Full name"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium" htmlFor="telNos">
+              Emergency contact number
+            </label>
+            <input
+              id="telNos"
+              name="telNos"
+              type="tel"
+              value={form.telNos}
+              onChange={handleField}
+              className={fieldClass}
+              placeholder="09xx xxx xxxx"
             />
           </div>
           {profileMsg ? (
