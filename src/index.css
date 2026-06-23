@@ -2,33 +2,148 @@
 
 @import "tailwindcss";
 
+/* ============================================================================
+   CMSPD design tokens — civic-blue identity, OKLCH, WCAG 2.1 AA + PWD extras.
+   One system across PDAO / PWD / Guardian portals + public surfaces.
+   ========================================================================== */
+
 @layer base {
 	:root {
 		color-scheme: light;
-		--gov-bg: #f6f8fb;
-		--gov-surface: #ffffff;
-		--gov-card: #fdfdff;
-		--gov-text: #0f172a;
-		--gov-muted: #475569;
-		--gov-border: #e2e8f0;
-		--gov-primary: #1d4ed8;
-		--gov-primary-soft: #3b82f6;
-		--gov-accent: #0ea5e9;
-		--gov-shadow: 0 20px 45px -30px rgba(15, 23, 42, 0.45);
+
+		/* Neutrals — cool-tinted, restrained */
+		--gov-bg: oklch(0.981 0.004 247); /* app canvas */
+		--gov-surface: oklch(1 0 0); /* chrome / panels */
+		--gov-card: oklch(0.995 0.002 264); /* content cards */
+		--gov-elevated: oklch(1 0 0); /* popovers / menus */
+		--gov-text: oklch(0.23 0.035 259); /* primary ink ~12:1 */
+		--gov-muted: oklch(0.474 0.035 257); /* secondary ~6.5:1 */
+		--gov-faint: oklch(0.62 0.028 257); /* tertiary, large text only */
+		--gov-border: oklch(0.918 0.007 255); /* hairlines */
+		--gov-border-strong: oklch(0.86 0.012 255); /* emphasized dividers */
+
+		/* Civic blue identity (legacy #1d4ed8) */
+		--gov-primary: oklch(0.488 0.214 264);
+		--gov-primary-hover: oklch(0.44 0.214 264);
+		--gov-primary-active: oklch(0.4 0.2 264);
+		--gov-primary-soft: oklch(0.95 0.03 264); /* tinted bg for selection */
+		--gov-on-primary: oklch(0.99 0.01 264); /* text on primary */
+		--gov-accent: oklch(0.685 0.15 232); /* sky — info / status */
+
+		/* Semantic state — *-fg tuned to ≥4.5:1 on its *-soft fill (AA) */
+		--gov-success: oklch(0.59 0.15 150);
+		--gov-success-fg: oklch(0.42 0.12 150);
+		--gov-success-soft: oklch(0.96 0.04 150);
+		--gov-warning: oklch(0.7 0.16 65);
+		--gov-warning-fg: oklch(0.44 0.11 56);
+		--gov-warning-soft: oklch(0.96 0.05 75);
+		--gov-danger: oklch(0.585 0.22 27);
+		--gov-danger-fg: oklch(0.46 0.19 27);
+		--gov-danger-soft: oklch(0.96 0.03 22);
+		--gov-info: oklch(0.6 0.13 240);
+		--gov-info-fg: oklch(0.44 0.13 250);
+		--gov-info-soft: oklch(0.96 0.03 240);
+
+		/* Focus ring */
+		--gov-ring: oklch(0.55 0.2 264);
+
+		/* Elevation — pick ONE per element, never border + wide shadow together */
+		--elev-1: 0 1px 2px -1px oklch(0.23 0.035 259 / 0.12),
+			0 2px 8px -2px oklch(0.23 0.035 259 / 0.1);
+		--elev-2: 0 4px 12px -4px oklch(0.23 0.035 259 / 0.16),
+			0 12px 32px -8px oklch(0.23 0.035 259 / 0.16);
+
+		/* Radius */
+		--radius-sm: 0.5rem; /* 8px  inputs */
+		--radius-md: 0.625rem; /* 10px buttons */
+		--radius-lg: 0.875rem; /* 14px cards */
+		--radius-xl: 1.25rem; /* 20px panels */
+		--radius-full: 9999px;
+
+		/* Spacing (4px base) */
+		--space-1: 0.25rem;
+		--space-2: 0.5rem;
+		--space-3: 0.75rem;
+		--space-4: 1rem;
+		--space-6: 1.5rem;
+		--space-8: 2rem;
+		--space-12: 3rem;
+		--space-16: 4rem;
+
+		/* Type scale (fixed rem, ratio ~1.2) */
+		--text-xs: 0.75rem;
+		--text-sm: 0.875rem;
+		--text-base: 1rem;
+		--text-lg: 1.125rem;
+		--text-xl: 1.25rem;
+		--text-2xl: 1.5rem;
+		--text-3xl: 1.875rem;
+		--text-4xl: 2.25rem;
+
+		/* Motion */
+		--ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+		--ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+		--dur-fast: 120ms;
+		--dur: 180ms;
+		--dur-slow: 240ms;
+
+		/* Semantic z-index scale */
+		--z-dropdown: 1000;
+		--z-sticky: 1100;
+		--z-backdrop: 1200;
+		--z-modal: 1300;
+		--z-toast: 1400;
+		--z-tooltip: 1500;
+
+		/* Min interactive target (PWD extra) */
+		--tap: 2.75rem; /* 44px */
 	}
 
 	.dark {
 		color-scheme: dark;
-		--gov-bg: #0b1220;
-		--gov-surface: #0f172a;
-		--gov-card: #111c31;
-		--gov-text: #e2e8f0;
-		--gov-muted: #94a3b8;
-		--gov-border: #1e293b;
-		--gov-primary: #60a5fa;
-		--gov-primary-soft: #38bdf8;
-		--gov-accent: #22d3ee;
-		--gov-shadow: 0 20px 45px -30px rgba(6, 9, 20, 0.7);
+
+		--gov-bg: oklch(0.185 0.025 263);
+		--gov-surface: oklch(0.235 0.03 263);
+		--gov-card: oklch(0.265 0.032 263);
+		--gov-elevated: oklch(0.29 0.034 263);
+		--gov-text: oklch(0.93 0.012 248);
+		--gov-muted: oklch(0.73 0.028 252);
+		--gov-faint: oklch(0.62 0.028 255);
+		--gov-border: oklch(0.34 0.03 260);
+		--gov-border-strong: oklch(0.42 0.034 260);
+
+		--gov-primary: oklch(0.72 0.14 258);
+		--gov-primary-hover: oklch(0.78 0.13 256);
+		--gov-primary-active: oklch(0.68 0.14 258);
+		--gov-primary-soft: oklch(0.34 0.07 262);
+		--gov-on-primary: oklch(0.18 0.04 264);
+		--gov-accent: oklch(0.78 0.13 226);
+
+		--gov-success: oklch(0.72 0.15 152);
+		--gov-success-fg: oklch(0.82 0.14 152);
+		--gov-success-soft: oklch(0.34 0.07 152);
+		--gov-warning: oklch(0.8 0.15 75);
+		--gov-warning-fg: oklch(0.86 0.13 80);
+		--gov-warning-soft: oklch(0.36 0.07 70);
+		--gov-danger: oklch(0.68 0.19 25);
+		--gov-danger-fg: oklch(0.78 0.15 25);
+		--gov-danger-soft: oklch(0.34 0.09 25);
+		--gov-info: oklch(0.74 0.13 238);
+		--gov-info-fg: oklch(0.82 0.12 240);
+		--gov-info-soft: oklch(0.34 0.07 240);
+
+		--gov-ring: oklch(0.74 0.14 258);
+
+		--elev-1: 0 1px 2px -1px oklch(0 0 0 / 0.5), 0 2px 10px -2px oklch(0 0 0 / 0.45);
+		--elev-2: 0 6px 16px -6px oklch(0 0 0 / 0.6), 0 16px 40px -10px oklch(0 0 0 / 0.55);
+	}
+
+	* {
+		border-color: var(--gov-border);
+	}
+
+	html {
+		-webkit-text-size-adjust: 100%;
 	}
 
 	html,
@@ -37,36 +152,341 @@
 	}
 
 	body {
-		font-family: "Public Sans", "Source Sans 3", "Segoe UI", sans-serif;
+		font-family: "Public Sans", "Source Sans 3", "Segoe UI", system-ui, sans-serif;
 		background: var(--gov-bg);
 		color: var(--gov-text);
+		font-size: var(--text-base);
+		line-height: 1.5;
+		-webkit-font-smoothing: antialiased;
+		text-rendering: optimizeLegibility;
+	}
+
+	h1,
+	h2,
+	h3,
+	h4 {
+		line-height: 1.2;
+		letter-spacing: -0.014em;
+		text-wrap: balance;
+	}
+
+	p {
+		text-wrap: pretty;
+	}
+
+	/* Visible focus on every interactive element — never bare outline:none.
+	   Critical for the PWD audience. */
+	:where(a, button, input, select, textarea, [tabindex], summary, [role="button"]):focus-visible {
+		outline: 2px solid var(--gov-ring);
+		outline-offset: 2px;
+		border-radius: var(--radius-sm);
+	}
+
+	::selection {
+		background: var(--gov-primary);
+		color: var(--gov-on-primary);
+	}
+
+	::placeholder {
+		color: var(--gov-muted);
+		opacity: 1;
+	}
+
+	/* Honor reduced motion globally as a safety net; components also branch. */
+	@media (prefers-reduced-motion: reduce) {
+		*,
+		*::before,
+		*::after {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+			scroll-behavior: auto !important;
+		}
 	}
 }
 
-@layer utilities {
+/* ============================================================================
+   Reusable component utilities — one vocabulary across every surface.
+   ========================================================================== */
+
+@layer components {
+	/* Surfaces */
 	.gov-card {
 		background: var(--gov-card);
 		border: 1px solid var(--gov-border);
-		box-shadow: var(--gov-shadow);
+		border-radius: var(--radius-lg);
 	}
 
 	.gov-surface {
 		background: var(--gov-surface);
 		border: 1px solid var(--gov-border);
+		border-radius: var(--radius-lg);
+	}
+
+	/* Raised elevation — for things that genuinely float (no border) */
+	.gov-raised {
+		background: var(--gov-elevated);
+		border-radius: var(--radius-lg);
+		box-shadow: var(--elev-1);
+	}
+
+	.gov-overlay {
+		background: var(--gov-elevated);
+		border-radius: var(--radius-xl);
+		box-shadow: var(--elev-2);
+	}
+
+	/* Buttons — single shape everywhere, ≥44px, full state set */
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-2);
+		min-height: var(--tap);
+		padding: 0 var(--space-4);
+		border-radius: var(--radius-md);
+		font-size: var(--text-sm);
+		font-weight: 600;
+		line-height: 1;
+		cursor: pointer;
+		transition: background-color var(--dur) var(--ease-out),
+			border-color var(--dur) var(--ease-out),
+			color var(--dur) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+		user-select: none;
+	}
+	.btn:active {
+		transform: translateY(1px);
+	}
+	.btn:disabled,
+	.btn[aria-disabled="true"] {
+		opacity: 0.55;
+		cursor: not-allowed;
+		transform: none;
+	}
+
+	.btn-primary {
+		background: var(--gov-primary);
+		color: var(--gov-on-primary);
+	}
+	.btn-primary:hover:not(:disabled) {
+		background: var(--gov-primary-hover);
+	}
+	.btn-primary:active:not(:disabled) {
+		background: var(--gov-primary-active);
+	}
+
+	.btn-secondary {
+		background: var(--gov-surface);
+		color: var(--gov-text);
+		border: 1px solid var(--gov-border-strong);
+	}
+	.btn-secondary:hover:not(:disabled) {
+		background: var(--gov-card);
+		border-color: var(--gov-primary);
+		color: var(--gov-primary);
+	}
+
+	.btn-ghost {
+		background: transparent;
+		color: var(--gov-text);
+	}
+	.btn-ghost:hover:not(:disabled) {
+		background: color-mix(in oklch, var(--gov-primary) 10%, transparent);
+		color: var(--gov-primary);
+	}
+
+	.btn-danger {
+		background: var(--gov-danger);
+		color: oklch(0.99 0.01 27);
+	}
+	.btn-danger:hover:not(:disabled) {
+		filter: brightness(0.94);
+	}
+
+	/* Form controls — 44px min, visible focus, error variant */
+	.gov-input {
+		width: 100%;
+		min-height: var(--tap);
+		padding: var(--space-3) var(--space-4);
+		background: var(--gov-surface);
+		color: var(--gov-text);
+		border: 1px solid var(--gov-border-strong);
+		border-radius: var(--radius-sm);
+		font-size: var(--text-sm);
+		transition: border-color var(--dur) var(--ease-out),
+			box-shadow var(--dur) var(--ease-out);
+	}
+	.gov-input:hover:not(:disabled) {
+		border-color: var(--gov-primary);
+	}
+	.gov-input:focus {
+		outline: none;
+		border-color: var(--gov-primary);
+		box-shadow: 0 0 0 3px color-mix(in oklch, var(--gov-ring) 25%, transparent);
+	}
+	.gov-input[aria-invalid="true"] {
+		border-color: var(--gov-danger);
+	}
+	.gov-input[aria-invalid="true"]:focus {
+		box-shadow: 0 0 0 3px color-mix(in oklch, var(--gov-danger) 25%, transparent);
+	}
+
+	/* Selectable option (radio / checkbox wrapped in a label) */
+	.gov-option {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		min-height: var(--tap);
+		padding: var(--space-3) var(--space-4);
+		border: 1px solid var(--gov-border-strong);
+		border-radius: var(--radius-md);
+		background: var(--gov-surface);
+		font-size: var(--text-sm);
+		cursor: pointer;
+		transition: border-color var(--dur) var(--ease-out),
+			background-color var(--dur) var(--ease-out);
+	}
+	.gov-option:hover {
+		border-color: var(--gov-primary);
+	}
+	.gov-option:has(input:checked) {
+		border-color: var(--gov-primary);
+		background: var(--gov-primary-soft);
+		color: var(--gov-primary);
+		font-weight: 500;
+	}
+	.gov-option:has(input:focus-visible) {
+		outline: 2px solid var(--gov-ring);
+		outline-offset: 2px;
+	}
+
+	/* Status badges — semantic soft bg + matching fg */
+	.gov-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: 0.25rem 0.625rem;
+		border-radius: var(--radius-full);
+		font-size: var(--text-xs);
+		font-weight: 600;
+		line-height: 1.4;
+		white-space: nowrap;
+	}
+	.gov-badge--success {
+		background: var(--gov-success-soft);
+		color: var(--gov-success-fg);
+	}
+	.gov-badge--warning {
+		background: var(--gov-warning-soft);
+		color: var(--gov-warning-fg);
+	}
+	.gov-badge--danger {
+		background: var(--gov-danger-soft);
+		color: var(--gov-danger-fg);
+	}
+	.gov-badge--info {
+		background: var(--gov-info-soft);
+		color: var(--gov-info-fg);
+	}
+	.gov-badge--neutral {
+		background: color-mix(in oklch, var(--gov-muted) 14%, transparent);
+		color: var(--gov-muted);
+	}
+
+	/* Sidebar / drawer navigation links — one shape across all portals */
+	.gov-nav-link {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		min-height: var(--tap);
+		padding: 0 var(--space-3);
+		border-radius: var(--radius-md);
+		font-size: var(--text-sm);
+		font-weight: 500;
+		color: var(--gov-text);
+		transition: background-color var(--dur) var(--ease-out),
+			color var(--dur) var(--ease-out);
+	}
+	.gov-nav-link:hover {
+		background: color-mix(in oklch, var(--gov-primary) 10%, transparent);
+		color: var(--gov-primary);
+	}
+	.gov-nav-link.is-active {
+		background: var(--gov-primary);
+		color: var(--gov-on-primary);
+		font-weight: 600;
+	}
+	.gov-nav-link.is-active:hover {
+		background: var(--gov-primary-hover);
+		color: var(--gov-on-primary);
+	}
+
+	/* Mobile navigation drawer + backdrop */
+	.gov-backdrop {
+		background: oklch(0.2 0.03 259 / 0.5);
+		animation: gov-fade var(--dur) var(--ease-out);
+	}
+	.gov-drawer {
+		animation: gov-slide-in var(--dur-slow) var(--ease-out);
+	}
+	@keyframes gov-fade {
+		from {
+			opacity: 0;
+		}
+	}
+	@keyframes gov-slide-in {
+		from {
+			transform: translateX(-100%);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.gov-backdrop,
+		.gov-drawer {
+			animation: none;
+		}
+	}
+
+	/* Skeleton loading shimmer */
+	.gov-skeleton {
+		position: relative;
+		overflow: hidden;
+		background: color-mix(in oklch, var(--gov-muted) 14%, transparent);
+		border-radius: var(--radius-sm);
+	}
+	.gov-skeleton::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		transform: translateX(-100%);
+		background: linear-gradient(
+			90deg,
+			transparent,
+			color-mix(in oklch, var(--gov-surface) 60%, transparent),
+			transparent
+		);
+		animation: gov-shimmer 1.4s var(--ease-in-out) infinite;
+	}
+	@keyframes gov-shimmer {
+		100% {
+			transform: translateX(100%);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.gov-skeleton::after {
+			animation: none;
+		}
 	}
 }
 
-/* When printing the digital ID, hide the app chrome and keep the card colors. */
+/* Print: digital ID — hide chrome, force white, keep card colors. */
 @media print {
 	header,
 	aside {
 		display: none !important;
 	}
-
 	body {
 		background: #ffffff;
 	}
-
 	* {
 		-webkit-print-color-adjust: exact;
 		print-color-adjust: exact;

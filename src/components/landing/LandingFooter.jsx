@@ -1,68 +1,93 @@
+import { Link } from "react-router";
 import pdaoLogo from "../../assets/pdao_logo.png";
+
+const sections = [
+  { label: "About", href: "#about" },
+  { label: "Services", href: "#services" },
+  { label: "How to apply", href: "#apply" },
+  { label: "FAQ", href: "#faq" },
+  { label: "Contact", href: "#contact" },
+];
 
 export default function LandingFooter() {
   return (
     <footer className="border-t border-[color:var(--gov-border)] bg-[color:var(--gov-surface)]">
-      <div className="mx-auto grid w-full max-w-6xl gap-6 px-6 py-10 text-sm text-[color:var(--gov-muted)] lg:grid-cols-[1.4fr_1fr_1fr]">
+      <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[1.6fr_1fr_1fr]">
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-card)] p-1 shadow-sm">
-              <img
-                src={pdaoLogo}
-                alt="PDAO seal"
-                className="h-full w-full rounded-xl object-contain"
-                loading="lazy"
-              />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gov-muted)]">
-                Provincial Government Portal
+            <img
+              src={pdaoLogo}
+              alt="PDAO seal"
+              className="h-11 w-11 shrink-0 rounded-[var(--radius-md)] object-contain"
+              loading="lazy"
+            />
+            <div className="leading-tight">
+              <p className="text-sm font-semibold text-[color:var(--gov-text)]">
+                PDAO Loreto
               </p>
-              <h3 className="text-base font-semibold text-[color:var(--gov-text)]">
-                PDAO Community Monitoring System
-              </h3>
+              <p className="text-xs text-[color:var(--gov-muted)]">
+                Community Monitoring System
+              </p>
             </div>
           </div>
-          <p>
-            A secure and inclusive platform built to strengthen PWD services
-            across every barangay, with clear records, transparent reporting,
-            and coordinated support.
+          <p className="max-w-sm text-sm text-[color:var(--gov-muted)]">
+            A secure, inclusive platform that strengthens PWD services across the
+            Municipality of Loreto, with clear records, transparent reporting, and
+            coordinated support.
           </p>
-          <div className="rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-card)] px-4 py-3 text-xs text-[color:var(--gov-muted)]">
-            Official digital services for persons with disabilities.
-          </div>
         </div>
-        <div>
-          <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gov-text)]">
-            Quick links
+
+        <nav aria-label="Footer">
+          <h4 className="text-sm font-semibold text-[color:var(--gov-text)]">
+            Explore
           </h4>
-          <ul className="mt-3 space-y-2">
-            <li>Accessibility policy</li>
-            <li>Data privacy notice</li>
-            <li>Partner barangay directory</li>
-            <li>Service charter</li>
+          <ul className="mt-4 space-y-2.5 text-sm">
+            {sections.map((item) => (
+              <li key={item.href}>
+                <a
+                  href={item.href}
+                  className="rounded text-[color:var(--gov-muted)] transition-colors hover:text-[color:var(--gov-primary)]"
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))}
           </ul>
-        </div>
+        </nav>
+
         <div>
-          <h4 className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gov-text)]">
-            Contact
+          <h4 className="text-sm font-semibold text-[color:var(--gov-text)]">
+            Get started
           </h4>
-          <ul className="mt-3 space-y-2">
-            <li>support@pdao.gov.ph</li>
-            <li>(043) 123-4567</li>
-            <li>Provincial Capitol Complex</li>
-            <li>Monday - Friday, 8:00 AM - 5:00 PM</li>
+          <ul className="mt-4 space-y-2.5 text-sm">
+            <li>
+              <Link
+                to="/beneficiary-apply"
+                className="rounded text-[color:var(--gov-muted)] transition-colors hover:text-[color:var(--gov-primary)]"
+              >
+                Apply as a beneficiary
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/auth/login"
+                className="rounded text-[color:var(--gov-muted)] transition-colors hover:text-[color:var(--gov-primary)]"
+              >
+                Sign in to the portal
+              </Link>
+            </li>
+            <li className="text-[color:var(--gov-muted)]">pdao@loreto.gov.ph</li>
+            <li className="text-[color:var(--gov-muted)]">
+              Mon – Fri, 8:00 AM – 5:00 PM
+            </li>
           </ul>
         </div>
       </div>
+
       <div className="border-t border-[color:var(--gov-border)]">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-4 text-xs text-[color:var(--gov-muted)]">
-          <p>© 2026 Municipality of Loreto, Agusan del Sur. All rights reserved.</p>
-          <div className="flex flex-wrap items-center gap-4">
-            <span className="cursor-default">Privacy Policy</span>
-            <span className="cursor-default">Terms of Service</span>
-            <span className="cursor-default">Accessibility Statement</span>
-          </div>
+        <div className="mx-auto w-full max-w-6xl px-4 py-5 text-xs text-[color:var(--gov-muted)] sm:px-6">
+          © {new Date().getFullYear()} Municipality of Loreto, Agusan del Sur. All
+          rights reserved.
         </div>
       </div>
     </footer>

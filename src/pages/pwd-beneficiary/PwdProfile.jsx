@@ -35,8 +35,7 @@ const initials = (name) =>
     .map((part) => part[0]?.toUpperCase())
     .join("") || "PWD";
 
-const fieldClass =
-  "mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm";
+const fieldClass = "gov-input mt-2";
 
 export default function PwdProfile() {
   const fileInputRef = useRef(null);
@@ -267,7 +266,7 @@ export default function PwdProfile() {
 
   if (loadError) {
     return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+      <div role="alert" className="rounded-[var(--radius-md)] bg-[color:var(--gov-danger-soft)] px-4 py-3 text-sm text-[color:var(--gov-danger-fg)]">
         {loadError}
       </div>
     );
@@ -277,12 +276,12 @@ export default function PwdProfile() {
     <div className="space-y-6">
       {/* Verification notices — personal email and mobile number */}
       {!personalEmailVerified ? (
-        <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div role="status" className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[color:var(--gov-warning-soft)] px-4 py-3 text-sm text-[color:var(--gov-warning-fg)]">
           ⚠ Your personal email address is not verified.
         </div>
       ) : null}
       {!contactVerified ? (
-        <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div role="status" className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[color:var(--gov-warning-soft)] px-4 py-3 text-sm text-[color:var(--gov-warning-fg)]">
           ⚠ Your mobile number is not verified.
         </div>
       ) : null}
@@ -301,7 +300,7 @@ export default function PwdProfile() {
               className="h-20 w-20 rounded-full object-cover"
             />
           ) : (
-            <div className="grid h-20 w-20 place-items-center rounded-full bg-[color:var(--gov-primary)] text-lg font-semibold text-white">
+            <div className="grid h-20 w-20 place-items-center rounded-full bg-[color:var(--gov-primary)] text-lg font-semibold text-[color:var(--gov-on-primary)]">
               {initials(form.full_name)}
             </div>
           )}
@@ -317,7 +316,7 @@ export default function PwdProfile() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className="rounded-full bg-[color:var(--gov-primary)] px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 disabled:opacity-60"
+              className="btn btn-primary"
             >
               {isUploading ? "Uploading…" : "Change picture"}
             </button>
@@ -351,11 +350,11 @@ export default function PwdProfile() {
             <label className="text-sm font-medium" htmlFor="contact_number">
               Mobile number
               {contactVerified ? (
-                <span className="ml-2 text-xs font-semibold text-green-600">
+                <span className="ml-2 text-xs font-semibold text-[color:var(--gov-success-fg)]">
                   Verified
                 </span>
               ) : (
-                <span className="ml-2 text-xs font-semibold text-amber-600">
+                <span className="ml-2 text-xs font-semibold text-[color:var(--gov-warning-fg)]">
                   Not verified
                 </span>
               )}
@@ -374,11 +373,11 @@ export default function PwdProfile() {
             <label className="text-sm font-medium" htmlFor="personal_email">
               Personal email address
               {personalEmailVerified ? (
-                <span className="ml-2 text-xs font-semibold text-green-600">
+                <span className="ml-2 text-xs font-semibold text-[color:var(--gov-success-fg)]">
                   Verified
                 </span>
               ) : (
-                <span className="ml-2 text-xs font-semibold text-amber-600">
+                <span className="ml-2 text-xs font-semibold text-[color:var(--gov-warning-fg)]">
                   Not verified
                 </span>
               )}
@@ -395,14 +394,14 @@ export default function PwdProfile() {
             {canVerifyEmail && !otp.open ? (
               <div className="mt-2">
                 {emailUnsaved ? (
-                  <p className="text-xs text-amber-600">
+                  <p className="text-xs text-[color:var(--gov-warning-fg)]">
                     Save your changes first, then verify this email.
                   </p>
                 ) : (
                   <button
                     type="button"
                     onClick={startEmailVerify}
-                    className="text-xs font-semibold text-[color:var(--gov-accent)]"
+                    className="text-xs font-semibold text-[color:var(--gov-primary)] hover:underline"
                   >
                     Verify this email
                   </button>
@@ -426,14 +425,14 @@ export default function PwdProfile() {
                         code: e.target.value.replace(/\D/g, "").slice(0, 6),
                       }))
                     }
-                    className="w-32 rounded-lg border border-[color:var(--gov-border)] bg-white px-3 py-2 text-sm tracking-[0.3em]"
+                    className="gov-input w-32 text-center tracking-[0.3em]"
                     placeholder="000000"
                   />
                   <button
                     type="button"
                     onClick={confirmCode}
                     disabled={otp.verifying}
-                    className="rounded-full bg-[color:var(--gov-primary)] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                    className="btn btn-primary h-9 px-3 text-xs"
                   >
                     {otp.verifying ? "Verifying…" : "Confirm"}
                   </button>
@@ -441,7 +440,7 @@ export default function PwdProfile() {
                     type="button"
                     onClick={sendCode}
                     disabled={otp.sending}
-                    className="text-xs font-semibold text-[color:var(--gov-accent)] disabled:opacity-60"
+                    className="text-xs font-semibold text-[color:var(--gov-primary)] hover:underline disabled:opacity-60"
                   >
                     {otp.sending ? "Sending…" : "Resend code"}
                   </button>
@@ -589,7 +588,7 @@ export default function PwdProfile() {
             <button
               type="submit"
               disabled={savingProfile}
-              className="rounded-full bg-[color:var(--gov-primary)] px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 disabled:opacity-60"
+              className="btn btn-primary"
             >
               {savingProfile ? "Saving…" : "Save changes"}
             </button>
@@ -679,7 +678,7 @@ export default function PwdProfile() {
             <button
               type="submit"
               disabled={savingAccount}
-              className="rounded-full bg-[color:var(--gov-primary)] px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 disabled:opacity-60"
+              className="btn btn-primary"
             >
               {savingAccount ? "Saving…" : "Update account"}
             </button>

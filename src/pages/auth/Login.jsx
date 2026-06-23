@@ -4,12 +4,12 @@ import ThemeToggle from "../../components/auth/ThemeToggle.jsx";
 
 export default function Login() {
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-      <LoginHeader />
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-end">
-          <ThemeToggle />
-        </div>
+    <div className="flex w-full flex-col gap-6">
+      <div className="flex items-center justify-end">
+        <ThemeToggle />
+      </div>
+      <div className="grid w-full items-stretch gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+        <LoginHeader />
         <LoginForm />
       </div>
     </div>

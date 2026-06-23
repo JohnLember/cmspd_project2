@@ -3,25 +3,21 @@ import { useTheme } from "../../context/ThemeContext.jsx";
 
 export default function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
+  const isDark = theme === "dark";
 
   return (
     <button
       type="button"
       onClick={toggleTheme}
-      className="inline-flex items-center gap-2 rounded-full border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-3 py-2 text-xs font-semibold text-[color:var(--gov-text)] shadow-sm transition hover:-translate-y-0.5"
-      aria-label="Toggle theme"
+      className="btn btn-secondary"
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
     >
-      {theme === "dark" ? (
-        <>
-          <Sun className="h-4 w-4" />
-          Light mode
-        </>
+      {isDark ? (
+        <Sun className="h-[1.15rem] w-[1.15rem]" aria-hidden="true" />
       ) : (
-        <>
-          <Moon className="h-4 w-4" />
-          Dark mode
-        </>
+        <Moon className="h-[1.15rem] w-[1.15rem]" aria-hidden="true" />
       )}
+      {isDark ? "Light mode" : "Dark mode"}
     </button>
   );
 }

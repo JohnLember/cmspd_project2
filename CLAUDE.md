@@ -59,7 +59,7 @@ Defined in `src/context/`, mounted in `src/App.jsx` as `ThemeProvider > AuthProv
 
 ### Design system / theming
 
-All UI uses CSS custom properties (`--gov-bg`, `--gov-text`, `--gov-surface`, `--gov-border`, `--gov-muted`, `--gov-shadow`, etc.). Dark/light variants switch via the `dark` class on `<html>`. Do not use hard-coded Tailwind colour classes for foreground/background; use `[color:var(--gov-*)]` or `bg-[color:var(--gov-*)]` patterns.
+All UI uses CSS custom properties (`--gov-bg`, `--gov-text`, `--gov-surface`, `--gov-border`, `--gov-muted`, `--gov-shadow`, etc.). Dark/light variants switch via the `dark` class on `<html>`. Do not use hard-coded Tailwind colour classes for foreground/background; reference the tokens with the `[color:var(--gov-…)]` / `bg-[color:var(--gov-…)]` arbitrary-value syntax (replace `…` with the token name).
 
 ### Supabase service layer
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { ArrowLeft, CheckCircle2, Mic } from "lucide-react";
 import { submitApplication } from "../../services/supabase/applications.js";
 import { getLoretoBarangays } from "../../services/psgc.js";
 import { useSpeechRecognition } from "../../hooks/useSpeechRecognition.js";
@@ -17,7 +18,7 @@ const requirements = [
 ];
 
 // Visual markers for form labels.
-const Req = () => <span className="text-red-600"> *</span>;
+const Req = () => <span className="text-[color:var(--gov-danger-fg)]"> *</span>;
 const Optional = () => (
   <span className="ml-1 text-xs font-normal text-[color:var(--gov-muted)]">
     (optional)
@@ -305,80 +306,114 @@ export default function BeneficiaryApply() {
   };
 
   return (
-    <div className="min-h-screen bg-[color:var(--gov-bg)] px-6 py-10 text-[color:var(--gov-text)]">
-      <div className="mx-auto w-full max-w-4xl space-y-8">
-        <header className="gov-card rounded-3xl p-6 lg:p-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gov-accent)]">
-            PWD Beneficiary Application
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold">
+    <div className="min-h-screen bg-[color:var(--gov-bg)] px-4 py-8 text-[color:var(--gov-text)] sm:px-6 sm:py-10">
+      <div className="mx-auto w-full max-w-4xl space-y-6">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 rounded text-sm font-medium text-[color:var(--gov-muted)] transition-colors hover:text-[color:var(--gov-primary)]"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Back to home
+        </Link>
+
+        <header className="gov-card p-6 lg:p-8">
+          <h1 className="text-2xl font-semibold sm:text-3xl">
             Apply to become a PWD beneficiary
           </h1>
-          <p className="mt-3 text-sm text-[color:var(--gov-muted)]">
+          <p className="mt-3 max-w-2xl text-[color:var(--gov-muted)]">
             Submit your request for assistance. PDAO staff will review your
             application and provide updates through the portal and official
             communication channels.
           </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              to="/"
-              className="rounded-full border border-[color:var(--gov-border)] px-5 py-2.5 text-sm font-semibold text-[color:var(--gov-text)] transition hover:-translate-y-0.5"
-            >
-              Back to landing page
-            </Link>
-          </div>
         </header>
 
-        <section className="gov-card rounded-3xl p-6 lg:p-8">
-          <h2 className="text-xl font-semibold">Prepare these requirements</h2>
+        <section className="gov-card p-6 lg:p-8">
+          <h2 className="text-lg font-semibold">Prepare these requirements</h2>
           <p className="mt-2 text-sm text-[color:var(--gov-muted)]">
             These documents are required for validation. Digital copies will be
             accepted once online submission is enabled.
           </p>
-          <ul className="mt-4 space-y-3 text-sm text-[color:var(--gov-muted)]">
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
             {requirements.map((item) => (
               <li
                 key={item}
-                className="rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3"
+                className="flex items-start gap-3 rounded-[var(--radius-md)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm text-[color:var(--gov-muted)]"
               >
+                <CheckCircle2
+                  className="mt-0.5 h-4 w-4 shrink-0 text-[color:var(--gov-primary)]"
+                  aria-hidden="true"
+                />
                 {item}
               </li>
             ))}
           </ul>
         </section>
 
-        <section className="gov-card rounded-3xl p-6 lg:p-8">
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-xl font-semibold">Application form</h2>
-              <p className="mt-2 text-sm text-[color:var(--gov-muted)]">
-                Complete each section to submit your request. Fields marked with
-                an asterisk (<span className="text-red-600">*</span>) are
-                required.
+        <section className="gov-card p-6 lg:p-8">
+          <div className="space-y-5">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold">Application form</h2>
+                <p className="mt-1 text-sm text-[color:var(--gov-muted)]">
+                  Fields marked with an asterisk (
+                  <span className="text-[color:var(--gov-danger-fg)]">*</span>) are
+                  required.
+                </p>
+              </div>
+              <p className="text-sm font-medium text-[color:var(--gov-muted)]">
+                Step {activeStep + 1}{" "}
+                <span className="text-[color:var(--gov-faint)]">of {steps.length}</span>
               </p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {steps.map((step, index) => (
-                <button
-                  key={step.title}
-                  type="button"
-                  onClick={() => setActiveStep(index)}
-                  className={`rounded-2xl border px-4 py-3 text-left text-xs font-semibold transition ${
-                    activeStep === index
-                      ? "border-[color:var(--gov-primary)] bg-[color:var(--gov-surface)] text-[color:var(--gov-text)]"
-                      : "border-[color:var(--gov-border)] bg-[color:var(--gov-card)] text-[color:var(--gov-muted)]"
-                  }`}
-                  aria-pressed={activeStep === index}
-                >
-                  <span className="text-[color:var(--gov-accent)]">
-                    Step {index + 1}
-                  </span>
-                  <div className="mt-1 text-sm text-[color:var(--gov-text)]">
-                    {step.title}
-                  </div>
-                  <div className="mt-1 text-xs">{step.description}</div>
-                </button>
-              ))}
+
+            {/* Progress bar */}
+            <div
+              className="h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--gov-border)]"
+              role="progressbar"
+              aria-valuenow={activeStep + 1}
+              aria-valuemin={1}
+              aria-valuemax={steps.length}
+              aria-label={`Step ${activeStep + 1} of ${steps.length}`}
+            >
+              <div
+                className="h-full rounded-full bg-[color:var(--gov-primary)] transition-[width] duration-[var(--dur-slow)] ease-[var(--ease-out)]"
+                style={{ width: `${((activeStep + 1) / steps.length) * 100}%` }}
+              />
+            </div>
+
+            {/* Step chips */}
+            <div className="flex flex-wrap gap-2">
+              {steps.map((step, index) => {
+                const isActive = activeStep === index;
+                const isDone = index < activeStep;
+                return (
+                  <button
+                    key={step.title}
+                    type="button"
+                    onClick={() => setActiveStep(index)}
+                    className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold transition-colors ${
+                      isActive
+                        ? "bg-[color:var(--gov-primary)] text-[color:var(--gov-on-primary)]"
+                        : "bg-[color:var(--gov-card)] text-[color:var(--gov-muted)] hover:text-[color:var(--gov-text)]"
+                    }`}
+                    aria-current={isActive ? "step" : undefined}
+                  >
+                    <span
+                      className={`grid h-5 w-5 place-items-center rounded-full text-[11px] ${
+                        isActive
+                          ? "bg-[color:var(--gov-on-primary)]/20"
+                          : isDone
+                          ? "bg-[color:var(--gov-success-soft)] text-[color:var(--gov-success-fg)]"
+                          : "bg-[color:var(--gov-border)]"
+                      }`}
+                      aria-hidden="true"
+                    >
+                      {isDone ? "✓" : index + 1}
+                    </span>
+                    <span className="hidden sm:inline">{step.title}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -388,18 +423,16 @@ export default function BeneficiaryApply() {
             onFocusCapture={handleFieldFocus}
           >
             {voiceSupported ? (
-              <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3">
+              <div className="flex flex-wrap items-center gap-3 rounded-[var(--radius-md)] bg-[color:var(--gov-surface)] px-4 py-3">
                 <button
                   type="button"
                   onClick={handleDictate}
                   aria-label={listening ? "Stop dictation" : "Start dictation"}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold text-white transition ${
-                    listening
-                      ? "animate-pulse bg-red-600"
-                      : "bg-[color:var(--gov-primary)]"
-                  }`}
+                  aria-pressed={listening}
+                  className={`btn ${listening ? "btn-danger" : "btn-secondary"}`}
                 >
-                  {listening ? "● Listening… tap to stop" : "🎤 Dictate"}
+                  <Mic className={`h-4 w-4 ${listening ? "animate-pulse motion-reduce:animate-none" : ""}`} aria-hidden="true" />
+                  {listening ? "Listening… tap to stop" : "Dictate"}
                 </button>
                 <p className="text-xs text-[color:var(--gov-muted)]">
                   {activeField
@@ -407,13 +440,13 @@ export default function BeneficiaryApply() {
                     : "Tap a text field, then tap Dictate and speak."}
                 </p>
                 {voiceError ? (
-                  <span className="text-xs text-red-600">
+                  <span className="text-xs text-[color:var(--gov-danger-fg)]">
                     Mic error: {voiceError}
                   </span>
                 ) : null}
               </div>
             ) : (
-              <p className="rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-xs text-[color:var(--gov-muted)]">
+              <p className="rounded-[var(--radius-md)] bg-[color:var(--gov-surface)] px-4 py-3 text-xs text-[color:var(--gov-muted)]">
                 Voice input isn’t supported in this browser. Use Chrome or Edge to
                 fill the form by voice.
               </p>
@@ -430,25 +463,25 @@ export default function BeneficiaryApply() {
                     <Req />
                   </p>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
+                    <label className="gov-option">
                       <input
                         type="radio"
                         name="appType"
                         value="new"
                         checked={formData.appType === "new"}
                         onChange={handleInputChange}
-                        className="h-4 w-4"
+                        className="h-[1.15rem] w-[1.15rem] accent-[color:var(--gov-primary)]"
                       />
                       New Applicant
                     </label>
-                    <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
+                    <label className="gov-option">
                       <input
                         type="radio"
                         name="appType"
                         value="renewal"
                         checked={formData.appType === "renewal"}
                         onChange={handleInputChange}
-                        className="h-4 w-4"
+                        className="h-[1.15rem] w-[1.15rem] accent-[color:var(--gov-primary)]"
                       />
                       Renewal
                     </label>
@@ -474,7 +507,7 @@ export default function BeneficiaryApply() {
                       name="firstName"
                       value={formData.firstName}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                       placeholder="Juan"
                     />
                   </div>
@@ -489,7 +522,7 @@ export default function BeneficiaryApply() {
                       name="lastName"
                       value={formData.lastName}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                       placeholder="Dela Cruz"
                     />
                   </div>
@@ -504,7 +537,7 @@ export default function BeneficiaryApply() {
                       name="middleName"
                       value={formData.middleName}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                   <div>
@@ -518,7 +551,7 @@ export default function BeneficiaryApply() {
                       name="suffix"
                       value={formData.suffix}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                       placeholder="Jr., Sr., III"
                     />
                   </div>
@@ -533,7 +566,7 @@ export default function BeneficiaryApply() {
                       name="birthdate"
                       value={formData.birthdate}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                   <div>
@@ -546,7 +579,7 @@ export default function BeneficiaryApply() {
                       name="gender"
                       value={formData.gender}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     >
                       <option value="">Select sex</option>
                       <option value="female">Female</option>
@@ -560,58 +593,58 @@ export default function BeneficiaryApply() {
                       <Req />
                     </label>
                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                      <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
+                      <label className="gov-option">
                         <input
                           type="radio"
                           name="civilStatus"
                           value="single"
                           checked={formData.civilStatus === "single"}
                           onChange={handleInputChange}
-                          className="h-4 w-4"
+                          className="h-[1.15rem] w-[1.15rem] accent-[color:var(--gov-primary)]"
                         />
                         Single
                       </label>
-                      <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
+                      <label className="gov-option">
                         <input
                           type="radio"
                           name="civilStatus"
                           value="married"
                           checked={formData.civilStatus === "married"}
                           onChange={handleInputChange}
-                          className="h-4 w-4"
+                          className="h-[1.15rem] w-[1.15rem] accent-[color:var(--gov-primary)]"
                         />
                         Married
                       </label>
-                      <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
+                      <label className="gov-option">
                         <input
                           type="radio"
                           name="civilStatus"
                           value="widowed"
                           checked={formData.civilStatus === "widowed"}
                           onChange={handleInputChange}
-                          className="h-4 w-4"
+                          className="h-[1.15rem] w-[1.15rem] accent-[color:var(--gov-primary)]"
                         />
                         Widowed
                       </label>
-                      <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
+                      <label className="gov-option">
                         <input
                           type="radio"
                           name="civilStatus"
                           value="separated"
                           checked={formData.civilStatus === "separated"}
                           onChange={handleInputChange}
-                          className="h-4 w-4"
+                          className="h-[1.15rem] w-[1.15rem] accent-[color:var(--gov-primary)]"
                         />
                         Separated
                       </label>
-                      <label className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm">
+                      <label className="gov-option">
                         <input
                           type="radio"
                           name="civilStatus"
                           value="cohabitation"
                           checked={formData.civilStatus === "cohabitation"}
                           onChange={handleInputChange}
-                          className="h-4 w-4"
+                          className="h-[1.15rem] w-[1.15rem] accent-[color:var(--gov-primary)]"
                         />
                         Cohabitation (Live-in)
                       </label>
@@ -648,7 +681,7 @@ export default function BeneficiaryApply() {
                       ].map((item) => (
                         <label
                           key={item.value}
-                          className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                          className="gov-option"
                         >
                           <input
                             type="checkbox"
@@ -663,7 +696,7 @@ export default function BeneficiaryApply() {
                               }
                             }}
                             value={item.value}
-                            className="h-4 w-4"
+                            className="h-[1.15rem] w-[1.15rem] accent-[color:var(--gov-primary)]"
                           />
                           {item.label}
                         </label>
@@ -682,7 +715,7 @@ export default function BeneficiaryApply() {
                         name="disabilityDetail"
                         value={formData.disabilityDetail}
                         onChange={handleInputChange}
-                        className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                        className="gov-input mt-2"
                         placeholder="Specify if applicable"
                       />
                     </div>
@@ -702,7 +735,7 @@ export default function BeneficiaryApply() {
                       ].map((item) => (
                         <label
                           key={item.value}
-                          className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                          className="gov-option"
                         >
                           <input
                             type="checkbox"
@@ -717,7 +750,7 @@ export default function BeneficiaryApply() {
                               }
                             }}
                             value={item.value}
-                            className="h-4 w-4"
+                            className="h-[1.15rem] w-[1.15rem] accent-[color:var(--gov-primary)]"
                           />
                           {item.label}
                         </label>
@@ -736,7 +769,7 @@ export default function BeneficiaryApply() {
                         name="causeInbornOther"
                         value={formData.causeInbornOther}
                         onChange={handleInputChange}
-                        className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                        className="gov-input mt-2"
                         placeholder="Specify if applicable"
                       />
                     </div>
@@ -755,7 +788,7 @@ export default function BeneficiaryApply() {
                       ].map((item) => (
                         <label
                           key={item.value}
-                          className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                          className="gov-option"
                         >
                           <input
                             type="checkbox"
@@ -770,7 +803,7 @@ export default function BeneficiaryApply() {
                               }
                             }}
                             value={item.value}
-                            className="h-4 w-4"
+                            className="h-[1.15rem] w-[1.15rem] accent-[color:var(--gov-primary)]"
                           />
                           {item.label}
                         </label>
@@ -789,7 +822,7 @@ export default function BeneficiaryApply() {
                         name="causeAcquiredOther"
                         value={formData.causeAcquiredOther}
                         onChange={handleInputChange}
-                        className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                        className="gov-input mt-2"
                         placeholder="Specify if applicable"
                       />
                     </div>
@@ -815,7 +848,7 @@ export default function BeneficiaryApply() {
                       name="street"
                       value={formData.street}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                       placeholder="House no., street, sitio"
                     />
                   </div>
@@ -830,7 +863,7 @@ export default function BeneficiaryApply() {
                       value={formData.barangay}
                       onChange={handleInputChange}
                       disabled={isLoadingBarangays || Boolean(barangaysError)}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm disabled:opacity-60"
+                      className="gov-input mt-2 disabled:opacity-60"
                     >
                       <option value="">
                         {isLoadingBarangays
@@ -844,7 +877,7 @@ export default function BeneficiaryApply() {
                       ))}
                     </select>
                     {barangaysError ? (
-                      <p className="mt-2 text-xs text-red-600">{barangaysError}</p>
+                      <p className="mt-2 text-xs text-[color:var(--gov-danger-fg)]">{barangaysError}</p>
                     ) : null}
                   </div>
                   <div>
@@ -859,7 +892,7 @@ export default function BeneficiaryApply() {
                       readOnly
                       aria-readonly="true"
                       tabIndex={-1}
-                      className="mt-2 w-full cursor-not-allowed rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-card)] px-4 py-3 text-sm text-[color:var(--gov-muted)]"
+                      className="gov-input mt-2 cursor-not-allowed bg-[color:var(--gov-card)] text-[color:var(--gov-muted)]"
                     />
                   </div>
                   <div>
@@ -874,7 +907,7 @@ export default function BeneficiaryApply() {
                       readOnly
                       aria-readonly="true"
                       tabIndex={-1}
-                      className="mt-2 w-full cursor-not-allowed rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-card)] px-4 py-3 text-sm text-[color:var(--gov-muted)]"
+                      className="gov-input mt-2 cursor-not-allowed bg-[color:var(--gov-card)] text-[color:var(--gov-muted)]"
                     />
                   </div>
                   <div>
@@ -889,7 +922,7 @@ export default function BeneficiaryApply() {
                       readOnly
                       aria-readonly="true"
                       tabIndex={-1}
-                      className="mt-2 w-full cursor-not-allowed rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-card)] px-4 py-3 text-sm text-[color:var(--gov-muted)]"
+                      className="gov-input mt-2 cursor-not-allowed bg-[color:var(--gov-card)] text-[color:var(--gov-muted)]"
                     />
                   </div>
                   <div>
@@ -907,12 +940,12 @@ export default function BeneficiaryApply() {
                         Boolean(formData.contactNumber.trim()) &&
                         !isValidPhone(formData.contactNumber)
                       }
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                       placeholder="09xx xxx xxxx"
                     />
                     {formData.contactNumber.trim() &&
                     !isValidPhone(formData.contactNumber) ? (
-                      <p className="mt-2 text-xs text-red-600">
+                      <p className="mt-2 text-xs text-[color:var(--gov-danger-fg)]">
                         Enter a valid mobile number (e.g. 09171234567).
                       </p>
                     ) : null}
@@ -932,12 +965,12 @@ export default function BeneficiaryApply() {
                         Boolean(formData.emailAddress.trim()) &&
                         !isValidEmail(formData.emailAddress)
                       }
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                       placeholder="name@example.com"
                     />
                     {formData.emailAddress.trim() &&
                     !isValidEmail(formData.emailAddress) ? (
-                      <p className="mt-2 text-xs text-red-600">
+                      <p className="mt-2 text-xs text-[color:var(--gov-danger-fg)]">
                         Enter a valid email address.
                       </p>
                     ) : null}
@@ -962,7 +995,7 @@ export default function BeneficiaryApply() {
                       name="education"
                       value={formData.education}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     >
                       <option value="">Select attainment</option>
                       <option value="none">No formal education</option>
@@ -983,7 +1016,7 @@ export default function BeneficiaryApply() {
                       name="employmentStatus"
                       value={formData.employmentStatus}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     >
                       <option value="">Select status</option>
                       <option value="employed">Employed</option>
@@ -1001,7 +1034,7 @@ export default function BeneficiaryApply() {
                       name="employmentType"
                       value={formData.employmentType}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     >
                       <option value="">Select type</option>
                       <option value="full-time">Full-time</option>
@@ -1019,7 +1052,7 @@ export default function BeneficiaryApply() {
                       name="employmentCategory"
                       value={formData.employmentCategory}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     >
                       <option value="">Select category</option>
                       <option value="government">Government</option>
@@ -1056,7 +1089,7 @@ export default function BeneficiaryApply() {
                       ].map((item) => (
                         <label
                           key={item.value}
-                          className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                          className="gov-option"
                         >
                           <input
                             type="radio"
@@ -1064,7 +1097,7 @@ export default function BeneficiaryApply() {
                             value={item.value}
                             checked={formData.occupation === item.value}
                             onChange={handleInputChange}
-                            className="h-4 w-4"
+                            className="h-[1.15rem] w-[1.15rem] accent-[color:var(--gov-primary)]"
                           />
                           {item.label}
                         </label>
@@ -1081,7 +1114,7 @@ export default function BeneficiaryApply() {
                       name="occupationOther"
                       value={formData.occupationOther}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                 </div>
@@ -1107,7 +1140,7 @@ export default function BeneficiaryApply() {
                       name="orgAffiliated"
                       value={formData.orgAffiliated}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                       placeholder="Organization name"
                     />
                   </div>
@@ -1121,7 +1154,7 @@ export default function BeneficiaryApply() {
                       name="contactPerson"
                       value={formData.contactPerson}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                   <div>
@@ -1134,7 +1167,7 @@ export default function BeneficiaryApply() {
                       name="telNos"
                       value={formData.telNos}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                   <div className="sm:col-span-2">
@@ -1147,7 +1180,7 @@ export default function BeneficiaryApply() {
                       name="officeAddress"
                       value={formData.officeAddress}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                   <div>
@@ -1160,7 +1193,7 @@ export default function BeneficiaryApply() {
                       name="sssNo"
                       value={formData.sssNo}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                   <div>
@@ -1173,7 +1206,7 @@ export default function BeneficiaryApply() {
                       name="gisNo"
                       value={formData.gisNo}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                   <div>
@@ -1186,7 +1219,7 @@ export default function BeneficiaryApply() {
                       name="pagibigNo"
                       value={formData.pagibigNo}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                   <div>
@@ -1199,7 +1232,7 @@ export default function BeneficiaryApply() {
                       name="psnNo"
                       value={formData.psnNo}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                   <div>
@@ -1212,7 +1245,7 @@ export default function BeneficiaryApply() {
                       name="philhealthNo"
                       value={formData.philhealthNo}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                 </div>
@@ -1228,7 +1261,7 @@ export default function BeneficiaryApply() {
                       name="fatherLast"
                       value={formData.fatherLast}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                   <div>
@@ -1241,7 +1274,7 @@ export default function BeneficiaryApply() {
                       name="fatherFirst"
                       value={formData.fatherFirst}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                   <div>
@@ -1254,7 +1287,7 @@ export default function BeneficiaryApply() {
                       name="fatherMiddle"
                       value={formData.fatherMiddle}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                 </div>
@@ -1270,7 +1303,7 @@ export default function BeneficiaryApply() {
                       name="motherLast"
                       value={formData.motherLast}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                   <div>
@@ -1283,7 +1316,7 @@ export default function BeneficiaryApply() {
                       name="motherFirst"
                       value={formData.motherFirst}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                   <div>
@@ -1296,7 +1329,7 @@ export default function BeneficiaryApply() {
                       name="motherMiddle"
                       value={formData.motherMiddle}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                 </div>
@@ -1313,7 +1346,7 @@ export default function BeneficiaryApply() {
                       name="guardianLast"
                       value={formData.guardianLast}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                   <div>
@@ -1327,7 +1360,7 @@ export default function BeneficiaryApply() {
                       name="guardianFirst"
                       value={formData.guardianFirst}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                   <div>
@@ -1340,7 +1373,7 @@ export default function BeneficiaryApply() {
                       name="guardianMiddle"
                       value={formData.guardianMiddle}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                 </div>
@@ -1354,7 +1387,7 @@ export default function BeneficiaryApply() {
                     ].map((item) => (
                       <label
                         key={item.value}
-                        className="flex items-center gap-2 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                        className="gov-option"
                       >
                         <input
                           type="radio"
@@ -1362,7 +1395,7 @@ export default function BeneficiaryApply() {
                           value={item.value}
                           checked={formData.accomplishedBy === item.value}
                           onChange={handleInputChange}
-                          className="h-4 w-4"
+                          className="h-[1.15rem] w-[1.15rem] accent-[color:var(--gov-primary)]"
                         />
                         {item.label}
                       </label>
@@ -1381,7 +1414,7 @@ export default function BeneficiaryApply() {
                       name="accompLast"
                       value={formData.accompLast}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                   <div>
@@ -1394,7 +1427,7 @@ export default function BeneficiaryApply() {
                       name="accompFirst"
                       value={formData.accompFirst}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                   <div>
@@ -1407,7 +1440,7 @@ export default function BeneficiaryApply() {
                       name="accompMiddle"
                       value={formData.accompMiddle}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+                      className="gov-input mt-2"
                     />
                   </div>
                 </div>
@@ -1415,67 +1448,67 @@ export default function BeneficiaryApply() {
             ) : null}
 
             {stepError ? (
-              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              <div role="alert" className="rounded-[var(--radius-md)] bg-[color:var(--gov-danger-soft)] px-4 py-3 text-sm text-[color:var(--gov-danger-fg)]">
                 {stepError}
               </div>
             ) : null}
 
             {submitError ? (
-              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              <div role="alert" className="rounded-[var(--radius-md)] bg-[color:var(--gov-danger-soft)] px-4 py-3 text-sm text-[color:var(--gov-danger-fg)]">
                 {submitError}
               </div>
             ) : null}
 
             {isSubmitted ? (
-              <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-4 text-sm text-green-700">
-                <p className="font-semibold">Application submitted</p>
-                <p className="mt-1">
+              <div
+                role="status"
+                className="rounded-[var(--radius-lg)] bg-[color:var(--gov-success-soft)] p-5 text-[color:var(--gov-success-fg)]"
+              >
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 shrink-0" aria-hidden="true" />
+                  <p className="text-base font-semibold">Application submitted</p>
+                </div>
+                <p className="mt-2 text-sm">
                   Please keep your application number. You will need it to follow
                   up on your application.
                 </p>
-                <div className="mt-3 rounded-xl border border-green-300 bg-white px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-green-700">
+                <div className="mt-4 rounded-[var(--radius-md)] bg-[color:var(--gov-surface)] px-4 py-3">
+                  <p className="text-xs font-medium text-[color:var(--gov-muted)]">
                     Application number
                   </p>
-                  <p className="mt-1 text-lg font-bold tracking-wider text-green-800">
+                  <p className="mt-1 text-xl font-bold tracking-wide text-[color:var(--gov-text)]">
                     {applicationNumber}
                   </p>
                 </div>
-                <p className="mt-3 text-xs">
+                <p className="mt-3 text-sm">
                   PDAO staff will review your application and provide updates
                   through the portal and official channels.
                 </p>
               </div>
             ) : (
-              <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--gov-border)] pt-5">
                 <button
                   type="button"
                   onClick={goPrevious}
-                  className="rounded-full border border-[color:var(--gov-border)] px-4 py-2 text-sm font-semibold text-[color:var(--gov-text)] transition hover:-translate-y-0.5"
+                  className="btn btn-secondary"
                   disabled={activeStep === 0}
                 >
                   Previous
                 </button>
-                <div className="flex gap-2">
-                  {activeStep < steps.length - 1 ? (
-                    <button
-                      type="button"
-                      onClick={goNext}
-                      className="rounded-full bg-[color:var(--gov-primary)] px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5"
-                    >
-                      Next step
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleSubmit}
-                      disabled={isSubmitting}
-                      className="rounded-full bg-[color:var(--gov-primary)] px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
-                    >
-                      {isSubmitting ? "Submitting..." : "Submit application"}
-                    </button>
-                  )}
-                </div>
+                {activeStep < steps.length - 1 ? (
+                  <button type="button" onClick={goNext} className="btn btn-primary">
+                    Next step
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                    className="btn btn-primary"
+                  >
+                    {isSubmitting ? "Submitting…" : "Submit application"}
+                  </button>
+                )}
               </div>
             )}
           </form>

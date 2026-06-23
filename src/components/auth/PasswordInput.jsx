@@ -7,20 +7,25 @@ export default function PasswordInput({
   error,
   register,
   placeholder,
+  autoComplete = "current-password",
 }) {
   const [visible, setVisible] = useState(false);
 
   return (
     <div>
-      <label className="text-sm font-medium" htmlFor={id}>
+      <label
+        className="mb-2 block text-sm font-medium text-[color:var(--gov-text)]"
+        htmlFor={id}
+      >
         {label}
       </label>
-      <div className="relative mt-2">
+      <div className="relative">
         <input
           id={id}
           type={visible ? "text" : "password"}
+          autoComplete={autoComplete}
           {...register}
-          className="w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 pr-11 text-sm text-[color:var(--gov-text)]"
+          className="gov-input pr-12"
           placeholder={placeholder}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `${id}-error` : undefined}
@@ -28,14 +33,22 @@ export default function PasswordInput({
         <button
           type="button"
           onClick={() => setVisible((current) => !current)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-[color:var(--gov-muted)] transition hover:text-[color:var(--gov-text)]"
+          className="absolute right-1 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-[var(--radius-sm)] text-[color:var(--gov-muted)] transition-colors hover:text-[color:var(--gov-text)]"
           aria-label={visible ? "Hide password" : "Show password"}
+          aria-pressed={visible}
         >
-          {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          {visible ? (
+            <EyeOff className="h-[1.15rem] w-[1.15rem]" aria-hidden="true" />
+          ) : (
+            <Eye className="h-[1.15rem] w-[1.15rem]" aria-hidden="true" />
+          )}
         </button>
       </div>
       {error ? (
-        <p id={`${id}-error`} className="mt-2 text-xs text-red-600">
+        <p
+          id={`${id}-error`}
+          className="mt-2 text-xs font-medium text-[color:var(--gov-danger-fg)]"
+        >
           {error}
         </p>
       ) : null}

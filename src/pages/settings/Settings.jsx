@@ -1,62 +1,88 @@
+import { Bell, ShieldCheck } from "lucide-react";
 import ThemeToggle from "../../components/ui/ThemeToggle.jsx";
+
+const notificationSettings = [
+  { label: "Email alerts for applications", defaultChecked: true },
+  { label: "SMS reminders for beneficiaries", defaultChecked: false },
+  { label: "Weekly summary reports", defaultChecked: true },
+];
+
+const securitySettings = [
+  { label: "Require two-factor confirmation", defaultChecked: false },
+  { label: "Auto-logout after inactivity", defaultChecked: true },
+  { label: "Log all administrative actions", defaultChecked: true },
+];
+
+function ToggleRow({ label, defaultChecked }) {
+  return (
+    <label className="flex items-center justify-between gap-4 py-1 text-sm text-[color:var(--gov-text)]">
+      <span>{label}</span>
+      <input
+        type="checkbox"
+        defaultChecked={defaultChecked}
+        className="h-[1.15rem] w-[1.15rem] accent-[color:var(--gov-primary)]"
+      />
+    </label>
+  );
+}
 
 export default function Settings() {
   return (
     <div className="space-y-6">
-      <section className="gov-card rounded-2xl p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gov-muted)]">
-              Settings
-            </p>
-            <h2 className="text-xl font-semibold">System Preferences</h2>
-            <p className="mt-2 text-sm text-[color:var(--gov-muted)]">
-              Manage theme, notification preferences, and security settings.
-            </p>
-          </div>
-          <ThemeToggle />
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-[-0.01em]">
+            System preferences
+          </h2>
+          <p className="mt-1 text-[color:var(--gov-muted)]">
+            Manage appearance, notifications, and security for the PDAO portal.
+          </p>
         </div>
-      </section>
+        <ThemeToggle />
+      </header>
 
       <section className="grid gap-6 lg:grid-cols-2">
-        <div className="gov-card rounded-2xl p-6">
-          <h3 className="text-sm font-semibold">Notification Settings</h3>
-          <p className="mt-2 text-sm text-[color:var(--gov-muted)]">
-            Control email and SMS alerts for applications and reports.
-          </p>
-          <div className="mt-4 space-y-3 text-sm text-[color:var(--gov-muted)]">
-            <label className="flex items-center justify-between">
-              <span>Email alerts for applications</span>
-              <input type="checkbox" className="h-4 w-4" defaultChecked />
-            </label>
-            <label className="flex items-center justify-between">
-              <span>SMS reminders for beneficiaries</span>
-              <input type="checkbox" className="h-4 w-4" />
-            </label>
-            <label className="flex items-center justify-between">
-              <span>Weekly summary reports</span>
-              <input type="checkbox" className="h-4 w-4" defaultChecked />
-            </label>
+        <div className="gov-card p-6">
+          <div className="flex items-center gap-3">
+            <span
+              className="grid h-10 w-10 place-items-center rounded-[var(--radius-md)] bg-[color:var(--gov-primary-soft)] text-[color:var(--gov-primary)]"
+              aria-hidden="true"
+            >
+              <Bell className="h-5 w-5" />
+            </span>
+            <div>
+              <h3 className="font-semibold">Notifications</h3>
+              <p className="text-sm text-[color:var(--gov-muted)]">
+                Email and SMS alerts for applications and reports.
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 divide-y divide-[color:var(--gov-border)]">
+            {notificationSettings.map((item) => (
+              <ToggleRow key={item.label} {...item} />
+            ))}
           </div>
         </div>
-        <div className="gov-card rounded-2xl p-6">
-          <h3 className="text-sm font-semibold">Security</h3>
-          <p className="mt-2 text-sm text-[color:var(--gov-muted)]">
-            Enforce access controls and session management for PDAO staff.
-          </p>
-          <div className="mt-4 space-y-3 text-sm text-[color:var(--gov-muted)]">
-            <label className="flex items-center justify-between">
-              <span>Require two-factor confirmation</span>
-              <input type="checkbox" className="h-4 w-4" />
-            </label>
-            <label className="flex items-center justify-between">
-              <span>Auto-logout after inactivity</span>
-              <input type="checkbox" className="h-4 w-4" defaultChecked />
-            </label>
-            <label className="flex items-center justify-between">
-              <span>Log all administrative actions</span>
-              <input type="checkbox" className="h-4 w-4" defaultChecked />
-            </label>
+
+        <div className="gov-card p-6">
+          <div className="flex items-center gap-3">
+            <span
+              className="grid h-10 w-10 place-items-center rounded-[var(--radius-md)] bg-[color:var(--gov-primary-soft)] text-[color:var(--gov-primary)]"
+              aria-hidden="true"
+            >
+              <ShieldCheck className="h-5 w-5" />
+            </span>
+            <div>
+              <h3 className="font-semibold">Security</h3>
+              <p className="text-sm text-[color:var(--gov-muted)]">
+                Access controls and session management for PDAO staff.
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 divide-y divide-[color:var(--gov-border)]">
+            {securitySettings.map((item) => (
+              <ToggleRow key={item.label} {...item} />
+            ))}
           </div>
         </div>
       </section>

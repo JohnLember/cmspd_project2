@@ -111,7 +111,7 @@ export default function Notifications() {
             <button
               type="button"
               onClick={closeToast}
-              className="rounded-full border border-[color:var(--gov-border)] px-3 py-1 text-xs font-semibold"
+              className="btn btn-secondary h-9 px-3 text-xs"
             >
               Cancel
             </button>
@@ -128,23 +128,20 @@ export default function Notifications() {
                   );
                 }
               }}
-              className="rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white"
+              className="btn btn-danger h-9 px-3 text-xs"
             >
               Delete
             </button>
           </div>
         </div>
       ),
-      { closeButton: false, autoClose: false, closeOnClick: false, className: "gov-card rounded-2xl border border-[color:var(--gov-border)]" }
+      { closeButton: false, autoClose: false, closeOnClick: false, className: "gov-card" }
     );
   };
 
   return (
     <div className="space-y-6">
-      <section className="gov-card rounded-2xl p-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gov-muted)]">
-          Announcements
-        </p>
+      <section className="gov-card p-6">
         <h2 className="text-xl font-semibold">Post an announcement</h2>
         <p className="mt-2 text-sm text-[color:var(--gov-muted)]">
           Published announcements appear in every PWD beneficiary and guardian
@@ -153,62 +150,63 @@ export default function Notifications() {
 
         <form className="mt-6 space-y-4" onSubmit={handlePost}>
           <div>
-            <label className="text-sm font-medium" htmlFor="ann-title">
-              Title<span className="text-red-600"> *</span>
+            <label className="mb-2 block text-sm font-medium" htmlFor="ann-title">
+              Title<span className="text-[color:var(--gov-danger-fg)]"> *</span>
             </label>
             <input
               id="ann-title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+              className="gov-input"
               placeholder="e.g. PWD ID renewal schedule"
             />
           </div>
           <div>
-            <label className="text-sm font-medium" htmlFor="ann-body">
-              Message<span className="text-red-600"> *</span>
+            <label className="mb-2 block text-sm font-medium" htmlFor="ann-body">
+              Message<span className="text-[color:var(--gov-danger-fg)]"> *</span>
             </label>
             <textarea
               id="ann-body"
               rows={4}
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm"
+              className="gov-input"
               placeholder="Write the advisory details here…"
             />
           </div>
           {error ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <div
+              role="alert"
+              className="rounded-[var(--radius-md)] bg-[color:var(--gov-danger-soft)] px-4 py-3 text-sm text-[color:var(--gov-danger-fg)]"
+            >
               {error}
             </div>
           ) : null}
-          <button
-            type="submit"
-            disabled={posting}
-            className="rounded-full bg-[color:var(--gov-primary)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-          >
+          <button type="submit" disabled={posting} className="btn btn-primary">
             {posting ? "Posting…" : "Post announcement"}
           </button>
         </form>
       </section>
 
-      <section className="gov-card rounded-2xl p-5">
-        <h3 className="text-sm font-semibold text-[color:var(--gov-text)]">
+      <section className="gov-card p-5">
+        <h3 className="font-semibold text-[color:var(--gov-text)]">
           Posted announcements
         </h3>
         <div className="mt-4 space-y-3">
           {isLoading ? (
-            <p className="text-sm text-[color:var(--gov-muted)]">Loading…</p>
+            [0, 1].map((i) => (
+              <div key={i} className="gov-skeleton h-20 w-full" />
+            ))
           ) : announcements.length === 0 ? (
-            <p className="text-sm text-[color:var(--gov-muted)]">
+            <p className="rounded-[var(--radius-md)] bg-[color:var(--gov-surface)] px-4 py-8 text-center text-sm text-[color:var(--gov-muted)]">
               No announcements posted yet.
             </p>
           ) : (
             announcements.map((item) => (
               <div
                 key={item.id}
-                className="rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-4"
+                className="rounded-[var(--radius-md)] border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] p-4"
               >
                 {editingId === item.id ? (
                   <div className="space-y-3">
@@ -216,20 +214,20 @@ export default function Notifications() {
                       type="text"
                       value={editTitle}
                       onChange={(e) => setEditTitle(e.target.value)}
-                      className="w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-3 py-2 text-sm font-semibold"
+                      className="gov-input font-semibold"
                     />
                     <textarea
                       rows={3}
                       value={editBody}
                       onChange={(e) => setEditBody(e.target.value)}
-                      className="w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-3 py-2 text-sm"
+                      className="gov-input"
                     />
                     <div className="flex justify-end gap-2">
                       <button
                         type="button"
                         onClick={cancelEdit}
                         disabled={savingEdit}
-                        className="rounded-full border border-[color:var(--gov-border)] px-3 py-1 text-xs font-semibold disabled:opacity-60"
+                        className="btn btn-secondary h-9 px-3 text-xs"
                       >
                         Cancel
                       </button>
@@ -237,7 +235,7 @@ export default function Notifications() {
                         type="button"
                         onClick={() => saveEdit(item.id)}
                         disabled={savingEdit}
-                        className="rounded-full bg-[color:var(--gov-primary)] px-3 py-1 text-xs font-semibold text-white disabled:opacity-60"
+                        className="btn btn-primary h-9 px-3 text-xs"
                       >
                         {savingEdit ? "Saving…" : "Save"}
                       </button>
@@ -246,26 +244,26 @@ export default function Notifications() {
                 ) : (
                   <>
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-[color:var(--gov-text)]">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-[color:var(--gov-text)]">
                           {item.title}
                         </p>
-                        <p className="mt-1 whitespace-pre-line text-xs text-[color:var(--gov-muted)]">
+                        <p className="mt-1 whitespace-pre-line text-sm text-[color:var(--gov-muted)]">
                           {item.body}
                         </p>
                       </div>
-                      <div className="flex shrink-0 items-center gap-3">
+                      <div className="flex shrink-0 items-center gap-1">
                         <button
                           type="button"
                           onClick={() => startEdit(item)}
-                          className="text-xs font-semibold text-[color:var(--gov-accent)]"
+                          className="btn btn-ghost h-9 px-3 text-xs"
                         >
                           Edit
                         </button>
                         <button
                           type="button"
                           onClick={() => confirmDelete(item)}
-                          className="text-xs font-semibold text-red-600"
+                          className="btn btn-ghost h-9 px-3 text-xs text-[color:var(--gov-danger-fg)] hover:bg-[color:var(--gov-danger-soft)] hover:text-[color:var(--gov-danger-fg)]"
                         >
                           Delete
                         </button>

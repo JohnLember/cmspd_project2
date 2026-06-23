@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { ClipboardList, Clock, CheckCircle2, XCircle } from "lucide-react";
 import BarChartCard from "../../components/charts/BarChartCard.jsx";
 import StatCard from "../../components/cards/StatCard.jsx";
+import StatusBadge from "../../components/ui/StatusBadge.jsx";
 import { getApplications } from "../../services/supabase/applications.js";
 
 const timeAgo = (iso) => {
@@ -72,66 +74,79 @@ export default function PdaoDashboard() {
 
   return (
     <div className="space-y-6">
-      <section className="gov-card rounded-2xl p-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gov-muted)]">
-          PDAO Operations Overview
-        </p>
-        <h2 className="text-xl font-semibold">
-          Good day, PDAO team. Here is your operational snapshot.
+      <header>
+        <h2 className="text-2xl font-semibold tracking-[-0.01em]">
+          Operations overview
         </h2>
-        <p className="mt-2 text-sm text-[color:var(--gov-muted)]">
+        <p className="mt-1 text-[color:var(--gov-muted)]">
           Live application activity from the beneficiary intake form.
         </p>
-      </section>
+      </header>
 
       {error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+        <div
+          role="alert"
+          className="rounded-[var(--radius-md)] bg-[color:var(--gov-danger-soft)] px-4 py-3 text-sm text-[color:var(--gov-danger-fg)]"
+        >
           {error}
         </div>
       ) : null}
 
-      <section className="grid gap-4 lg:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Total Applications"
+          label="Total applications"
           value={isLoading ? "…" : stats.total}
           hint="All submissions"
+          icon={ClipboardList}
+          tone="primary"
         />
         <StatCard
-          label="Pending Review"
+          label="Pending review"
           value={isLoading ? "…" : stats.pending}
           hint="Needs verification"
+          icon={Clock}
+          tone="warning"
         />
         <StatCard
           label="Approved"
           value={isLoading ? "…" : stats.approved}
           hint="Validated beneficiaries"
+          icon={CheckCircle2}
+          tone="success"
         />
         <StatCard
           label="Rejected"
           value={isLoading ? "…" : stats.rejected}
           hint="Declined applications"
+          icon={XCircle}
+          tone="danger"
         />
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
-        <BarChartCard title="Applications per Month" data={monthly} />
-        <div className="gov-card rounded-2xl p-5">
-          <h3 className="text-sm font-semibold text-[color:var(--gov-text)]">
-            Recent Activity
+        <BarChartCard title="Applications per month" data={monthly} />
+        <div className="gov-card p-5">
+          <h3 className="font-semibold text-[color:var(--gov-text)]">
+            Recent activity
           </h3>
-          <ul className="mt-4 space-y-3 text-sm text-[color:var(--gov-muted)]">
+          <ul className="mt-4 space-y-3 text-sm">
             {isLoading ? (
-              <li>Loading…</li>
+              [0, 1, 2].map((i) => (
+                <li key={i} className="gov-skeleton h-5 w-full" />
+              ))
             ) : recent.length === 0 ? (
-              <li>No applications submitted yet.</li>
+              <li className="text-[color:var(--gov-muted)]">
+                No applications submitted yet.
+              </li>
             ) : (
               recent.map((row) => (
-                <li key={row.id}>
-                  {(row.applicant_name || "An applicant") +
-                    " submitted an application"}
+                <li key={row.id} className="flex items-baseline justify-between gap-3">
                   <span className="text-[color:var(--gov-text)]">
-                    {" "}
-                    · {timeAgo(row.submitted_at)}
+                    {row.applicant_name || "An applicant"}
+                    <span className="text-[color:var(--gov-muted)]"> applied</span>
+                  </span>
+                  <span className="shrink-0 text-xs text-[color:var(--gov-muted)]">
+                    {timeAgo(row.submitted_at)}
                   </span>
                 </li>
               ))
@@ -140,30 +155,32 @@ export default function PdaoDashboard() {
         </div>
       </section>
 
-      <section className="gov-card rounded-2xl p-5">
-        <h3 className="text-sm font-semibold text-[color:var(--gov-text)]">
-          Recent Applications
+      <section className="gov-card p-5">
+        <h3 className="font-semibold text-[color:var(--gov-text)]">
+          Recent applications
         </h3>
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="text-xs uppercase text-[color:var(--gov-muted)]">
-              <tr>
-                <th className="pb-3">Applicant</th>
-                <th className="pb-3">Barangay</th>
-                <th className="pb-3">Submitted</th>
-                <th className="pb-3">Status</th>
+          <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
+            <thead>
+              <tr className="border-b border-[color:var(--gov-border)] text-xs font-semibold text-[color:var(--gov-muted)]">
+                <th className="pb-3 pr-4 font-semibold">Applicant</th>
+                <th className="pb-3 pr-4 font-semibold">Barangay</th>
+                <th className="pb-3 pr-4 font-semibold">Submitted</th>
+                <th className="pb-3 font-semibold">Status</th>
               </tr>
             </thead>
             <tbody className="text-[color:var(--gov-text)]">
               {isLoading ? (
-                <tr>
-                  <td colSpan={4} className="py-6 text-center text-[color:var(--gov-muted)]">
-                    Loading…
-                  </td>
-                </tr>
+                [0, 1, 2].map((i) => (
+                  <tr key={i} className="border-b border-[color:var(--gov-border)]">
+                    <td colSpan={4} className="py-3">
+                      <span className="gov-skeleton block h-5 w-full" />
+                    </td>
+                  </tr>
+                ))
               ) : recent.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-6 text-center text-[color:var(--gov-muted)]">
+                  <td colSpan={4} className="py-8 text-center text-[color:var(--gov-muted)]">
                     No applications yet.
                   </td>
                 </tr>
@@ -171,15 +188,17 @@ export default function PdaoDashboard() {
                 recent.map((row) => (
                   <tr
                     key={row.id}
-                    className="border-t border-[color:var(--gov-border)]"
+                    className="border-b border-[color:var(--gov-border)] last:border-0"
                   >
-                    <td className="py-3">{row.applicant_name || "—"}</td>
-                    <td className="py-3">{row.barangay || "—"}</td>
-                    <td className="py-3">{timeAgo(row.submitted_at)}</td>
+                    <td className="py-3 pr-4 font-medium">{row.applicant_name || "—"}</td>
+                    <td className="py-3 pr-4 text-[color:var(--gov-muted)]">
+                      {row.barangay || "—"}
+                    </td>
+                    <td className="py-3 pr-4 text-[color:var(--gov-muted)]">
+                      {timeAgo(row.submitted_at)}
+                    </td>
                     <td className="py-3">
-                      <span className="rounded-full border border-[color:var(--gov-border)] px-3 py-1 text-xs capitalize">
-                        {row.status || "pending"}
-                      </span>
+                      <StatusBadge status={row.status || "pending"} />
                     </td>
                   </tr>
                 ))

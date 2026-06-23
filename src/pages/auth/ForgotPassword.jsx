@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { Link } from "react-router";
+import { AlertCircle, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { sendPasswordReset } from "../../services/supabase/auth.js";
 
 export default function ForgotPassword() {
@@ -31,60 +33,87 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="gov-card rounded-2xl p-6">
-      <h2 className="text-lg font-semibold">Reset your password</h2>
-      <p className="mt-2 text-sm text-[color:var(--gov-muted)]">
-        Enter the email address associated with your account and we will send
-        reset instructions through Supabase.
-      </p>
+    <div className="mx-auto w-full max-w-md">
+      <Link
+        to="/auth/login"
+        className="mb-6 inline-flex items-center gap-2 rounded text-sm font-medium text-[color:var(--gov-muted)] transition-colors hover:text-[color:var(--gov-primary)]"
+      >
+        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+        Back to sign in
+      </Link>
 
-      <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
-        <div>
-          <label className="text-sm font-medium" htmlFor="reset-email">
-            Email address
-          </label>
-          <input
-            id="reset-email"
-            type="email"
-            {...register("email", {
-              required: "Email is required",
-              pattern: {
-                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                message: "Enter a valid email address",
-              },
-            })}
-            className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm text-[color:var(--gov-text)]"
-            placeholder="name@pdao.gov.ph"
-            aria-invalid={Boolean(errors.email)}
-            aria-describedby={errors.email ? "reset-email-error" : undefined}
-          />
-          {errors.email ? (
-            <p id="reset-email-error" className="mt-2 text-xs text-red-600">
-              {errors.email.message}
-            </p>
-          ) : null}
-        </div>
+      <div className="rounded-[var(--radius-xl)] border border-[color:var(--gov-border)] bg-[color:var(--gov-card)] p-6 lg:p-8">
+        <h2 className="text-xl font-semibold text-[color:var(--gov-text)]">
+          Reset your password
+        </h2>
+        <p className="mt-2 text-sm text-[color:var(--gov-muted)]">
+          Enter the email address associated with your account and we will send
+          reset instructions.
+        </p>
 
-        {error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-600">
-            {error}
-          </div>
-        ) : null}
-
-        {message ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-700">
-            {message}
-          </div>
-        ) : null}
-
-        <button
-          type="submit"
-          className="rounded-xl bg-[color:var(--gov-primary)] px-4 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
-          disabled={isSubmitting}
+        <form
+          className="mt-7 flex flex-col gap-5"
+          onSubmit={handleSubmit(onSubmit)}
+          noValidate
         >
-          {isSubmitting ? "Sending reset link…" : "Send reset link"}
-        </button>
-      </form>
+          <div>
+            <label
+              className="mb-2 block text-sm font-medium text-[color:var(--gov-text)]"
+              htmlFor="reset-email"
+            >
+              Email address
+            </label>
+            <input
+              id="reset-email"
+              type="email"
+              autoComplete="email"
+              {...register("email", {
+                required: "Email is required",
+                pattern: {
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  message: "Enter a valid email address",
+                },
+              })}
+              className="gov-input"
+              placeholder="name@pdao.gov.ph"
+              aria-invalid={Boolean(errors.email)}
+              aria-describedby={errors.email ? "reset-email-error" : undefined}
+            />
+            {errors.email ? (
+              <p
+                id="reset-email-error"
+                className="mt-2 text-xs font-medium text-[color:var(--gov-danger-fg)]"
+              >
+                {errors.email.message}
+              </p>
+            ) : null}
+          </div>
+
+          {error ? (
+            <div
+              role="alert"
+              className="flex items-start gap-2 rounded-[var(--radius-md)] bg-[color:var(--gov-danger-soft)] px-4 py-3 text-sm text-[color:var(--gov-danger-fg)]"
+            >
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>{error}</span>
+            </div>
+          ) : null}
+
+          {message ? (
+            <div
+              role="status"
+              className="flex items-start gap-2 rounded-[var(--radius-md)] bg-[color:var(--gov-success-soft)] px-4 py-3 text-sm text-[color:var(--gov-success-fg)]"
+            >
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>{message}</span>
+            </div>
+          ) : null}
+
+          <button type="submit" className="btn btn-primary w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Sending reset link…" : "Send reset link"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

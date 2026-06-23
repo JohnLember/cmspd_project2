@@ -1,15 +1,13 @@
 import {
   Accessibility,
-  BadgeCheck,
+  ArrowRight,
   BarChart3,
-  BookOpen,
-  Building2,
-  FileCheck2,
+  IdCard,
   Mail,
   MapPin,
-  Phone,
+  Mic,
   ShieldCheck,
-  Sparkles,
+  Clock,
   Users,
 } from "lucide-react";
 import { Link } from "react-router";
@@ -17,46 +15,84 @@ import LandingFooter from "../../components/landing/LandingFooter.jsx";
 import LandingHeader from "../../components/landing/LandingHeader.jsx";
 import LandingSection from "../../components/landing/LandingSection.jsx";
 
-const stats = [
-  { label: "Registered PWDs", value: "2,418" },
-  { label: "Partner Barangays", value: "42" },
-  { label: "Active Subsidies", value: "1,042" },
-  { label: "Cases resolved on time", value: "96%" },
+const portals = [
+  {
+    role: "PDAO Staff",
+    detail: "Process registrations, approve applications, and monitor barangay reports.",
+    icon: ShieldCheck,
+  },
+  {
+    role: "PWD Beneficiary",
+    detail: "Access your Digital ID, profile, and official announcements.",
+    icon: IdCard,
+  },
+  {
+    role: "Guardian",
+    detail: "Stay informed about the ward you care for.",
+    icon: Users,
+  },
+];
+
+const services = [
+  {
+    title: "Online application",
+    detail:
+      "Submit a PWD registration from any device, with guided steps and built-in validation.",
+    icon: ArrowRight,
+  },
+  {
+    title: "Per-barangay reporting",
+    detail:
+      "Registered PWDs summarized by barangay and disability type, with CSV and print export.",
+    icon: BarChart3,
+  },
+  {
+    title: "Guardian access",
+    detail:
+      "Carers get their own linked account to follow a ward's status and ID.",
+    icon: Users,
+  },
+  {
+    title: "Voice navigation",
+    detail:
+      "Move through the beneficiary portal and dictate forms by voice, hands-free.",
+    icon: Mic,
+  },
+];
+
+const steps = [
+  {
+    title: "Submit your application",
+    detail:
+      "Fill in the online form with your details and disability information. It takes a few minutes.",
+  },
+  {
+    title: "PDAO reviews and approves",
+    detail:
+      "Staff verify your requirements and approve your registration with an official digital signature.",
+  },
+  {
+    title: "Receive your Digital ID",
+    detail:
+      "Your account is created automatically. Sign in to view and print your Digital PWD ID.",
+  },
 ];
 
 const faqs = [
   {
-    question: "How do I register a PWD profile?",
+    question: "How do I register as a PWD beneficiary?",
     answer:
-      "PDAO staff will assist with registration. The portal will allow secure digital submission of requirements and status tracking.",
+      "Use the Apply button to submit the online application form. PDAO staff review your requirements and, once approved, your beneficiary account and Digital ID are created automatically.",
   },
   {
-    question: "Can guardians manage multiple PWD profiles?",
+    question: "Can a guardian manage a beneficiary's account?",
     answer:
-      "Yes. Guardian accounts can link multiple PWD profiles with verified consent and approval.",
+      "Yes. When guardian details are provided on an approved application, a linked guardian account is created so the carer can follow the ward's status and Digital ID.",
   },
   {
-    question: "Will the portal send SMS or email alerts?",
+    question: "Is the portal accessible for users with disabilities?",
     answer:
-      "Yes. Official SMS and email alerts will be activated once government messaging services are connected.",
-  },
-];
-
-const blogItems = [
-  {
-    title: "Barangay readiness roadmap",
-    excerpt:
-      "A 6-month rollout plan to align barangay coordinators with the PWD monitoring workflow.",
-  },
-  {
-    title: "Inclusive analytics in action",
-    excerpt:
-      "How accessibility-first dashboards improve subsidy distribution accuracy and timeliness.",
-  },
-  {
-    title: "Building trust with secure data",
-    excerpt:
-      "Governance and data privacy practices designed for public service platforms.",
+      "Accessibility is a core requirement: strong contrast, large touch targets, full keyboard support, reduced-motion options, and voice navigation in the beneficiary portal.",
   },
 ];
 
@@ -65,361 +101,210 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[color:var(--gov-bg)] text-[color:var(--gov-text)]">
       <LandingHeader />
 
-      <main className="space-y-20 px-6 pb-20">
-        <section className="relative overflow-hidden">
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute -top-40 right-0 h-72 w-72 rounded-full bg-[radial-gradient(circle,_rgba(29,78,216,0.18),_transparent_70%)]" />
-            <div className="absolute bottom-0 left-10 h-72 w-72 rounded-full bg-[radial-gradient(circle,_rgba(14,165,233,0.18),_transparent_70%)]" />
+      <main className="space-y-20 px-4 pb-20 pt-12 sm:px-6 sm:space-y-24">
+        {/* Hero */}
+        <section className="mx-auto grid w-full max-w-6xl items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="space-y-6">
+            <span className="inline-flex items-center gap-2 rounded-full bg-[color:var(--gov-primary-soft)] px-3 py-1 text-sm font-medium text-[color:var(--gov-primary)]">
+              <MapPin className="h-4 w-4" aria-hidden="true" />
+              Municipality of Loreto · Agusan del Sur
+            </span>
+            <h1 className="text-4xl font-semibold leading-[1.1] tracking-[-0.02em] text-[color:var(--gov-text)] sm:text-5xl">
+              Inclusive PWD services, managed with clarity and care
+            </h1>
+            <p className="max-w-xl text-lg text-[color:var(--gov-muted)]">
+              The official PDAO portal for registering Persons with Disabilities,
+              issuing Digital IDs, and monitoring assistance across every barangay
+              in Loreto.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Link to="/beneficiary-apply" className="btn btn-primary h-12 px-6 text-base">
+                Become a beneficiary
+                <ArrowRight className="h-[1.15rem] w-[1.15rem]" aria-hidden="true" />
+              </Link>
+              <Link to="/auth/login" className="btn btn-secondary h-12 px-6 text-base">
+                Access the portal
+              </Link>
+            </div>
           </div>
-          <div className="mx-auto grid w-full max-w-6xl gap-10 pt-12 lg:grid-cols-[1.15fr_0.85fr]">
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-3 py-1 text-xs font-semibold text-[color:var(--gov-muted)]">
-                <Sparkles className="h-3.5 w-3.5 text-[color:var(--gov-accent)]" />
-                Official PDAO service platform
-              </div>
-              <h1 className="text-4xl font-semibold leading-tight lg:text-5xl">
-                Deliver inclusive PWD services with clarity, speed, and accountability
-              </h1>
-              <p className="text-base text-[color:var(--gov-muted)]">
-                This government-grade portal centralizes PWD registration,
-                assistance tracking, and barangay coordination so every case is
-                visible, verified, and supported on time.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <Link
-                  to="/auth/login"
-                  className="rounded-full bg-[color:var(--gov-primary)] px-6 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5"
-                >
-                  Access the portal
-                </Link>
-                <Link
-                  to="/beneficiary-apply"
-                  className="rounded-full border border-[color:var(--gov-border)] px-6 py-3 text-sm font-semibold text-[color:var(--gov-text)] transition hover:-translate-y-0.5"
-                >
-                  Become a Beneficiary
-                </Link>
-              </div>
-              <div className="flex flex-wrap gap-6 text-sm text-[color:var(--gov-muted)]">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em]">
-                    Accredited
-                  </p>
-                  <p className="text-sm font-semibold text-[color:var(--gov-text)]">
-                    <span className="inline-flex items-center gap-2">
-                      <BadgeCheck className="h-4 w-4 text-[color:var(--gov-accent)]" />
-                      PDAO office network
-                    </span>
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em]">
-                    Coverage
-                  </p>
-                  <p className="text-sm font-semibold text-[color:var(--gov-text)]">
-                    <span className="inline-flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-[color:var(--gov-accent)]" />
-                      Province-wide barangays
-                    </span>
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="gov-card relative overflow-hidden rounded-3xl p-6">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.18),_transparent_60%)]" />
-              <div className="relative space-y-5">
-                <h2 className="text-lg font-semibold">Operational snapshot</h2>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {stats.map((item) => (
-                    <div
-                      key={item.label}
-                      className="rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] p-4"
-                    >
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gov-muted)]">
-                        {item.label}
-                      </p>
-                      <p className="mt-2 text-2xl font-semibold">{item.value}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+
+          <div className="rounded-[var(--radius-xl)] border border-[color:var(--gov-border)] bg-[color:var(--gov-card)] p-6 sm:p-7">
+            <h2 className="text-sm font-semibold text-[color:var(--gov-text)]">
+              One platform, three roles
+            </h2>
+            <ul className="mt-5 space-y-4">
+              {portals.map((portal) => (
+                <li key={portal.role} className="flex items-start gap-4">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[var(--radius-md)] bg-[color:var(--gov-primary-soft)] text-[color:var(--gov-primary)]">
+                    <portal.icon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <div>
+                    <p className="font-semibold text-[color:var(--gov-text)]">
+                      {portal.role}
+                    </p>
+                    <p className="mt-0.5 text-sm text-[color:var(--gov-muted)]">
+                      {portal.detail}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 
-        <LandingSection
-          id="problem"
-          title="The challenge"
-          subtitle="Fragmented records, delayed assistance, and limited visibility across barangays slow down service delivery."
-        >
-          <div className="grid gap-6 lg:grid-cols-3">
-            {[
-              {
-                title: "Disconnected data",
-                detail:
-                  "Paper-based records delay updates and weaken coordination between PDAO, barangays, and guardians.",
-                icon: FileCheck2,
-              },
-              {
-                title: "Limited analytics",
-                detail:
-                  "Without consolidated reporting, subsidy distribution and disability classifications are harder to track.",
-                icon: BarChart3,
-              },
-              {
-                title: "Access barriers",
-                detail:
-                  "PWD citizens need interfaces that prioritize accessibility, clarity, and reliable updates.",
-                icon: Accessibility,
-              },
-            ].map((item) => (
-              <div key={item.title} className="gov-card rounded-2xl p-6">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--gov-surface)]">
-                    <item.icon className="h-5 w-5 text-[color:var(--gov-primary)]" />
-                  </span>
-                  <h3 className="text-base font-semibold">{item.title}</h3>
-                </div>
-                <p className="mt-3 text-sm text-[color:var(--gov-muted)]">
-                  {item.detail}
-                </p>
-              </div>
-            ))}
-          </div>
-        </LandingSection>
-
+        {/* About */}
         <LandingSection
           id="about"
           title="About the program"
-          subtitle="Built for PDAO offices to coordinate care, track assistance, and deliver inclusive services."
+          subtitle="A single, trusted system for the PDAO office, beneficiaries, and their guardians — replacing slow, paper-based processing with secure digital records."
         >
-          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-            <div className="gov-card rounded-2xl p-6">
-              <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--gov-surface)]">
-                  <ShieldCheck className="h-5 w-5 text-[color:var(--gov-primary)]" />
-                </span>
-                <h3 className="text-base font-semibold">Mission-driven coordination</h3>
-              </div>
-              <p className="mt-3 text-sm text-[color:var(--gov-muted)]">
-                The portal unifies registration, subsidy management, and
-                reporting so every stakeholder has a single, trusted source of
-                truth. It supports accessibility-first experiences and secure
-                data handling.
+          <div className="grid gap-5 md:grid-cols-3">
+            <div className="flex flex-col gap-3 rounded-[var(--radius-lg)] border border-[color:var(--gov-border)] bg-[color:var(--gov-card)] p-6 md:col-span-2">
+              <ShieldCheck className="h-6 w-6 text-[color:var(--gov-primary)]" aria-hidden="true" />
+              <h3 className="text-lg font-semibold">A single source of truth</h3>
+              <p className="text-[color:var(--gov-muted)]">
+                Registration, approvals, Digital IDs, and reporting live in one
+                place. Every record carries a secure audit trail, and access is
+                governed by role so citizen data stays private and visible only to
+                authorized personnel.
               </p>
-              <ul className="mt-4 space-y-2 text-sm text-[color:var(--gov-muted)]">
-                <li className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-[color:var(--gov-accent)]" />
-                  Centralized PWD profiles and guardian links
-                </li>
-                <li className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-[color:var(--gov-accent)]" />
-                  Barangay-level reporting and monitoring
-                </li>
-                <li className="flex items-center gap-2">
-                  <FileCheck2 className="h-4 w-4 text-[color:var(--gov-accent)]" />
-                  Secure audit trails for compliance
-                </li>
-              </ul>
             </div>
-            <div className="gov-card rounded-2xl p-6">
-              <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--gov-surface)]">
-                  <Accessibility className="h-5 w-5 text-[color:var(--gov-primary)]" />
-                </span>
-                <h3 className="text-base font-semibold">Accessibility focus</h3>
-              </div>
-              <p className="mt-3 text-sm text-[color:var(--gov-muted)]">
-                WCAG-inspired layouts, larger typography, and high-contrast
-                interfaces keep the system inclusive for PWD users.
+            <div className="flex flex-col gap-3 rounded-[var(--radius-lg)] border border-[color:var(--gov-border)] bg-[color:var(--gov-card)] p-6">
+              <Accessibility className="h-6 w-6 text-[color:var(--gov-primary)]" aria-hidden="true" />
+              <h3 className="text-lg font-semibold">Built to be accessible</h3>
+              <p className="text-[color:var(--gov-muted)]">
+                Strong contrast, large targets, keyboard support, and voice
+                navigation keep the system usable for everyone it serves.
               </p>
-              <div className="mt-4 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] p-4 text-xs text-[color:var(--gov-muted)]">
-                Voice recognition placeholders and keyboard navigation readiness
-                are part of the roadmap.
-              </div>
             </div>
           </div>
         </LandingSection>
 
+        {/* Services */}
         <LandingSection
-          id="social-proof"
-          title="Voices from the field"
-          subtitle="Designed with frontline staff and partner barangays in mind."
+          id="services"
+          title="What you can do"
+          subtitle="Practical tools for the whole community, from first application to everyday access."
         >
-          <div className="grid gap-6 lg:grid-cols-3">
-            {[
-              {
-                name: "PDAO Operations",
-                quote:
-                  "Unified dashboards help us validate subsidies faster and keep barangay teams aligned.",
-                icon: Building2,
-              },
-              {
-                name: "Barangay Coordinators",
-                quote:
-                  "We finally have a single portal to track updates without manual follow-ups.",
-                icon: Users,
-              },
-              {
-                name: "Guardian Support",
-                quote:
-                  "Notifications and digital IDs reduce repeated visits and save time.",
-                icon: ShieldCheck,
-              },
-            ].map((item) => (
-              <div key={item.name} className="gov-card rounded-2xl p-6">
-                <div className="flex items-center justify-between">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--gov-surface)]">
-                    <item.icon className="h-5 w-5 text-[color:var(--gov-primary)]" />
-                  </span>
+          <div className="grid gap-5 sm:grid-cols-2">
+            {services.map((service) => (
+              <div
+                key={service.title}
+                className="flex items-start gap-4 rounded-[var(--radius-lg)] border border-[color:var(--gov-border)] bg-[color:var(--gov-card)] p-6"
+              >
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[var(--radius-md)] bg-[color:var(--gov-primary-soft)] text-[color:var(--gov-primary)]">
+                  <service.icon className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <div>
+                  <h3 className="font-semibold text-[color:var(--gov-text)]">
+                    {service.title}
+                  </h3>
+                  <p className="mt-1 text-sm text-[color:var(--gov-muted)]">
+                    {service.detail}
+                  </p>
                 </div>
-                <p className="text-sm text-[color:var(--gov-muted)]">“{item.quote}”</p>
-                <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gov-accent)]">
-                  {item.name}
-                </p>
               </div>
             ))}
           </div>
         </LandingSection>
 
+        {/* How to apply — a genuine ordered sequence */}
         <LandingSection
-          id="stats"
-          title="Program stats"
-          subtitle="Key figures that guide resource allocation and planning."
+          id="apply"
+          title="How to apply"
+          subtitle="Three steps from application to a valid Digital PWD ID."
         >
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {stats.map((item) => (
-              <div key={item.label} className="gov-card rounded-2xl p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gov-muted)]">
-                  {item.label}
-                </p>
-                <p className="mt-2 text-2xl font-semibold">{item.value}</p>
-                <p className="mt-2 text-xs uppercase tracking-[0.2em] text-[color:var(--gov-accent)]">
-                  Updated quarterly
-                </p>
-              </div>
-            ))}
-          </div>
-        </LandingSection>
-
-        <LandingSection
-          id="blogs"
-          title="Latest insights"
-          subtitle="Guides and updates for barangay partners and PDAO teams."
-        >
-          <div className="grid gap-6 lg:grid-cols-3">
-            {blogItems.map((item) => (
-              <div key={item.title} className="gov-card rounded-2xl p-6">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--gov-surface)]">
-                    <BookOpen className="h-5 w-5 text-[color:var(--gov-primary)]" />
-                  </span>
-                  <h3 className="text-base font-semibold">{item.title}</h3>
-                </div>
-                <p className="mt-3 text-sm text-[color:var(--gov-muted)]">
-                  {item.excerpt}
-                </p>
-                <button
-                  type="button"
-                  className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gov-accent)]"
+          <ol className="grid gap-5 md:grid-cols-3">
+            {steps.map((step, index) => (
+              <li
+                key={step.title}
+                className="relative flex flex-col gap-3 rounded-[var(--radius-lg)] border border-[color:var(--gov-border)] bg-[color:var(--gov-card)] p-6"
+              >
+                <span
+                  className="grid h-10 w-10 place-items-center rounded-full bg-[color:var(--gov-primary)] text-base font-semibold text-[color:var(--gov-on-primary)]"
+                  aria-hidden="true"
                 >
-                  Read more
-                </button>
-              </div>
+                  {index + 1}
+                </span>
+                <h3 className="font-semibold text-[color:var(--gov-text)]">
+                  {step.title}
+                </h3>
+                <p className="text-sm text-[color:var(--gov-muted)]">{step.detail}</p>
+              </li>
             ))}
+          </ol>
+          <div className="mt-2">
+            <Link to="/beneficiary-apply" className="btn btn-primary h-12 px-6 text-base">
+              Start your application
+              <ArrowRight className="h-[1.15rem] w-[1.15rem]" aria-hidden="true" />
+            </Link>
           </div>
         </LandingSection>
 
+        {/* FAQ */}
         <LandingSection
           id="faq"
           title="Frequently asked questions"
-          subtitle="Quick answers for citizens and barangay partners."
+          subtitle="Quick answers for citizens, guardians, and barangay partners."
         >
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="divide-y divide-[color:var(--gov-border)] overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--gov-border)] bg-[color:var(--gov-card)]">
             {faqs.map((item) => (
-              <div key={item.question} className="gov-card rounded-2xl p-6">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--gov-surface)]">
-                    <ShieldCheck className="h-5 w-5 text-[color:var(--gov-primary)]" />
+              <details key={item.question} className="group">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 font-medium text-[color:var(--gov-text)] transition-colors hover:bg-[color:var(--gov-surface)]">
+                  {item.question}
+                  <span
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-[color:var(--gov-border)] text-[color:var(--gov-muted)] transition-transform duration-[var(--dur)] group-open:rotate-45"
+                    aria-hidden="true"
+                  >
+                    +
                   </span>
-                  <h3 className="text-base font-semibold">{item.question}</h3>
-                </div>
-                <p className="mt-3 text-sm text-[color:var(--gov-muted)]">
-                  {item.answer}
-                </p>
-              </div>
+                </summary>
+                <p className="px-6 pb-5 text-[color:var(--gov-muted)]">{item.answer}</p>
+              </details>
             ))}
           </div>
         </LandingSection>
 
+        {/* Contact */}
         <LandingSection
           id="contact"
-          title="Contact PDAO"
+          title="Contact the PDAO office"
           subtitle="Reach the program office for assistance and coordination."
         >
-          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="gov-card rounded-2xl p-6">
-              <form className="grid gap-4">
-                <div>
-                  <label className="text-sm font-medium" htmlFor="contact-name">
-                    Full name
-                  </label>
-                  <input
-                    id="contact-name"
-                    type="text"
-                    className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm text-[color:var(--gov-text)]"
-                    placeholder="Juan Dela Cruz"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium" htmlFor="contact-email">
-                    Email address
-                  </label>
-                  <input
-                    id="contact-email"
-                    type="email"
-                    className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm text-[color:var(--gov-text)]"
-                    placeholder="name@example.com"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium" htmlFor="contact-message">
-                    Message
-                  </label>
-                  <textarea
-                    id="contact-message"
-                    rows="4"
-                    className="mt-2 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-3 text-sm text-[color:var(--gov-text)]"
-                    placeholder="How can we help your barangay?"
-                  />
-                </div>
-                <button
-                  type="button"
-                  className="rounded-xl bg-[color:var(--gov-primary)] px-4 py-3 text-sm font-semibold text-white"
-                >
-                  Submit inquiry
-                </button>
-              </form>
+          <div className="grid gap-5 lg:grid-cols-2">
+            <div className="rounded-[var(--radius-lg)] border border-[color:var(--gov-border)] bg-[color:var(--gov-card)] p-6">
+              <h3 className="font-semibold text-[color:var(--gov-text)]">
+                PDAO — Municipality of Loreto
+              </h3>
+              <ul className="mt-4 space-y-3 text-[color:var(--gov-muted)]">
+                <li className="flex items-center gap-3">
+                  <MapPin className="h-5 w-5 shrink-0 text-[color:var(--gov-primary)]" aria-hidden="true" />
+                  Municipal Hall, Loreto, Agusan del Sur
+                </li>
+                <li className="flex items-center gap-3">
+                  <Mail className="h-5 w-5 shrink-0 text-[color:var(--gov-primary)]" aria-hidden="true" />
+                  pdao@loreto.gov.ph
+                </li>
+                <li className="flex items-center gap-3">
+                  <Clock className="h-5 w-5 shrink-0 text-[color:var(--gov-primary)]" aria-hidden="true" />
+                  Monday – Friday, 8:00 AM – 5:00 PM
+                </li>
+              </ul>
             </div>
-            <div className="gov-card rounded-2xl p-6">
-              <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--gov-surface)]">
-                  <MapPin className="h-5 w-5 text-[color:var(--gov-primary)]" />
-                </span>
-                <h3 className="text-base font-semibold">Program office</h3>
-              </div>
-              <p className="mt-3 text-sm text-[color:var(--gov-muted)]">
-                Provincial Capitol Complex, PDAO Office, City of Batangas
+            <div className="flex flex-col justify-center gap-4 rounded-[var(--radius-lg)] border border-[color:var(--gov-border)] bg-[color:var(--gov-card)] p-6">
+              <h3 className="text-lg font-semibold text-[color:var(--gov-text)]">
+                Ready to get started?
+              </h3>
+              <p className="text-[color:var(--gov-muted)]">
+                Submit a new application, or sign in if you already have an account.
               </p>
-              <div className="mt-4 space-y-2 text-sm text-[color:var(--gov-muted)]">
-                <p className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-[color:var(--gov-accent)]" />
-                  Hotline: (043) 123-4567
-                </p>
-                <p className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-[color:var(--gov-accent)]" />
-                  Email: support@pdao.gov.ph
-                </p>
-                <p>Office hours: Monday - Friday, 8:00 AM - 5:00 PM</p>
+              <div className="flex flex-wrap gap-3">
+                <Link to="/beneficiary-apply" className="btn btn-primary">
+                  Apply now
+                </Link>
+                <Link to="/auth/login" className="btn btn-secondary">
+                  Sign in
+                </Link>
               </div>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { Mic, MicOff } from "lucide-react";
 import { useSpeechRecognition } from "../../hooks/useSpeechRecognition.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 
@@ -67,17 +68,17 @@ export default function VoiceNav() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2">
+    <div className="fixed bottom-5 right-5 z-[var(--z-sticky)] flex flex-col items-end gap-2 sm:bottom-6 sm:right-6">
       {(feedback || error) && (
         <div
           aria-live="polite"
-          className="max-w-xs rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-2 text-xs text-[color:var(--gov-text)] shadow-lg"
+          className="gov-raised max-w-xs px-4 py-2.5 text-xs text-[color:var(--gov-text)]"
         >
           {error ? `Mic error: ${error}` : feedback}
         </div>
       )}
       {listening ? (
-        <div className="rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-3 py-1 text-[10px] text-[color:var(--gov-muted)] shadow">
+        <div className="gov-raised px-3 py-2 text-[11px] leading-relaxed text-[color:var(--gov-muted)]">
           Try: “dashboard”, “digital ID”, “announcements”, “profile”, “log out”
         </div>
       ) : null}
@@ -85,12 +86,25 @@ export default function VoiceNav() {
         type="button"
         onClick={handleClick}
         aria-label={listening ? "Stop voice navigation" : "Start voice navigation"}
+        aria-pressed={listening}
         title="Voice navigation"
-        className={`grid h-14 w-14 place-items-center rounded-full text-xl text-white shadow-lg transition ${
-          listening ? "animate-pulse bg-red-600" : "bg-[color:var(--gov-primary)]"
+        className={`relative grid h-14 w-14 place-items-center rounded-full text-[color:var(--gov-on-primary)] shadow-[var(--elev-2)] transition-colors ${
+          listening
+            ? "bg-[color:var(--gov-danger)]"
+            : "bg-[color:var(--gov-primary)] hover:bg-[color:var(--gov-primary-hover)]"
         }`}
       >
-        🎤
+        {listening ? (
+          <>
+            <span
+              className="absolute h-14 w-14 animate-ping rounded-full bg-[color:var(--gov-danger)] opacity-40 motion-reduce:hidden"
+              aria-hidden="true"
+            />
+            <MicOff className="relative h-6 w-6" aria-hidden="true" />
+          </>
+        ) : (
+          <Mic className="h-6 w-6" aria-hidden="true" />
+        )}
       </button>
     </div>
   );

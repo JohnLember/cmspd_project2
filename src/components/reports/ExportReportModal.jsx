@@ -1,7 +1,5 @@
+import { useEffect } from "react";
 import { DISABILITY_LABELS } from "../../constants/disability.js";
-
-const selectClass =
-  "mt-1 w-full rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-3 py-2 text-sm";
 
 export default function ExportReportModal({
   barangays,
@@ -14,9 +12,27 @@ export default function ExportReportModal({
   onExport,
   onClose,
 }) {
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
-      <div className="gov-card w-full max-w-md rounded-3xl p-6">
+    <div className="fixed inset-0 z-[var(--z-modal)] grid place-items-center p-4">
+      <div
+        className="gov-backdrop absolute inset-0"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Export report"
+        className="gov-overlay relative w-full max-w-md p-6"
+      >
         <h3 className="text-lg font-semibold">Export report (CSV)</h3>
         <p className="mt-1 text-sm text-[color:var(--gov-muted)]">
           Choose which registered PWDs to export.
@@ -24,13 +40,13 @@ export default function ExportReportModal({
 
         <div className="mt-5 grid gap-4">
           <div>
-            <label className="text-xs font-medium text-[color:var(--gov-muted)]">
+            <label className="mb-1 block text-sm font-medium text-[color:var(--gov-text)]">
               Barangay
             </label>
             <select
               value={barangay}
               onChange={(e) => onBarangayChange(e.target.value)}
-              className={selectClass}
+              className="gov-input"
             >
               <option value="all">All barangays</option>
               {barangays.map((b) => (
@@ -41,13 +57,13 @@ export default function ExportReportModal({
             </select>
           </div>
           <div>
-            <label className="text-xs font-medium text-[color:var(--gov-muted)]">
+            <label className="mb-1 block text-sm font-medium text-[color:var(--gov-text)]">
               Disability type
             </label>
             <select
               value={type}
               onChange={(e) => onTypeChange(e.target.value)}
-              className={selectClass}
+              className="gov-input"
             >
               <option value="all">All disability types</option>
               {typeColumns.map((t) => (
@@ -58,24 +74,20 @@ export default function ExportReportModal({
             </select>
           </div>
 
-          <p className="text-xs text-[color:var(--gov-muted)]">
+          <p className="text-sm text-[color:var(--gov-muted)]">
             {matchCount} record{matchCount === 1 ? "" : "s"} match this selection.
           </p>
         </div>
 
         <div className="mt-6 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full border border-[color:var(--gov-border)] px-4 py-2 text-sm font-semibold"
-          >
+          <button type="button" onClick={onClose} className="btn btn-secondary">
             Cancel
           </button>
           <button
             type="button"
             onClick={onExport}
             disabled={matchCount === 0}
-            className="rounded-full bg-[color:var(--gov-primary)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className="btn btn-primary"
           >
             Export
           </button>

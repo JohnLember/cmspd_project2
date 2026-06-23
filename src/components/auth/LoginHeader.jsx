@@ -1,4 +1,4 @@
-import { Accessibility, ShieldCheck, Sparkles } from "lucide-react";
+import { Accessibility, ShieldCheck } from "lucide-react";
 import { Link } from "react-router";
 import pdaoLogo from "../../assets/pdao_logo.png";
 
@@ -6,80 +6,75 @@ const roles = ["PDAO Staff", "Guardian", "PWD Beneficiary"];
 
 export default function LoginHeader() {
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] p-6 shadow-sm lg:p-8">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-24 right-10 h-52 w-52 rounded-full bg-[radial-gradient(circle,_rgba(29,78,216,0.18),_transparent_70%)]" />
-        <div className="absolute bottom-0 left-0 h-60 w-60 rounded-full bg-[radial-gradient(circle,_rgba(14,165,233,0.18),_transparent_70%)]" />
-      </div>
-      <div className="relative space-y-6">
-        <Link to="/" className="flex items-center gap-4">
-          <div className="flex h-20 w-20 items-center justify-center rounded-2xl">
-            <img
-              src={pdaoLogo}
-              alt="PDAO seal"
-              className="h-full w-full rounded-xl object-contain"
-              loading="lazy"
-            />
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gov-muted)]">
-              Municipality of Loreto, Agusan del Sur
-            </p>
-            <h1 className="text-2xl font-semibold">
-              Web-Based Community Monitoring System for Persons with
-              Disabilities
-            </h1>
-          </div>
-        </Link>
-        <p className="text-sm text-[color:var(--gov-muted)]">
-          A secure and accessible platform for monitoring, managing, and
-          supporting Persons with Disabilities in the community.
-        </p>
-        <div className="grid gap-3 text-sm text-[color:var(--gov-muted)] sm:grid-cols-2">
-          <div className="flex items-start gap-3 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-card)] px-4 py-3">
-            <ShieldCheck className="mt-0.5 h-5 w-5 text-[color:var(--gov-primary)]" />
-            <div>
-              <p className="text-sm font-semibold text-[color:var(--gov-text)]">
-                Protected citizen records
-              </p>
-              <p className="text-xs">
-                Your information is kept private and only visible to authorized
-                personnel.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3 rounded-2xl border border-[color:var(--gov-border)] bg-[color:var(--gov-card)] px-4 py-3">
-            <Accessibility className="mt-0.5 h-5 w-5 text-[color:var(--gov-primary)]" />
-            <div>
-              <p className="text-sm font-semibold text-[color:var(--gov-text)]">
-                Designed for easy access
-              </p>
-              <p className="text-xs">
-                Clear text, strong contrast, and simple navigation for all
-                users.
-              </p>
-            </div>
-          </div>
-        </div>
+    <section className="flex flex-col gap-7 rounded-[var(--radius-xl)] border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] p-6 lg:p-9">
+      <Link
+        to="/"
+        className="flex items-center gap-4 rounded-[var(--radius-md)]"
+      >
+        <img
+          src={pdaoLogo}
+          alt="PDAO seal"
+          className="h-16 w-16 shrink-0 rounded-[var(--radius-md)] object-contain"
+          loading="lazy"
+        />
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gov-accent)]">
-            Supported roles
+          <p className="text-sm font-medium text-[color:var(--gov-muted)]">
+            Municipality of Loreto · Agusan del Sur
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {roles.map((role) => (
-              <span
-                key={role}
-                className="rounded-full border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-3 py-1 text-xs font-semibold text-[color:var(--gov-text)]"
-              >
-                {role}
-              </span>
-            ))}
+          <h1 className="mt-1 text-2xl font-semibold leading-tight text-[color:var(--gov-text)]">
+            Community Monitoring System for Persons with Disabilities
+          </h1>
+        </div>
+      </Link>
+
+      <p className="max-w-prose text-[color:var(--gov-muted)]">
+        A secure, accessible platform for monitoring, managing, and supporting
+        Persons with Disabilities across the community.
+      </p>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="flex items-start gap-3 rounded-[var(--radius-lg)] bg-[color:var(--gov-card)] p-4">
+          <ShieldCheck
+            className="mt-0.5 h-5 w-5 shrink-0 text-[color:var(--gov-primary)]"
+            aria-hidden="true"
+          />
+          <div>
+            <p className="text-sm font-semibold text-[color:var(--gov-text)]">
+              Protected citizen records
+            </p>
+            <p className="mt-1 text-sm text-[color:var(--gov-muted)]">
+              Information stays private and visible only to authorized personnel.
+            </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-xs font-semibold text-[color:var(--gov-muted)]">
-          <Sparkles className="h-4 w-4 text-[color:var(--gov-accent)]" />
-          Secure access for verified government accounts only.
+        <div className="flex items-start gap-3 rounded-[var(--radius-lg)] bg-[color:var(--gov-card)] p-4">
+          <Accessibility
+            className="mt-0.5 h-5 w-5 shrink-0 text-[color:var(--gov-primary)]"
+            aria-hidden="true"
+          />
+          <div>
+            <p className="text-sm font-semibold text-[color:var(--gov-text)]">
+              Designed for easy access
+            </p>
+            <p className="mt-1 text-sm text-[color:var(--gov-muted)]">
+              Clear text, strong contrast, and simple navigation for everyone.
+            </p>
+          </div>
         </div>
+      </div>
+
+      <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-[color:var(--gov-border)] pt-6">
+        <span className="text-sm font-medium text-[color:var(--gov-muted)]">
+          For:
+        </span>
+        {roles.map((role) => (
+          <span
+            key={role}
+            className="rounded-full bg-[color:var(--gov-primary-soft)] px-3 py-1 text-xs font-semibold text-[color:var(--gov-primary)]"
+          >
+            {role}
+          </span>
+        ))}
       </div>
     </section>
   );

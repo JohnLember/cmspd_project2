@@ -6,6 +6,7 @@ import {
   updateApplicationStatus,
 } from "../../services/supabase/applications.js";
 import ApproveApplicationModal from "../../components/applications/ApproveApplicationModal.jsx";
+import StatusBadge from "../../components/ui/StatusBadge.jsx";
 
 const STATUS_OPTIONS = ["pending", "approved", "rejected"];
 
@@ -130,7 +131,7 @@ export default function Applications() {
             <button
               type="button"
               onClick={closeToast}
-              className="rounded-full border border-[color:var(--gov-border)] px-3 py-1 text-xs font-semibold"
+              className="btn btn-secondary h-9 px-3 text-xs"
             >
               Cancel
             </button>
@@ -140,7 +141,7 @@ export default function Applications() {
                 handleStatusChange(row, "rejected");
                 closeToast();
               }}
-              className="rounded-full bg-red-600 px-3 py-1 text-xs font-semibold text-white"
+              className="btn btn-danger h-9 px-3 text-xs"
             >
               Reject
             </button>
@@ -151,7 +152,7 @@ export default function Applications() {
         closeButton: false,
         autoClose: false,
         closeOnClick: false,
-        className: "gov-card rounded-2xl border border-[color:var(--gov-border)]",
+        className: "gov-card",
       }
     );
   };
@@ -163,23 +164,17 @@ export default function Applications() {
     const busy = updatingId === row.id;
 
     if (status === "approved") {
-      return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-          ✓ Approved
-        </span>
-      );
+      return <StatusBadge status="approved" />;
     }
     if (status === "rejected") {
       return (
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
-            Rejected
-          </span>
+          <StatusBadge status="rejected" />
           <button
             type="button"
             disabled={busy}
             onClick={() => handleStatusChange(row, "pending")}
-            className="text-xs font-semibold text-[color:var(--gov-accent)] disabled:opacity-60"
+            className="btn btn-ghost h-9 px-3 text-xs"
           >
             Reconsider
           </button>
@@ -192,7 +187,7 @@ export default function Applications() {
           type="button"
           disabled={busy}
           onClick={() => handleStatusChange(row, "approved")}
-          className="rounded-full bg-[color:var(--gov-primary)] px-3 py-1 text-xs font-semibold text-white disabled:opacity-60"
+          className="btn btn-primary h-9 px-3 text-xs"
         >
           Approve
         </button>
@@ -200,7 +195,7 @@ export default function Applications() {
           type="button"
           disabled={busy}
           onClick={() => confirmReject(row)}
-          className="rounded-full border border-[color:var(--gov-border)] px-3 py-1 text-xs font-semibold disabled:opacity-60"
+          className="btn btn-secondary h-9 px-3 text-xs"
         >
           Reject
         </button>
@@ -210,91 +205,93 @@ export default function Applications() {
 
   return (
     <div className="space-y-6">
-      <section className="gov-card rounded-2xl p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gov-muted)]">
-              Application Management
-            </p>
-            <h2 className="text-xl font-semibold">PWD Applications Queue</h2>
-            <p className="mt-2 text-sm text-[color:var(--gov-muted)]">
-              Review submitted applications, verify requirements, and update
-              statuses.
-            </p>
-          </div>
-          <span className="rounded-full border border-[color:var(--gov-border)] px-4 py-2 text-xs font-semibold text-[color:var(--gov-muted)]">
-            {applications.length} total
-          </span>
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-[-0.01em]">
+            Applications queue
+          </h2>
+          <p className="mt-1 text-[color:var(--gov-muted)]">
+            Review submitted applications, verify requirements, and update statuses.
+          </p>
         </div>
-      </section>
+        <span className="gov-badge gov-badge--neutral">
+          {applications.length} total
+        </span>
+      </header>
 
-      <section className="gov-card rounded-2xl p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-3">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name or ID"
-              className="rounded-full border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-2 text-sm"
-            />
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="rounded-full border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-2 text-sm"
-            >
-              <option value="all">All types</option>
-              <option value="new">New Applicant</option>
-              <option value="renewal">Renewal</option>
-            </select>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-full border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-4 py-2 text-sm"
-            >
-              <option value="all">All statuses</option>
-              {STATUS_OPTIONS.map((status) => (
-                <option key={status} value={status}>
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
+      <section className="gov-card p-5">
+        <div className="flex flex-wrap gap-3">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name or ID"
+            className="gov-input w-full sm:max-w-xs"
+          />
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="gov-input w-full sm:w-auto"
+          >
+            <option value="all">All types</option>
+            <option value="new">New Applicant</option>
+            <option value="renewal">Renewal</option>
+          </select>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="gov-input w-full sm:w-auto"
+          >
+            <option value="all">All statuses</option>
+            {STATUS_OPTIONS.map((status) => (
+              <option key={status} value={status}>
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </option>
+            ))}
+          </select>
         </div>
 
         {error ? (
-          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          <div
+            role="alert"
+            className="mt-4 rounded-[var(--radius-md)] bg-[color:var(--gov-danger-soft)] px-4 py-3 text-sm text-[color:var(--gov-danger-fg)]"
+          >
             {error}
           </div>
         ) : null}
 
         {notice ? (
-          <div className="mt-4 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          <div
+            role="status"
+            className="mt-4 rounded-[var(--radius-md)] bg-[color:var(--gov-success-soft)] px-4 py-3 text-sm text-[color:var(--gov-success-fg)]"
+          >
             {notice}
           </div>
         ) : null}
 
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="text-xs uppercase text-[color:var(--gov-muted)]">
-              <tr>
-                <th className="pb-3">Application ID</th>
-                <th className="pb-3">Applicant</th>
-                <th className="pb-3">Type</th>
-                <th className="pb-3">Barangay</th>
-                <th className="pb-3">Status</th>
+          <table className="w-full min-w-[44rem] border-collapse text-left text-sm">
+            <thead>
+              <tr className="border-b border-[color:var(--gov-border)] text-xs font-semibold text-[color:var(--gov-muted)]">
+                <th className="pb-3 pr-4 font-semibold">Application ID</th>
+                <th className="pb-3 pr-4 font-semibold">Applicant</th>
+                <th className="pb-3 pr-4 font-semibold">Type</th>
+                <th className="pb-3 pr-4 font-semibold">Barangay</th>
+                <th className="pb-3 font-semibold">Status</th>
               </tr>
             </thead>
             <tbody className="text-[color:var(--gov-text)]">
               {isLoading ? (
-                <tr>
-                  <td colSpan={5} className="py-6 text-center text-[color:var(--gov-muted)]">
-                    Loading applications…
-                  </td>
-                </tr>
+                [0, 1, 2].map((i) => (
+                  <tr key={i} className="border-b border-[color:var(--gov-border)]">
+                    <td colSpan={5} className="py-3">
+                      <span className="gov-skeleton block h-6 w-full" />
+                    </td>
+                  </tr>
+                ))
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-6 text-center text-[color:var(--gov-muted)]">
+                  <td colSpan={5} className="py-10 text-center text-[color:var(--gov-muted)]">
                     {applications.length === 0
                       ? "No applications submitted yet."
                       : "No applications match your filters."}
@@ -304,12 +301,16 @@ export default function Applications() {
                 filtered.map((row) => (
                   <tr
                     key={row.id}
-                    className="border-t border-[color:var(--gov-border)]"
+                    className="border-b border-[color:var(--gov-border)] last:border-0"
                   >
-                    <td className="py-3 font-mono text-xs">{displayId(row)}</td>
-                    <td className="py-3">{row.applicant_name || "—"}</td>
-                    <td className="py-3">{typeLabel(row.data?.appType)}</td>
-                    <td className="py-3">{row.barangay || "—"}</td>
+                    <td className="py-3 pr-4 font-mono text-xs">{displayId(row)}</td>
+                    <td className="py-3 pr-4 font-medium">{row.applicant_name || "—"}</td>
+                    <td className="py-3 pr-4 text-[color:var(--gov-muted)]">
+                      {typeLabel(row.data?.appType)}
+                    </td>
+                    <td className="py-3 pr-4 text-[color:var(--gov-muted)]">
+                      {row.barangay || "—"}
+                    </td>
                     <td className="py-3">{renderStatus(row)}</td>
                   </tr>
                 ))

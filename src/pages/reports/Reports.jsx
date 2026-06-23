@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Activity, Download, MapPin, Printer, Users } from "lucide-react";
 import BarChartCard from "../../components/charts/BarChartCard.jsx";
 import StatCard from "../../components/cards/StatCard.jsx";
 import ExportReportModal from "../../components/reports/ExportReportModal.jsx";
@@ -133,104 +134,108 @@ export default function Reports() {
 
   return (
     <div className="space-y-6">
-      <section className="gov-card rounded-2xl p-6 print:hidden">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gov-muted)]">
-              Reports Center
-            </p>
-            <h2 className="text-xl font-semibold">
-              Registered PWDs per Barangay
-            </h2>
-            <p className="mt-2 text-sm text-[color:var(--gov-muted)]">
-              Monitoring report classified by disability type.
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setShowExport(true)}
-              disabled={isLoading || report.total === 0}
-              className="rounded-full border border-[color:var(--gov-border)] px-4 py-2 text-xs font-semibold disabled:opacity-50"
-            >
-              Export CSV
-            </button>
-            <button
-              type="button"
-              onClick={() => window.print()}
-              disabled={isLoading || report.total === 0}
-              className="rounded-full bg-[color:var(--gov-primary)] px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
-            >
-              Print / Save as PDF
-            </button>
-          </div>
+      <header className="flex flex-wrap items-center justify-between gap-4 print:hidden">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-[-0.01em]">
+            Registered PWDs per barangay
+          </h2>
+          <p className="mt-1 text-[color:var(--gov-muted)]">
+            Monitoring report classified by disability type.
+          </p>
         </div>
-      </section>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setShowExport(true)}
+            disabled={isLoading || report.total === 0}
+            className="btn btn-secondary h-10 px-4 text-xs"
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+            Export CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            disabled={isLoading || report.total === 0}
+            className="btn btn-primary h-10 px-4 text-xs"
+          >
+            <Printer className="h-4 w-4" aria-hidden="true" />
+            Print / Save as PDF
+          </button>
+        </div>
+      </header>
 
       {error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 print:hidden">
+        <div
+          role="alert"
+          className="rounded-[var(--radius-md)] bg-[color:var(--gov-danger-soft)] px-4 py-3 text-sm text-[color:var(--gov-danger-fg)] print:hidden"
+        >
           {error}
         </div>
       ) : null}
 
       {isLoading ? (
-        <div className="gov-card rounded-2xl p-6 text-sm text-[color:var(--gov-muted)]">
-          Loading report…
+        <div className="gov-card p-6">
+          <div className="gov-skeleton h-6 w-48" />
         </div>
       ) : report.total === 0 ? (
-        <div className="gov-card rounded-2xl p-6 text-sm text-[color:var(--gov-muted)]">
+        <div className="gov-card p-8 text-center text-sm text-[color:var(--gov-muted)]">
           No registered PWDs yet. Approve applications to populate this report.
         </div>
       ) : (
         <>
-          <section className="grid gap-4 lg:grid-cols-3">
-            <StatCard label="Registered PWDs" value={report.total} />
-            <StatCard label="Barangays covered" value={report.barangayCount} />
+          <section className="grid gap-4 sm:grid-cols-3">
+            <StatCard label="Registered PWDs" value={report.total} icon={Users} tone="primary" />
+            <StatCard label="Barangays covered" value={report.barangayCount} icon={MapPin} tone="success" />
             <StatCard
               label="Disability types"
               value={report.typeColumns.filter((t) => t !== "unspecified").length}
+              icon={Activity}
+              tone="warning"
             />
           </section>
 
           <section className="grid gap-6 lg:grid-cols-2">
             <BarChartCard
-              title="Registered PWDs per Barangay"
+              title="Registered PWDs per barangay"
               subtitle="All registered"
               data={report.perBarangayChart}
             />
             <BarChartCard
-              title="By Disability Type"
+              title="By disability type"
               subtitle="All registered"
               data={report.perTypeChart}
             />
           </section>
 
-          <section className="gov-card rounded-2xl p-5">
-            <h3 className="text-sm font-semibold text-[color:var(--gov-text)]">
-              Barangay × Disability Type
+          <section className="gov-card p-5">
+            <h3 className="font-semibold text-[color:var(--gov-text)]">
+              Barangay × disability type
             </h3>
             <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="text-xs uppercase text-[color:var(--gov-muted)]">
-                  <tr>
-                    <th className="pb-3 pr-4">Barangay</th>
+              <table className="w-full border-collapse text-left text-sm">
+                <thead>
+                  <tr className="border-b border-[color:var(--gov-border)] text-xs font-semibold text-[color:var(--gov-muted)]">
+                    <th className="pb-3 pr-4 font-semibold">Barangay</th>
                     {report.typeColumns.map((t) => (
-                      <th key={t} className="pb-3 pr-4 text-center">
+                      <th key={t} className="pb-3 pr-4 text-center font-semibold">
                         {label(t)}
                       </th>
                     ))}
-                    <th className="pb-3 text-center font-semibold">Total</th>
+                    <th className="pb-3 text-center font-semibold text-[color:var(--gov-text)]">
+                      Total
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="text-[color:var(--gov-text)]">
                   {report.barangays.map((b) => (
                     <tr
                       key={b}
-                      className="border-t border-[color:var(--gov-border)]"
+                      className="border-b border-[color:var(--gov-border)]"
                     >
-                      <td className="py-3 pr-4">{b}</td>
+                      <td className="py-3 pr-4 font-medium">{b}</td>
                       {report.typeColumns.map((t) => (
-                        <td key={t} className="py-3 pr-4 text-center">
+                        <td key={t} className="py-3 pr-4 text-center text-[color:var(--gov-muted)]">
                           {report.byBarangay[b].types[t] || 0}
                         </td>
                       ))}
@@ -239,14 +244,16 @@ export default function Reports() {
                       </td>
                     </tr>
                   ))}
-                  <tr className="border-t-2 border-[color:var(--gov-border)] font-semibold">
+                  <tr className="border-t-2 border-[color:var(--gov-border-strong)] font-semibold">
                     <td className="py-3 pr-4">All barangays</td>
                     {report.typeColumns.map((t) => (
                       <td key={t} className="py-3 pr-4 text-center">
                         {report.typeCounts[t] || 0}
                       </td>
                     ))}
-                    <td className="py-3 text-center">{report.total}</td>
+                    <td className="py-3 text-center text-[color:var(--gov-primary)]">
+                      {report.total}
+                    </td>
                   </tr>
                 </tbody>
               </table>
