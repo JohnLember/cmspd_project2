@@ -1,5 +1,7 @@
 import { Accessibility } from "lucide-react";
 import { disabilityLabel } from "../../constants/disability.js";
+import loretoSeal from "../../assets/loreto_seal.jpg";
+import dswdLogo from "../../assets/dswd_logo.png";
 
 const fmtDate = (value) => {
   if (!value) return "";
@@ -24,11 +26,18 @@ const formatName = (profile) => {
 const officerName = (o) =>
   o ? [o.firstName, o.middleName, o.lastName].filter(Boolean).join(" ") : "";
 
-const Seal = ({ label }) => (
-  <div className="grid h-9 w-9 place-items-center rounded-full border border-green-800 text-center text-[6px] font-semibold leading-none text-green-900">
-    {label}
-  </div>
-);
+const Seal = ({ label, src, alt }) =>
+  src ? (
+    <img
+      src={src}
+      alt={alt || label}
+      className="h-14 w-14 shrink-0 rounded-full object-contain"
+    />
+  ) : (
+    <div className="grid h-14 w-14 place-items-center rounded-full border border-green-800 text-center text-[8px] font-semibold leading-none text-green-900">
+      {label}
+    </div>
+  );
 
 export default function DigitalIdCard({ profile }) {
   const data = profile.data ?? {};
@@ -56,8 +65,8 @@ export default function DigitalIdCard({ profile }) {
             </p>
           </div>
           <div className="flex gap-1">
-            <Seal label="AdS" />
-            <Seal label="BP" />
+            <Seal src={loretoSeal} alt="Municipality of Loreto, Agusan del Sur" />
+            <Seal src={dswdLogo} alt="Department of Social Welfare and Development" />
           </div>
         </div>
 
