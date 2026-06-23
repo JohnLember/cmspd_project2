@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import { signInWithEmail } from "../../services/supabase/auth.js";
 import {
   getMyProfile,
   sendEmailOtp,
@@ -62,7 +63,7 @@ export default function PwdProfile() {
   const [avatarMsg, setAvatarMsg] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
-  const [account, setAccount] = useState({ email: "", password: "" });
+  const [account, setAccount] = useState({ email: "", currentPassword: "", password: "", confirmPassword: "" });
   const [savingAccount, setSavingAccount] = useState(false);
   const [accountMsg, setAccountMsg] = useState("");
 
@@ -97,7 +98,7 @@ export default function PwdProfile() {
           contactPerson: row.data?.contactPerson ?? "",
           telNos: row.data?.telNos ?? "",
         });
-        setAccount({ email: authUser.email ?? "", password: "" });
+        setAccount({ email: authUser.email ?? "", currentPassword: "", password: "", confirmPassword: "" });
       }
       setIsLoading(false);
     })();
@@ -181,8 +182,24 @@ export default function PwdProfile() {
     }
 
     if (account.password) {
+      if (!account.currentPassword) {
+        setAccountMsg("Enter your current password to set a new one.");
+        setSavingAccount(false);
+        return;
+      }
       if (account.password.length < 6) {
-        setAccountMsg("Password must be at least 6 characters.");
+        setAccountMsg("New password must be at least 6 characters.");
+        setSavingAccount(false);
+        return;
+      }
+      if (account.password !== account.confirmPassword) {
+        setAccountMsg("New password and confirm password do not match.");
+        setSavingAccount(false);
+        return;
+      }
+      const { error: authError } = await signInWithEmail(user.email, account.currentPassword);
+      if (authError) {
+        setAccountMsg("Current password is incorrect.");
         setSavingAccount(false);
         return;
       }
@@ -195,7 +212,7 @@ export default function PwdProfile() {
       messages.push("Your password has been updated.");
     }
 
-    setAccount((prev) => ({ ...prev, password: "" }));
+    setAccount((prev) => ({ ...prev, currentPassword: "", password: "", confirmPassword: "" }));
     setAccountMsg(messages.length ? messages.join(" ") : "No changes to save.");
     setSavingAccount(false);
   };
@@ -588,7 +605,7 @@ export default function PwdProfile() {
           from your personal email above.
         </p>
         <form className="mt-6 grid gap-4 sm:grid-cols-2" onSubmit={handleSaveAccount}>
-          <div>
+          <div className="sm:col-span-2">
             <label className="text-sm font-medium" htmlFor="account-email">
               Login email
             </label>
@@ -600,6 +617,25 @@ export default function PwdProfile() {
                 setAccount((prev) => ({ ...prev, email: e.target.value }))
               }
               className={fieldClass}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-sm font-medium" htmlFor="account-current-password">
+              Current password
+            </label>
+            <p className="mt-1 text-xs text-[color:var(--gov-muted)]">
+              Required only when changing your password.
+            </p>
+            <input
+              id="account-current-password"
+              type="password"
+              value={account.currentPassword}
+              onChange={(e) =>
+                setAccount((prev) => ({ ...prev, currentPassword: e.target.value }))
+              }
+              className={fieldClass}
+              placeholder="Enter your current password"
+              autoComplete="current-password"
             />
           </div>
           <div>
@@ -615,6 +651,22 @@ export default function PwdProfile() {
               }
               className={fieldClass}
               placeholder="Leave blank to keep current"
+              autoComplete="new-password"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium" htmlFor="account-confirm-password">
+              Confirm new password
+            </label>
+            <input
+              id="account-confirm-password"
+              type="password"
+              value={account.confirmPassword}
+              onChange={(e) =>
+                setAccount((prev) => ({ ...prev, confirmPassword: e.target.value }))
+              }
+              className={fieldClass}
+              placeholder="Re-enter new password"
               autoComplete="new-password"
             />
           </div>
