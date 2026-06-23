@@ -52,17 +52,31 @@ export default function Notifications() {
       return;
     }
     setPosting(true);
-    const { announcement, error: postError } = await createAnnouncement({
-      title: title.trim(),
-      body: body.trim(),
-    });
+    const { announcement, emailedCount, recipientCount, emailError, error: postError } =
+      await createAnnouncement({
+        title: title.trim(),
+        body: body.trim(),
+      });
     if (postError) {
       setError(postError.message || "Unable to post announcement.");
     } else {
       setAnnouncements((prev) => [announcement, ...prev]);
       setTitle("");
       setBody("");
-      toast.success("Announcement posted to PWDs and guardians.");
+      if (emailError) {
+        toast.success("Announcement posted to PWDs and guardians.");
+        toast.warn(emailError);
+      } else if (recipientCount > 0) {
+        toast.success(
+          `Announcement posted and emailed to ${emailedCount} of ${recipientCount} verified ${
+            recipientCount === 1 ? "beneficiary" : "beneficiaries"
+          }.`
+        );
+      } else {
+        toast.success(
+          "Announcement posted. No beneficiaries have a verified email yet, so no emails were sent."
+        );
+      }
     }
     setPosting(false);
   };
@@ -145,7 +159,7 @@ export default function Notifications() {
         <h2 className="text-xl font-semibold">Post an announcement</h2>
         <p className="mt-2 text-sm text-[color:var(--gov-muted)]">
           Published announcements appear in every PWD beneficiary and guardian
-          portal.
+          portal, and are emailed to beneficiaries with a verified email address.
         </p>
 
         <form className="mt-6 space-y-4" onSubmit={handlePost}>
