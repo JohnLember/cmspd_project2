@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   createAnnouncement,
   deleteAnnouncement,
@@ -18,8 +19,26 @@ const fmt = (iso) =>
       })
     : "";
 
+const PAGE_SIZE = 10;
+
+// Windowed page numbers: first, last, current ±1, with "…" gaps for big sets.
+function getPageNumbers(current, total) {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  const pages = [1];
+  if (current > 3) pages.push("start-ellipsis");
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  for (let i = start; i <= end; i += 1) pages.push(i);
+  if (current < total - 2) pages.push("end-ellipsis");
+  pages.push(total);
+  return pages;
+}
+
 export default function Notifications() {
   const [announcements, setAnnouncements] = useState([]);
+  const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [title, setTitle] = useState("");
@@ -44,6 +63,13 @@ export default function Notifications() {
     };
   }, []);
 
+  const totalPages = Math.max(1, Math.ceil(announcements.length / PAGE_SIZE));
+  // Derive a valid page so the list shrinking (e.g. after a delete) never
+  // strands us on an empty page — no effect/setState needed.
+  const currentPage = Math.min(page, totalPages);
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageItems = announcements.slice(start, start + PAGE_SIZE);
+
   const handlePost = async (e) => {
     e.preventDefault();
     setError("");
@@ -61,6 +87,7 @@ export default function Notifications() {
       setError(postError.message || "Unable to post announcement.");
     } else {
       setAnnouncements((prev) => [announcement, ...prev]);
+      setPage(1);
       setTitle("");
       setBody("");
       if (emailError) {
@@ -210,9 +237,17 @@ export default function Notifications() {
       </section>
 
       <section className="gov-card p-5">
-        <h3 className="font-semibold text-[color:var(--gov-text)]">
-          Posted announcements
-        </h3>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="font-semibold text-[color:var(--gov-text)]">
+            Posted announcements
+          </h3>
+          {!isLoading && announcements.length > 0 ? (
+            <span className="tnum text-xs text-[color:var(--gov-muted)]">
+              Showing {start + 1}–{Math.min(start + PAGE_SIZE, announcements.length)} of{" "}
+              {announcements.length}
+            </span>
+          ) : null}
+        </div>
         <div className="mt-4 space-y-3">
           {isLoading ? (
             [0, 1].map((i) => (
@@ -223,7 +258,7 @@ export default function Notifications() {
               No announcements posted yet.
             </p>
           ) : (
-            announcements.map((item) => (
+            pageItems.map((item) => (
               <div
                 key={item.id}
                 className="rounded-[var(--radius-md)] border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] p-4"
@@ -298,6 +333,61 @@ export default function Notifications() {
             ))
           )}
         </div>
+
+        {!isLoading && totalPages > 1 ? (
+          <nav
+            className="mt-5 flex items-center justify-between gap-2 border-t border-[color:var(--gov-border)] pt-4"
+            aria-label="Announcements pages"
+          >
+            <button
+              type="button"
+              onClick={() => setPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="btn btn-secondary h-9 px-3 text-xs"
+            >
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden sm:inline">Previous</span>
+            </button>
+
+            <div className="flex items-center gap-1">
+              {getPageNumbers(currentPage, totalPages).map((p) =>
+                typeof p === "number" ? (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPage(p)}
+                    aria-current={p === currentPage ? "page" : undefined}
+                    className={`tnum grid h-9 min-w-9 place-items-center rounded-[var(--radius-md)] px-2 text-xs font-semibold transition-colors ${
+                      p === currentPage
+                        ? "bg-[color:var(--gov-primary)] text-[color:var(--gov-on-primary)]"
+                        : "text-[color:var(--gov-muted)] hover:bg-[color:var(--gov-card)] hover:text-[color:var(--gov-text)]"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ) : (
+                  <span
+                    key={p}
+                    className="px-1 text-xs text-[color:var(--gov-faint)]"
+                    aria-hidden="true"
+                  >
+                    …
+                  </span>
+                )
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="btn btn-secondary h-9 px-3 text-xs"
+            >
+              <span className="hidden sm:inline">Next</span>
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </nav>
+        ) : null}
       </section>
     </div>
   );
