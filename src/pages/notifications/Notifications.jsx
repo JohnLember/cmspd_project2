@@ -149,7 +149,13 @@ export default function Notifications() {
           </div>
         </div>
       ),
-      { closeButton: false, autoClose: false, closeOnClick: false, className: "gov-card" }
+      {
+        toastId: `delete-announcement-${item.id}`,
+        closeButton: false,
+        autoClose: false,
+        closeOnClick: false,
+        className: "gov-card",
+      }
     );
   };
 

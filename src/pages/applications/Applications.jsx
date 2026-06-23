@@ -149,6 +149,7 @@ export default function Applications() {
         </div>
       ),
       {
+        toastId: `reject-${row.id}`,
         closeButton: false,
         autoClose: false,
         closeOnClick: false,

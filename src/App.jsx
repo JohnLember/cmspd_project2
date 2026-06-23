@@ -11,8 +11,8 @@ function ToastHost() {
   return (
     <ToastContainer
       position="top-center"
-      autoClose={false}
-      closeOnClick={false}
+      autoClose={4000}
+      closeOnClick
       pauseOnHover
       draggable={false}
       newestOnTop

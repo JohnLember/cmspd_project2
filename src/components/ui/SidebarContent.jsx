@@ -47,6 +47,7 @@ export default function SidebarContent({
         </div>
       ),
       {
+        toastId: "logout-confirm",
         closeButton: false,
         autoClose: false,
         closeOnClick: false,
