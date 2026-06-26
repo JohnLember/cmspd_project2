@@ -1,31 +1,34 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Printer, XCircle } from "lucide-react";
 import { getMyProfile } from "../../services/supabase/profile.js";
 import DigitalIdCard from "../../components/pwd/DigitalIdCard.jsx";
 import { getMissingIdFields } from "../../components/pwd/digitalIdFields.js";
+import { useRealtime } from "../../hooks/useRealtime.js";
 
 export default function PwdDigitalId() {
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      const { profile: row, error: loadError } = await getMyProfile();
-      if (!isMounted) return;
-      if (loadError) {
-        setError(loadError.message || "Unable to load your digital ID.");
-      } else {
-        setProfile(row);
-      }
-      setIsLoading(false);
-    })();
-    return () => {
-      isMounted = false;
-    };
+  const load = useCallback(async () => {
+    const { profile: row, error: loadError } = await getMyProfile();
+    if (loadError) {
+      setError(loadError.message || "Unable to load your digital ID.");
+    } else {
+      setProfile(row);
+    }
+    setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      await load();
+    })();
+  }, [load]);
+
+  // Live: the ID reflects PDAO edits to this beneficiary's record immediately.
+  useRealtime("profiles", load);
 
   const missingFields = profile ? getMissingIdFields(profile) : [];
   const isComplete = profile && missingFields.length === 0;

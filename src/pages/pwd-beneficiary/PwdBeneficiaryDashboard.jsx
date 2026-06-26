@@ -1,26 +1,29 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { ArrowRight, Bell, IdCard, User } from "lucide-react";
 import { getMyProfile } from "../../services/supabase/profile.js";
 import { getMissingIdFields } from "../../components/pwd/digitalIdFields.js";
 import AnnouncementsFeed from "../../components/ui/AnnouncementsFeed.jsx";
+import { useRealtime } from "../../hooks/useRealtime.js";
 
 export default function PwdBeneficiaryDashboard() {
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      const { profile: row } = await getMyProfile();
-      if (!isMounted) return;
-      setProfile(row);
-      setIsLoading(false);
-    })();
-    return () => {
-      isMounted = false;
-    };
+  const load = useCallback(async () => {
+    const { profile: row } = await getMyProfile();
+    setProfile(row);
+    setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      await load();
+    })();
+  }, [load]);
+
+  // Live: reflects profile/ID changes made by PDAO without a refresh.
+  useRealtime("profiles", load);
 
   const firstName = (profile?.full_name || "").split(" ")[0];
   const idReady = profile && getMissingIdFields(profile).length === 0;

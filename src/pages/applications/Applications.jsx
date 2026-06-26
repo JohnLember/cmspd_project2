@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import {
   approveApplication,
@@ -7,6 +7,7 @@ import {
 } from "../../services/supabase/applications.js";
 import ApproveApplicationModal from "../../components/applications/ApproveApplicationModal.jsx";
 import StatusBadge from "../../components/ui/StatusBadge.jsx";
+import { useRealtime } from "../../hooks/useRealtime.js";
 
 const STATUS_OPTIONS = ["pending", "approved", "rejected"];
 
@@ -29,22 +30,24 @@ export default function Applications() {
   const [isApproving, setIsApproving] = useState(false);
   const [approveError, setApproveError] = useState("");
 
-  useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      const { applications: rows, error: fetchError } = await getApplications();
-      if (!isMounted) return;
-      if (fetchError) {
-        setError(fetchError.message || "Unable to load applications.");
-      } else {
-        setApplications(rows);
-      }
-      setIsLoading(false);
-    })();
-    return () => {
-      isMounted = false;
-    };
+  const load = useCallback(async () => {
+    const { applications: rows, error: fetchError } = await getApplications();
+    if (fetchError) {
+      setError(fetchError.message || "Unable to load applications.");
+    } else {
+      setApplications(rows);
+    }
+    setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      await load();
+    })();
+  }, [load]);
+
+  // Live: new submissions and status changes appear without a refresh.
+  useRealtime("applications", load);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();

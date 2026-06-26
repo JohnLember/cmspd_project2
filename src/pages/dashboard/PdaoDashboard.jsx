@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ClipboardList, Clock, CheckCircle2, XCircle } from "lucide-react";
 import BarChartCard from "../../components/charts/BarChartCard.jsx";
 import StatCard from "../../components/cards/StatCard.jsx";
 import StatusBadge from "../../components/ui/StatusBadge.jsx";
 import { getApplications } from "../../services/supabase/applications.js";
+import { useRealtime } from "../../hooks/useRealtime.js";
 
 const timeAgo = (iso) => {
   if (!iso) return "";
@@ -41,22 +42,24 @@ export default function PdaoDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      const { applications: rows, error: fetchError } = await getApplications();
-      if (!isMounted) return;
-      if (fetchError) {
-        setError(fetchError.message || "Unable to load dashboard data.");
-      } else {
-        setApplications(rows);
-      }
-      setIsLoading(false);
-    })();
-    return () => {
-      isMounted = false;
-    };
+  const load = useCallback(async () => {
+    const { applications: rows, error: fetchError } = await getApplications();
+    if (fetchError) {
+      setError(fetchError.message || "Unable to load dashboard data.");
+    } else {
+      setApplications(rows);
+    }
+    setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      await load();
+    })();
+  }, [load]);
+
+  // Live stats and recent activity as applications come in and change status.
+  useRealtime("applications", load);
 
   const stats = useMemo(() => {
     const by = (status) =>

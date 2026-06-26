@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
@@ -7,6 +7,7 @@ import {
   getAnnouncements,
   updateAnnouncement,
 } from "../../services/supabase/announcements.js";
+import { useRealtime } from "../../hooks/useRealtime.js";
 
 const fmt = (iso) =>
   iso
@@ -49,19 +50,21 @@ export default function Notifications() {
   const [editBody, setEditBody] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
 
-  useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      const { announcements: rows, error: loadError } = await getAnnouncements();
-      if (!isMounted) return;
-      if (loadError) setError(loadError.message || "Unable to load announcements.");
-      else setAnnouncements(rows);
-      setIsLoading(false);
-    })();
-    return () => {
-      isMounted = false;
-    };
+  const load = useCallback(async () => {
+    const { announcements: rows, error: loadError } = await getAnnouncements();
+    if (loadError) setError(loadError.message || "Unable to load announcements.");
+    else setAnnouncements(rows);
+    setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      await load();
+    })();
+  }, [load]);
+
+  // Keep the list in sync across PDAO sessions in realtime.
+  useRealtime("announcements", load);
 
   const totalPages = Math.max(1, Math.ceil(announcements.length / PAGE_SIZE));
   // Derive a valid page so the list shrinking (e.g. after a delete) never

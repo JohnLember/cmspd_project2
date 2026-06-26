@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getAnnouncements } from "../../services/supabase/announcements.js";
+import { useRealtime } from "../../hooks/useRealtime.js";
 
 const isRecent = (iso) =>
   iso && Date.now() - new Date(iso).getTime() < 3 * 24 * 60 * 60 * 1000;
@@ -18,19 +19,21 @@ export default function AnnouncementsFeed({ emptyText }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      const { announcements: rows, error: loadError } = await getAnnouncements();
-      if (!isMounted) return;
-      if (loadError) setError(loadError.message || "Unable to load announcements.");
-      else setAnnouncements(rows);
-      setIsLoading(false);
-    })();
-    return () => {
-      isMounted = false;
-    };
+  const load = useCallback(async () => {
+    const { announcements: rows, error: loadError } = await getAnnouncements();
+    if (loadError) setError(loadError.message || "Unable to load announcements.");
+    else setAnnouncements(rows);
+    setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      await load();
+    })();
+  }, [load]);
+
+  // Live updates when PDAO posts, edits, or deletes an announcement.
+  useRealtime("announcements", load);
 
   if (isLoading) {
     return (

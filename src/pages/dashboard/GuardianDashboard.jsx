@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getMyWards } from "../../services/supabase/guardians.js";
 import { disabilityLabel } from "../../constants/disability.js";
 import DigitalIdCard from "../../components/pwd/DigitalIdCard.jsx";
 import AnnouncementsFeed from "../../components/ui/AnnouncementsFeed.jsx";
 import StatusBadge from "../../components/ui/StatusBadge.jsx";
+import { useRealtime } from "../../hooks/useRealtime.js";
 
 export default function GuardianDashboard() {
   const [wards, setWards] = useState([]);
@@ -11,19 +12,23 @@ export default function GuardianDashboard() {
   const [error, setError] = useState("");
   const [openId, setOpenId] = useState(null);
 
-  useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      const { wards: rows, error: loadError } = await getMyWards();
-      if (!isMounted) return;
-      if (loadError) setError(loadError.message || "Unable to load your wards.");
-      else setWards(rows);
-      setIsLoading(false);
-    })();
-    return () => {
-      isMounted = false;
-    };
+  const load = useCallback(async () => {
+    const { wards: rows, error: loadError } = await getMyWards();
+    if (loadError) setError(loadError.message || "Unable to load your wards.");
+    else setWards(rows);
+    setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      await load();
+    })();
+  }, [load]);
+
+  // Live: ward profile/approval changes and new ward links update in place.
+  // RLS scopes these events to this guardian's own ward(s).
+  useRealtime("profiles", load);
+  useRealtime("ward_links", load);
 
   return (
     <div className="space-y-6">

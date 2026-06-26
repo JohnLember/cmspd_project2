@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getProfiles } from "../../services/supabase/profile.js";
 import { disabilityLabel } from "../../constants/disability.js";
 import PwdDetailModal from "../../components/pwd/PwdDetailModal.jsx";
+import { useRealtime } from "../../hooks/useRealtime.js";
 
 const displayId = (row) =>
   row.pwd_id_number ||
@@ -16,22 +17,24 @@ export default function PwdManagement() {
   const [barangayFilter, setBarangayFilter] = useState("all");
   const [selected, setSelected] = useState(null);
 
-  useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      const { profiles: rows, error: fetchError } = await getProfiles();
-      if (!isMounted) return;
-      if (fetchError) {
-        setError(fetchError.message || "Unable to load PWD profiles.");
-      } else {
-        setProfiles(rows);
-      }
-      setIsLoading(false);
-    })();
-    return () => {
-      isMounted = false;
-    };
+  const load = useCallback(async () => {
+    const { profiles: rows, error: fetchError } = await getProfiles();
+    if (fetchError) {
+      setError(fetchError.message || "Unable to load PWD profiles.");
+    } else {
+      setProfiles(rows);
+    }
+    setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      await load();
+    })();
+  }, [load]);
+
+  // Live: profiles appear/update as applications are approved or records change.
+  useRealtime("profiles", load);
 
   const barangays = useMemo(() => {
     const set = new Set(
