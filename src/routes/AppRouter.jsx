@@ -11,6 +11,9 @@ const ForgotPassword = lazy(() => import("../pages/auth/ForgotPassword.jsx"));
 const GuardianDashboard = lazy(
   () => import("../pages/dashboard/GuardianDashboard.jsx")
 );
+const GuardianProfile = lazy(
+  () => import("../pages/guardian/GuardianProfile.jsx")
+);
 const PdaoDashboard = lazy(() => import("../pages/dashboard/PdaoDashboard.jsx"));
 const PwdDashboard = lazy(() => import("../pages/dashboard/PwdDashboard.jsx"));
 const PwdManagement = lazy(() => import("../pages/pwd/PwdManagement.jsx"));
@@ -90,6 +93,7 @@ export default function AppRouter() {
           }
         >
           <Route index element={<GuardianDashboard />} />
+          <Route path="profile" element={<GuardianProfile />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

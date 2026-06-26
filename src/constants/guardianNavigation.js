@@ -1,4 +1,4 @@
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, User } from "lucide-react";
 
 export const guardianNavigationItems = [
   {
@@ -6,5 +6,10 @@ export const guardianNavigationItems = [
     to: "/app/guardian",
     icon: LayoutDashboard,
     end: true,
+  },
+  {
+    label: "My Profile",
+    to: "/app/guardian/profile",
+    icon: User,
   },
 ];
