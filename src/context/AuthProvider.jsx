@@ -7,6 +7,7 @@ import {
   signInWithEmail,
   signOut as supabaseSignOut,
 } from "../services/supabase/auth.js";
+import { joinPresence, leavePresence } from "../services/supabase/presence.js";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -34,6 +35,13 @@ export function AuthProvider({ children }) {
       data?.subscription?.unsubscribe();
     };
   }, []);
+
+  // Track this user as "online" via Realtime presence while signed in.
+  useEffect(() => {
+    if (!user?.id) return undefined;
+    joinPresence(user.id);
+    return () => leavePresence();
+  }, [user?.id]);
 
   const signIn = async ({ email, password }) => {
     const { error, user: signedInUser } = await signInWithEmail(email, password);

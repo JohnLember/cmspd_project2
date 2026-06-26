@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Outlet } from "react-router";
 import { Menu, X } from "lucide-react";
-import ThemeToggle from "../components/ui/ThemeToggle.jsx";
 import SidebarContent from "../components/ui/SidebarContent.jsx";
 
 // Unified app shell for the PDAO, PWD, and Guardian portals.
@@ -75,16 +74,6 @@ export default function AppShell({
                 <h1 className="truncate text-base font-semibold text-[color:var(--gov-text)] sm:text-lg">
                   {headerTitle}
                 </h1>
-              </div>
-              <div className="flex items-center gap-2 sm:gap-3">
-                <span className="hidden items-center gap-2 rounded-full border border-[color:var(--gov-border)] px-3 py-1.5 text-xs font-medium text-[color:var(--gov-muted)] md:inline-flex">
-                  <span
-                    className="h-2 w-2 rounded-full bg-[color:var(--gov-success)]"
-                    aria-hidden="true"
-                  />
-                  Operational
-                </span>
-                <ThemeToggle />
               </div>
             </div>
           </header>

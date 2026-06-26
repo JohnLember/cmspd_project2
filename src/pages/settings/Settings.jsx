@@ -13,6 +13,7 @@ import {
   updateAccountPassword,
 } from "../../services/supabase/profile.js";
 import { createPdaoUser, listPdaoUsers } from "../../services/supabase/pdao.js";
+import { subscribeOnline } from "../../services/supabase/presence.js";
 
 const fmtDate = (iso) =>
   iso
@@ -100,6 +101,7 @@ export default function Settings() {
   const [accounts, setAccounts] = useState([]);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [onlineIds, setOnlineIds] = useState(() => new Set());
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -121,6 +123,9 @@ export default function Settings() {
       isMounted = false;
     };
   }, []);
+
+  // Live online/offline status from Realtime presence.
+  useEffect(() => subscribeOnline(setOnlineIds), []);
 
   const handleAvatar = async (e) => {
     const file = e.target.files?.[0];
@@ -532,6 +537,7 @@ export default function Settings() {
             ) : (
               accounts.map((acct) => {
                 const isYou = acct.email === user?.email;
+                const isOnline = onlineIds.has(acct.id);
                 return (
                   <div
                     key={acct.id}
@@ -554,9 +560,28 @@ export default function Settings() {
                         {acct.email}
                       </p>
                     </div>
-                    <span className="shrink-0 text-xs text-[color:var(--gov-muted)]">
-                      Added {fmtDate(acct.createdAt)}
-                    </span>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <span
+                        className={`inline-flex items-center gap-1.5 text-xs font-medium ${
+                          isOnline
+                            ? "text-[color:var(--gov-success-fg)]"
+                            : "text-[color:var(--gov-muted)]"
+                        }`}
+                      >
+                        <span
+                          className={`h-2 w-2 rounded-full ${
+                            isOnline
+                              ? "bg-[color:var(--gov-success)]"
+                              : "bg-[color:var(--gov-faint)]"
+                          }`}
+                          aria-hidden="true"
+                        />
+                        {isOnline ? "Online" : "Offline"}
+                      </span>
+                      <span className="text-xs text-[color:var(--gov-muted)]">
+                        Added {fmtDate(acct.createdAt)}
+                      </span>
+                    </div>
                   </div>
                 );
               })
