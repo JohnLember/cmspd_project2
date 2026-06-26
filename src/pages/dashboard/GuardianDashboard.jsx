@@ -28,7 +28,7 @@ export default function GuardianDashboard() {
   // Live: ward profile/approval changes and new ward links update in place.
   // RLS scopes these events to this guardian's own ward(s).
   useRealtime("profiles", load);
-  useRealtime("ward_links", load);
+  useRealtime("guardian_ward_links", load);
 
   return (
     <div className="space-y-6">

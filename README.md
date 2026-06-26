@@ -103,7 +103,7 @@ by `ProtectedRoute`.
   status, `approval` record with signatures + officers).
 - **profiles** — one per PWD account (personal info, avatar, `pwd_id_number`,
   verification flags, link to source application).
-- **ward_links** — guardian ↔ PWD ward relationships.
+- **guardian_ward_links** — guardian ↔ PWD ward relationships.
 - **announcements** — PDAO broadcasts.
 
 All tables use **RLS**: PWDs see only their own data, guardians see their wards,

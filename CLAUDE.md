@@ -70,7 +70,7 @@ All UI uses CSS custom properties (`--gov-bg`, `--gov-text`, `--gov-surface`, `-
 | `auth.js` | `supabase.auth.*`, maps session user to `{ id, email, role, fullName, avatarUrl }` |
 | `applications.js` | `applications` table, `approve-application` Edge Function |
 | `profile.js` | `profiles` table, `avatars` storage bucket, `send-email-otp` / `verify-email-otp` Edge Functions |
-| `guardians.js` | `ward_links` table, `create-guardian` Edge Function |
+| `guardians.js` | `guardian_ward_links` table, `create-guardian` Edge Function |
 | `announcements.js` | `announcements` table |
 
 RLS on Supabase enforces role access — never skip the service layer to query Supabase directly from components.
@@ -81,7 +81,7 @@ RLS on Supabase enforces role access — never skip the service layer to query S
 
 Three Supabase Edge Functions handle privileged operations:
 - `approve-application` — creates a PWD auth account, links it to the application, stores approval record
-- `create-guardian` — creates a guardian auth account and inserts a `ward_links` row
+- `create-guardian` — creates a guardian auth account and inserts a `guardian_ward_links` row
 - `send-email-otp` / `verify-email-otp` — OTP flow via Resend for email verification
 
 ### Geographic scope

@@ -23,7 +23,7 @@ export async function createGuardian(payload) {
 // PDAO staff: list guardians linked to a given PWD ward.
 export async function getGuardiansForPwd(pwdId) {
   const { data, error } = await supabase
-    .from("ward_links")
+    .from("guardian_ward_links")
     .select("*")
     .eq("pwd_id", pwdId)
     .order("created_at", { ascending: true });
@@ -39,7 +39,7 @@ export async function getMyWards() {
   if (!user) return { wards: [], error: { message: "Not signed in." } };
 
   const { data, error } = await supabase
-    .from("ward_links")
+    .from("guardian_ward_links")
     .select(
       "id, relationship, ward:pwd_id(*, application:application_id(application_number, status, approval, submitted_at))"
     )
