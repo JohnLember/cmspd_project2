@@ -103,12 +103,21 @@ export default function SidebarContent({
       <div className="mt-auto flex flex-col gap-3 border-t border-[color:var(--gov-border)] pt-4">
         {user?.email ? (
           <div className="flex items-center gap-3 px-1">
-            <span
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[color:var(--gov-primary-soft)] text-xs font-semibold text-[color:var(--gov-primary)]"
-              aria-hidden="true"
-            >
-              {(user.fullName || user.email).slice(0, 1).toUpperCase()}
-            </span>
+            {user.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt=""
+                aria-hidden="true"
+                className="h-9 w-9 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <span
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[color:var(--gov-primary-soft)] text-xs font-semibold text-[color:var(--gov-primary)]"
+                aria-hidden="true"
+              >
+                {(user.fullName || user.email).slice(0, 1).toUpperCase()}
+              </span>
+            )}
             <div className="min-w-0">
               <p className="truncate text-xs font-medium text-[color:var(--gov-text)]">
                 {user.fullName || "Signed in"}

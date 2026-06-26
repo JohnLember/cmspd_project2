@@ -1,8 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import { UserPlus, Users } from "lucide-react";
+import { Camera, Eye, EyeOff, UserCog, UserPlus, Users } from "lucide-react";
 import ThemeToggle from "../../components/ui/ThemeToggle.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
+import {
+  signInWithEmail,
+  updateAccountName,
+  uploadAccountAvatar,
+} from "../../services/supabase/auth.js";
+import {
+  updateAccountEmail,
+  updateAccountPassword,
+} from "../../services/supabase/profile.js";
 import { createPdaoUser, listPdaoUsers } from "../../services/supabase/pdao.js";
 
 const fmtDate = (iso) =>
@@ -14,8 +23,79 @@ const fmtDate = (iso) =>
       })
     : "—";
 
+// Controlled password input with a show/hide eye toggle.
+function PasswordField({
+  id,
+  label,
+  required = false,
+  hint,
+  value,
+  onChange,
+  placeholder,
+  autoComplete = "new-password",
+}) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-medium" htmlFor={id}>
+        {label}
+        {required ? (
+          <span className="text-[color:var(--gov-danger-fg)]"> *</span>
+        ) : null}
+      </label>
+      {hint ? (
+        <p className="-mt-1 mb-2 text-xs text-[color:var(--gov-muted)]">{hint}</p>
+      ) : null}
+      <div className="relative">
+        <input
+          id={id}
+          type={visible ? "text" : "password"}
+          value={value}
+          onChange={onChange}
+          className="gov-input pr-12"
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+        />
+        <button
+          type="button"
+          onClick={() => setVisible((v) => !v)}
+          className="absolute right-1 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-[var(--radius-sm)] text-[color:var(--gov-muted)] transition-colors hover:text-[color:var(--gov-text)]"
+          aria-label={visible ? "Hide password" : "Show password"}
+          aria-pressed={visible}
+        >
+          {visible ? (
+            <EyeOff className="h-[1.15rem] w-[1.15rem]" aria-hidden="true" />
+          ) : (
+            <Eye className="h-[1.15rem] w-[1.15rem]" aria-hidden="true" />
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const initials = (name, email) =>
+  (name || email || "?").trim().slice(0, 1).toUpperCase();
+
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
+
+  // Edit my own account (name / login email / password).
+  const [me, setMe] = useState({
+    fullName: user?.fullName ?? "",
+    email: user?.email ?? "",
+    currentPassword: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [savingMe, setSavingMe] = useState(false);
+  const [meMsg, setMeMsg] = useState("");
+  const [meError, setMeError] = useState("");
+
+  // Profile picture upload.
+  const avatarInputRef = useRef(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarMsg, setAvatarMsg] = useState("");
 
   const [accounts, setAccounts] = useState([]);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
@@ -41,6 +121,120 @@ export default function Settings() {
       isMounted = false;
     };
   }, []);
+
+  const handleAvatar = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarMsg("");
+    if (!file.type.startsWith("image/")) {
+      setAvatarMsg("Please choose an image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarMsg("Image must be 5MB or smaller.");
+      return;
+    }
+    setUploadingAvatar(true);
+    const { url, error } = await uploadAccountAvatar(file);
+    if (error) {
+      setAvatarMsg(error.message || "Unable to upload picture.");
+    } else {
+      // Reflect immediately in the app shell (also reconciled by USER_UPDATED).
+      setUser((prev) => (prev ? { ...prev, avatarUrl: url } : prev));
+      toast.success("Profile picture updated.");
+    }
+    setUploadingAvatar(false);
+    if (avatarInputRef.current) avatarInputRef.current.value = "";
+  };
+
+  const handleSaveMe = async (e) => {
+    e.preventDefault();
+    setMeMsg("");
+    setMeError("");
+
+    if (!me.fullName.trim()) {
+      setMeError("Full name cannot be empty.");
+      return;
+    }
+
+    setSavingMe(true);
+    const messages = [];
+
+    // Name change.
+    if (me.fullName.trim() !== (user?.fullName ?? "")) {
+      const { error } = await updateAccountName(me.fullName.trim());
+      if (error) {
+        setMeError(error.message || "Unable to update your name.");
+        setSavingMe(false);
+        return;
+      }
+      messages.push("Your name has been updated.");
+    }
+
+    // Login email change (requires confirmation via email link).
+    const emailChanged =
+      me.email.trim() && me.email.trim() !== (user?.email ?? "");
+    if (emailChanged) {
+      const { error } = await updateAccountEmail(me.email.trim());
+      if (error) {
+        setMeError(error.message || "Unable to update email.");
+        setSavingMe(false);
+        return;
+      }
+      messages.push(
+        "A confirmation link was sent to your new email; the change applies once confirmed."
+      );
+    }
+
+    // Password change (re-authenticate with current password first).
+    if (me.password) {
+      if (!me.currentPassword) {
+        setMeError("Enter your current password to set a new one.");
+        setSavingMe(false);
+        return;
+      }
+      if (me.password.length < 6) {
+        setMeError("New password must be at least 6 characters.");
+        setSavingMe(false);
+        return;
+      }
+      if (me.password !== me.confirmPassword) {
+        setMeError("New password and confirm password do not match.");
+        setSavingMe(false);
+        return;
+      }
+      const { error: authError } = await signInWithEmail(
+        user.email,
+        me.currentPassword
+      );
+      if (authError) {
+        setMeError("Current password is incorrect.");
+        setSavingMe(false);
+        return;
+      }
+      const { error } = await updateAccountPassword(me.password);
+      if (error) {
+        setMeError(error.message || "Unable to update password.");
+        setSavingMe(false);
+        return;
+      }
+      messages.push("Your password has been updated.");
+    }
+
+    setMe((prev) => ({
+      ...prev,
+      currentPassword: "",
+      password: "",
+      confirmPassword: "",
+    }));
+    if (messages.length) {
+      setMeMsg(messages.join(" "));
+      toast.success("Account updated.");
+    } else {
+      setMeMsg("No changes to save.");
+    }
+    setSavingMe(false);
+  };
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -92,6 +286,139 @@ export default function Settings() {
         <ThemeToggle />
       </header>
 
+      {/* Edit my own account */}
+      <section className="gov-card p-6">
+        <div className="flex items-center gap-3">
+          <span
+            className="grid h-10 w-10 place-items-center rounded-[var(--radius-md)] bg-[color:var(--gov-primary-soft)] text-[color:var(--gov-primary)]"
+            aria-hidden="true"
+          >
+            <UserCog className="h-5 w-5" />
+          </span>
+          <div>
+            <h3 className="font-semibold">My account</h3>
+            <p className="text-sm text-[color:var(--gov-muted)]">
+              Update your photo, name, login email, and password.
+            </p>
+          </div>
+        </div>
+
+        {/* Profile picture */}
+        <div className="mt-6 flex flex-wrap items-center gap-5">
+          {user?.avatarUrl ? (
+            <img
+              src={user.avatarUrl}
+              alt="Profile"
+              className="h-20 w-20 rounded-full object-cover"
+            />
+          ) : (
+            <div className="grid h-20 w-20 place-items-center rounded-full bg-[color:var(--gov-primary)] text-lg font-semibold text-[color:var(--gov-on-primary)]">
+              {initials(me.fullName, user?.email)}
+            </div>
+          )}
+          <div>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatar}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={uploadingAvatar}
+              className="btn btn-secondary"
+            >
+              <Camera className="h-4 w-4" aria-hidden="true" />
+              {uploadingAvatar ? "Uploading…" : "Change picture"}
+            </button>
+            <p className="mt-2 text-xs text-[color:var(--gov-muted)]">
+              {avatarMsg || "JPG or PNG, up to 5MB."}
+            </p>
+          </div>
+        </div>
+
+        <form className="mt-6 grid gap-4 sm:grid-cols-2" onSubmit={handleSaveMe}>
+          <div className="sm:col-span-2">
+            <label className="mb-2 block text-sm font-medium" htmlFor="me-name">
+              Full name<span className="text-[color:var(--gov-danger-fg)]"> *</span>
+            </label>
+            <input
+              id="me-name"
+              type="text"
+              value={me.fullName}
+              onChange={(e) => setMe((p) => ({ ...p, fullName: e.target.value }))}
+              className="gov-input"
+              placeholder="Your full name"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="mb-2 block text-sm font-medium" htmlFor="me-email">
+              Login email
+            </label>
+            <input
+              id="me-email"
+              type="email"
+              value={me.email}
+              onChange={(e) => setMe((p) => ({ ...p, email: e.target.value }))}
+              className="gov-input"
+              placeholder="name@pdao.gov.ph"
+              autoComplete="username"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <PasswordField
+              id="me-current"
+              label="Current password"
+              hint="Required only when changing your password."
+              value={me.currentPassword}
+              onChange={(e) =>
+                setMe((p) => ({ ...p, currentPassword: e.target.value }))
+              }
+              placeholder="Enter your current password"
+              autoComplete="current-password"
+            />
+          </div>
+          <PasswordField
+            id="me-password"
+            label="New password"
+            value={me.password}
+            onChange={(e) => setMe((p) => ({ ...p, password: e.target.value }))}
+            placeholder="Leave blank to keep current"
+          />
+          <PasswordField
+            id="me-confirm"
+            label="Confirm new password"
+            value={me.confirmPassword}
+            onChange={(e) =>
+              setMe((p) => ({ ...p, confirmPassword: e.target.value }))
+            }
+            placeholder="Re-enter new password"
+          />
+
+          {meError ? (
+            <div
+              role="alert"
+              className="sm:col-span-2 rounded-[var(--radius-md)] bg-[color:var(--gov-danger-soft)] px-4 py-3 text-sm text-[color:var(--gov-danger-fg)]"
+            >
+              {meError}
+            </div>
+          ) : null}
+          {meMsg ? (
+            <p className="sm:col-span-2 text-sm text-[color:var(--gov-muted)]">
+              {meMsg}
+            </p>
+          ) : null}
+
+          <div className="sm:col-span-2">
+            <button type="submit" disabled={savingMe} className="btn btn-primary">
+              {savingMe ? "Saving…" : "Update account"}
+            </button>
+          </div>
+        </form>
+      </section>
+
       <section className="grid gap-6 lg:grid-cols-2">
         {/* Create a PDAO account */}
         <div className="gov-card p-6">
@@ -139,35 +466,22 @@ export default function Settings() {
                 autoComplete="off"
               />
             </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium" htmlFor="pdao-pass">
-                Password<span className="text-[color:var(--gov-danger-fg)]"> *</span>
-              </label>
-              <input
-                id="pdao-pass"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="gov-input"
-                placeholder="At least 6 characters"
-                autoComplete="new-password"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium" htmlFor="pdao-confirm">
-                Confirm password
-                <span className="text-[color:var(--gov-danger-fg)]"> *</span>
-              </label>
-              <input
-                id="pdao-confirm"
-                type="password"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                className="gov-input"
-                placeholder="Re-enter the password"
-                autoComplete="new-password"
-              />
-            </div>
+            <PasswordField
+              id="pdao-pass"
+              label="Password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 6 characters"
+            />
+            <PasswordField
+              id="pdao-confirm"
+              label="Confirm password"
+              required
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              placeholder="Re-enter the password"
+            />
 
             {formError ? (
               <div
