@@ -80,7 +80,7 @@ export async function getAllGuardians() {
   const { data, error } = await supabase
     .from("guardian_ward_links")
     .select(
-      "id, guardian_id, guardian_name, guardian_email, guardian_phone, relationship, created_at, ward:pwd_id(id, full_name, pwd_id_number, barangay)"
+      "id, guardian_id, guardian_name, guardian_email, guardian_phone, guardian_active, relationship, created_at, ward:pwd_id(id, full_name, pwd_id_number, barangay, active)"
     )
     .order("created_at", { ascending: true });
   if (error) return { guardians: [], error };
@@ -94,6 +94,7 @@ export async function getAllGuardians() {
         name: row.guardian_name,
         email: row.guardian_email,
         phone: row.guardian_phone,
+        active: row.guardian_active !== false,
         createdAt: row.created_at,
         wards: [],
       };
@@ -108,6 +109,25 @@ export async function getAllGuardians() {
     }
   }
   return { guardians: [...byGuardian.values()], error: null };
+}
+
+// PWD beneficiary: list the guardian account(s) linked to the signed-in PWD,
+// including each guardian's activation status. Used to warn the PWD when a
+// linked guardian has been deactivated. RLS scopes rows to pwd_id = auth.uid().
+export async function getMyGuardians() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { guardians: [], error: { message: "Not signed in." } };
+
+  const { data, error } = await supabase
+    .from("guardian_ward_links")
+    .select(
+      "id, guardian_id, guardian_name, guardian_email, guardian_phone, guardian_active, relationship"
+    )
+    .eq("pwd_id", user.id)
+    .order("created_at", { ascending: true });
+  return { guardians: data ?? [], error };
 }
 
 // PDAO staff: list guardians linked to a given PWD ward.

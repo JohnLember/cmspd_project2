@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 import { getProfiles } from "../../services/supabase/profile.js";
+import { setAccountStatus } from "../../services/supabase/accounts.js";
 import { disabilityLabel } from "../../constants/disability.js";
 import PwdDetailModal from "../../components/pwd/PwdDetailModal.jsx";
 import { useRealtime } from "../../hooks/useRealtime.js";
@@ -16,6 +18,7 @@ export default function PwdManagement() {
   const [search, setSearch] = useState("");
   const [barangayFilter, setBarangayFilter] = useState("all");
   const [selected, setSelected] = useState(null);
+  const [togglingId, setTogglingId] = useState(null);
 
   const load = useCallback(async () => {
     const { profiles: rows, error: fetchError } = await getProfiles();
@@ -42,6 +45,71 @@ export default function PwdManagement() {
     );
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [profiles]);
+
+  const doToggle = async (row) => {
+    const next = row.active === false; // currently inactive -> activating
+    setTogglingId(row.id);
+    const { error: toggleError } = await setAccountStatus({
+      targetId: row.id,
+      type: "pwd",
+      active: next,
+    });
+    if (toggleError) {
+      toast.error(toggleError.message || "Unable to update account status.");
+    } else {
+      setProfiles((prev) =>
+        prev.map((p) => (p.id === row.id ? { ...p, active: next } : p))
+      );
+      toast.success(next ? "Account activated." : "Account deactivated.");
+    }
+    setTogglingId(null);
+  };
+
+  const confirmToggle = (row) => {
+    const deactivating = row.active !== false;
+    toast(
+      ({ closeToast }) => (
+        <div className="space-y-3 text-sm text-[color:var(--gov-text)]">
+          <p className="font-semibold">
+            {deactivating ? "Deactivate account?" : "Activate account?"}
+          </p>
+          <p className="text-xs text-[color:var(--gov-muted)]">
+            {deactivating
+              ? `${row.full_name || "This PWD"} will be signed out and blocked from logging in until reactivated.`
+              : `${row.full_name || "This PWD"} will be able to log in again.`}
+          </p>
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={closeToast}
+              className="btn btn-secondary h-9 px-3 text-xs"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                doToggle(row);
+                closeToast();
+              }}
+              className={`btn h-9 px-3 text-xs ${
+                deactivating ? "btn-danger" : "btn-primary"
+              }`}
+            >
+              {deactivating ? "Deactivate" : "Activate"}
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        toastId: `pwd-status-${row.id}`,
+        closeButton: false,
+        autoClose: false,
+        closeOnClick: false,
+        className: "gov-card",
+      }
+    );
+  };
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -112,6 +180,7 @@ export default function PwdManagement() {
                 <th className="pb-3 pr-4 font-semibold">Full name</th>
                 <th className="pb-3 pr-4 font-semibold">Barangay</th>
                 <th className="pb-3 pr-4 font-semibold">Disability</th>
+                <th className="pb-3 pr-4 font-semibold">Status</th>
                 <th className="pb-3 font-semibold">Action</th>
               </tr>
             </thead>
@@ -119,14 +188,14 @@ export default function PwdManagement() {
               {isLoading ? (
                 [0, 1, 2].map((i) => (
                   <tr key={i} className="border-b border-[color:var(--gov-border)]">
-                    <td colSpan={5} className="py-3">
+                    <td colSpan={6} className="py-3">
                       <span className="gov-skeleton block h-6 w-full" />
                     </td>
                   </tr>
                 ))
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-10 text-center text-[color:var(--gov-muted)]">
+                  <td colSpan={6} className="py-10 text-center text-[color:var(--gov-muted)]">
                     {profiles.length === 0
                       ? "No registered PWD profiles yet. Approve an application to create one."
                       : "No profiles match your filters."}
@@ -146,14 +215,41 @@ export default function PwdManagement() {
                     <td className="py-3 pr-4 text-[color:var(--gov-muted)]">
                       {disabilityLabel(row.data?.disabilityTypes)}
                     </td>
+                    <td className="py-3 pr-4">
+                      {row.active === false ? (
+                        <span className="gov-badge gov-badge--danger">
+                          Deactivated
+                        </span>
+                      ) : (
+                        <span className="gov-badge gov-badge--success">
+                          Active
+                        </span>
+                      )}
+                    </td>
                     <td className="py-3">
-                      <button
-                        type="button"
-                        onClick={() => setSelected(row)}
-                        className="btn btn-ghost h-9 px-3 text-xs"
-                      >
-                        View profile
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSelected(row)}
+                          className="btn btn-ghost h-9 px-3 text-xs"
+                        >
+                          View profile
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => confirmToggle(row)}
+                          disabled={togglingId === row.id}
+                          className={`btn h-9 px-3 text-xs ${
+                            row.active === false ? "btn-secondary" : "btn-danger"
+                          }`}
+                        >
+                          {togglingId === row.id
+                            ? "…"
+                            : row.active === false
+                            ? "Activate"
+                            : "Deactivate"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

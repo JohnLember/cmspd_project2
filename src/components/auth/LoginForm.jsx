@@ -35,7 +35,14 @@ export default function LoginForm() {
       const redirectPath = roleRedirects[user?.role] || "/app";
       navigate(redirectPath, { replace: true });
     } catch (error) {
-      setFormError(error?.message || "Unable to sign in. Please try again.");
+      const raw = error?.message || "";
+      const deactivated =
+        error?.code === "user_banned" || /ban/i.test(raw);
+      setFormError(
+        deactivated
+          ? "This account has been deactivated. Please contact the PDAO office."
+          : raw || "Unable to sign in. Please try again."
+      );
     }
   };
 

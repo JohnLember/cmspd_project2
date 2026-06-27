@@ -85,9 +85,16 @@ export default function GuardianDashboard() {
                     </div>
                   )}
                   <div>
-                    <h3 className="text-base font-semibold">
-                      {ward.full_name || "—"}
-                    </h3>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-base font-semibold">
+                        {ward.full_name || "—"}
+                      </h3>
+                      {ward.active === false ? (
+                        <span className="gov-badge gov-badge--danger">
+                          Deactivated account
+                        </span>
+                      ) : null}
+                    </div>
                     <p className="text-sm text-[color:var(--gov-muted)]">
                       {disabilityLabel(ward.data?.disabilityTypes)}
                       {link.relationship ? ` · ${link.relationship}` : ""}

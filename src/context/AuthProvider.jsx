@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 import { AuthContext } from "./AuthContext.jsx";
 import {
   getAuthSession,
@@ -8,6 +9,7 @@ import {
   signOut as supabaseSignOut,
 } from "../services/supabase/auth.js";
 import { joinPresence, leavePresence } from "../services/supabase/presence.js";
+import { useRealtime } from "../hooks/useRealtime.js";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -56,6 +58,31 @@ export function AuthProvider({ children }) {
     await supabaseSignOut();
     setUser(null);
   };
+
+  // If PDAO deactivates this account while the user is online, sign them out
+  // right away. RLS scopes these events to the user's own row(s).
+  const role = user?.role ?? null;
+  const uid = user?.id ?? null;
+  const onStatusChange = (payload) => {
+    const row = payload?.new;
+    if (!row) return;
+    const deactivated =
+      role === "pwd" ? row.active === false : row.guardian_active === false;
+    if (deactivated) {
+      toast.error("Your account has been deactivated. Contact the PDAO office.");
+      logout();
+    }
+  };
+  useRealtime(
+    role === "pwd" ? "profiles" : null,
+    onStatusChange,
+    uid ? `id=eq.${uid}` : undefined
+  );
+  useRealtime(
+    role === "guardian" ? "guardian_ward_links" : null,
+    onStatusChange,
+    uid ? `guardian_id=eq.${uid}` : undefined
+  );
 
   const value = useMemo(
     () => ({
