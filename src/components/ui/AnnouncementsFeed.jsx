@@ -14,7 +14,7 @@ const fmt = (iso) =>
       })
     : "";
 
-export default function AnnouncementsFeed({ emptyText }) {
+export default function AnnouncementsFeed({ emptyText, limit }) {
   const [announcements, setAnnouncements] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -62,9 +62,11 @@ export default function AnnouncementsFeed({ emptyText }) {
     );
   }
 
+  const visible = limit ? announcements.slice(0, limit) : announcements;
+
   return (
     <div className="space-y-3">
-      {announcements.map((item) => (
+      {visible.map((item) => (
         <article
           key={item.id}
           className="rounded-[var(--radius-md)] border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] p-4"

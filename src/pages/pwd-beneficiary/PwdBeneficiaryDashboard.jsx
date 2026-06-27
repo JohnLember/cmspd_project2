@@ -182,7 +182,7 @@ export default function PwdBeneficiaryDashboard() {
           </Link>
         </div>
         <div className="mt-4">
-          <AnnouncementsFeed emptyText="No announcements from PDAO yet." />
+          <AnnouncementsFeed limit={5} emptyText="No announcements from PDAO yet." />
         </div>
       </section>
     </div>
