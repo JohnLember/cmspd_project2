@@ -46,6 +46,7 @@ const requiredFieldsByStep = {
   5: [
     ["guardianLast", "Guardian last name"],
     ["guardianFirst", "Guardian first name"],
+    ["guardianContact", "Guardian mobile number"],
   ],
 };
 
@@ -120,6 +121,7 @@ export default function BeneficiaryApply() {
     guardianLast: "",
     guardianFirst: "",
     guardianMiddle: "",
+    guardianContact: "",
     accomplishedBy: "",
     accompLast: "",
     accompFirst: "",
@@ -252,6 +254,14 @@ export default function BeneficiaryApply() {
       }
       if (formData.emailAddress.trim() && !isValidEmail(formData.emailAddress)) {
         errors.push("Enter a valid email address");
+      }
+    }
+    if (step === 5) {
+      if (
+        formData.guardianContact.trim() &&
+        !isValidPhone(formData.guardianContact)
+      ) {
+        errors.push("Enter a valid guardian mobile number (e.g. 09171234567)");
       }
     }
     return errors;
@@ -1375,6 +1385,38 @@ export default function BeneficiaryApply() {
                       onChange={handleInputChange}
                       className="gov-input mt-2"
                     />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div>
+                    <label
+                      className="text-sm font-medium"
+                      htmlFor="guardian-contact"
+                    >
+                      Guardian's mobile number
+                      <Req />
+                    </label>
+                    <input
+                      id="guardian-contact"
+                      type="tel"
+                      inputMode="numeric"
+                      name="guardianContact"
+                      value={formData.guardianContact}
+                      onChange={handleInputChange}
+                      placeholder="09171234567"
+                      aria-invalid={
+                        Boolean(formData.guardianContact.trim()) &&
+                        !isValidPhone(formData.guardianContact)
+                      }
+                      className="gov-input mt-2"
+                    />
+                    {formData.guardianContact.trim() &&
+                    !isValidPhone(formData.guardianContact) ? (
+                      <p className="mt-1 text-xs text-[color:var(--gov-danger-fg)]">
+                        Enter a valid mobile number (e.g. 09171234567).
+                      </p>
+                    ) : null}
                   </div>
                 </div>
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const officerFields = [
   ["lastName", "Last name"],
@@ -135,21 +135,142 @@ function SignaturePad({ initialDataUrl, onChange }) {
   );
 }
 
-const STEPS = ["PWD signature", "Officers", "Approving signature"];
+// Lets the officer link the new ward to an existing guardian account (avoiding
+// duplicate guardian logins) or deliberately create a new one.
+function GuardianStep({ guardianInfo, matches, loading, choice, onChoice }) {
+  return (
+    <div className="space-y-4">
+      <div className="rounded-[var(--radius-md)] border border-[color:var(--gov-border)] p-4">
+        <p className="text-xs font-medium text-[color:var(--gov-muted)]">
+          Guardian on this application
+        </p>
+        <p className="mt-1 text-sm font-semibold">
+          {guardianInfo?.fullName || "—"}
+          {guardianInfo?.phone ? (
+            <span className="font-normal text-[color:var(--gov-muted)]">
+              {" · "}
+              {guardianInfo.phone}
+            </span>
+          ) : null}
+        </p>
+      </div>
+
+      {loading ? (
+        <p className="text-sm text-[color:var(--gov-muted)]">
+          Checking for an existing guardian account…
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {matches.length > 0 ? (
+            <p className="text-sm font-medium">
+              {matches.length === 1
+                ? "A matching guardian account already exists:"
+                : "Matching guardian accounts already exist:"}
+            </p>
+          ) : (
+            <p className="text-sm text-[color:var(--gov-muted)]">
+              No existing guardian account matched. A new one will be created.
+            </p>
+          )}
+
+          {matches.map((m) => {
+            const selected =
+              choice.mode === "existing" && choice.guardianId === m.guardianId;
+            return (
+              <label
+                key={m.guardianId}
+                className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-md)] border border-[color:var(--gov-border)] p-3 has-[:checked]:border-[color:var(--gov-primary)]"
+              >
+                <input
+                  type="radio"
+                  name="guardian-link"
+                  checked={selected}
+                  onChange={() =>
+                    onChoice({ mode: "existing", guardianId: m.guardianId })
+                  }
+                  className="mt-0.5 h-[1.15rem] w-[1.15rem] accent-[color:var(--gov-primary)]"
+                />
+                <span className="text-sm">
+                  <span className="font-semibold">{m.name || "Guardian"}</span>
+                  <span className="text-[color:var(--gov-muted)]">
+                    {m.phone ? ` · ${m.phone}` : " · no phone on record"}
+                    {` · ${m.wardCount} ward${m.wardCount === 1 ? "" : "s"}`}
+                  </span>
+                  {m.phoneHit ? (
+                    <span className="ml-2 gov-badge gov-badge--neutral">
+                      phone match
+                    </span>
+                  ) : (
+                    <span className="ml-2 gov-badge gov-badge--neutral">
+                      name match
+                    </span>
+                  )}
+                  <span className="mt-0.5 block text-xs text-[color:var(--gov-muted)]">
+                    Link this ward to {m.email}
+                  </span>
+                </span>
+              </label>
+            );
+          })}
+
+          <label className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-md)] border border-[color:var(--gov-border)] p-3 has-[:checked]:border-[color:var(--gov-primary)]">
+            <input
+              type="radio"
+              name="guardian-link"
+              checked={choice.mode === "new"}
+              onChange={() => onChoice({ mode: "new" })}
+              className="mt-0.5 h-[1.15rem] w-[1.15rem] accent-[color:var(--gov-primary)]"
+            />
+            <span className="text-sm">
+              <span className="font-semibold">Create a new guardian account</span>
+              <span className="mt-0.5 block text-xs text-[color:var(--gov-muted)]">
+                Use this if the guardian above is a different person.
+              </span>
+            </span>
+          </label>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ApproveApplicationModal({
   applicantName,
+  guardianInfo,
+  guardianMatches = [],
+  guardianMatchesLoading = false,
   onCancel,
   onConfirm,
   isSubmitting,
   error,
 }) {
+  const hasGuardian = Boolean(guardianInfo);
+  // Insert a guardian-resolution step only when the application names a guardian.
+  const steps = hasGuardian
+    ? ["PWD signature", "Officers", "Guardian", "Approving signature"]
+    : ["PWD signature", "Officers", "Approving signature"];
+  const totalSteps = steps.length;
+
   const [step, setStep] = useState(1);
   const [pwdSignature, setPwdSignature] = useState(null);
   const [approvingSignature, setApprovingSignature] = useState(null);
   const [processingOfficer, setProcessingOfficer] = useState(emptyOfficer);
   const [approvingOfficer, setApprovingOfficer] = useState(emptyOfficer);
+  // Guardian linking choice. Null until the officer picks one; we then fall back
+  // to a sensible default (link to a phone match if one exists, else create new
+  // so two different people who share a name never silently merge).
+  const [guardianChoice, setGuardianChoice] = useState(null);
   const [localError, setLocalError] = useState("");
+
+  const stepName = steps[step - 1];
+
+  const defaultGuardianChoice = useMemo(() => {
+    const phoneMatch = guardianMatches.find((m) => m.phoneHit);
+    return phoneMatch
+      ? { mode: "existing", guardianId: phoneMatch.guardianId }
+      : { mode: "new" };
+  }, [guardianMatches]);
+  const effectiveChoice = guardianChoice ?? defaultGuardianChoice;
 
   const officersValid =
     processingOfficer.lastName.trim() &&
@@ -159,19 +280,18 @@ export default function ApproveApplicationModal({
 
   const goNext = () => {
     setLocalError("");
-    if (step === 1) {
+    if (stepName === "PWD signature") {
       if (!pwdSignature) {
         setLocalError("The PWD must sign before continuing.");
         return;
       }
-      setStep(2);
-    } else if (step === 2) {
+    } else if (stepName === "Officers") {
       if (!officersValid) {
         setLocalError("Processing and approving officer names are required.");
         return;
       }
-      setStep(3);
     }
+    setStep((s) => Math.min(totalSteps, s + 1));
   };
 
   const goBack = () => {
@@ -190,6 +310,7 @@ export default function ApproveApplicationModal({
       approvingSignature,
       processingOfficer,
       approvingOfficer,
+      guardianChoice: hasGuardian ? effectiveChoice : null,
     });
   };
 
@@ -222,7 +343,7 @@ export default function ApproveApplicationModal({
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold">Approve application</h2>
           <span className="gov-badge gov-badge--neutral">
-            Step {step} of 3 · {STEPS[step - 1]}
+            Step {step} of {totalSteps} · {stepName}
           </span>
         </div>
         <p className="mt-1 text-sm text-[color:var(--gov-muted)]">
@@ -231,7 +352,7 @@ export default function ApproveApplicationModal({
         </p>
 
         <div className="mt-5">
-          {step === 1 ? (
+          {stepName === "PWD signature" ? (
             <div>
               <label className="text-sm font-semibold">
                 PWD signature<span className="text-[color:var(--gov-danger-fg)]"> *</span>
@@ -246,7 +367,7 @@ export default function ApproveApplicationModal({
             </div>
           ) : null}
 
-          {step === 2 ? (
+          {stepName === "Officers" ? (
             <div className="space-y-4">
               <OfficerInputs
                 title="Processing Officer"
@@ -261,7 +382,17 @@ export default function ApproveApplicationModal({
             </div>
           ) : null}
 
-          {step === 3 ? (
+          {stepName === "Guardian" ? (
+            <GuardianStep
+              guardianInfo={guardianInfo}
+              matches={guardianMatches}
+              loading={guardianMatchesLoading}
+              choice={effectiveChoice}
+              onChoice={setGuardianChoice}
+            />
+          ) : null}
+
+          {stepName === "Approving signature" ? (
             <div>
               <label className="text-sm font-semibold">
                 Approving officer signature<span className="text-[color:var(--gov-danger-fg)]"> *</span>
@@ -295,7 +426,7 @@ export default function ApproveApplicationModal({
           >
             {step === 1 ? "Cancel" : "Back"}
           </button>
-          {step < 3 ? (
+          {step < totalSteps ? (
             <button type="button" onClick={goNext} className="btn btn-primary">
               Next
             </button>

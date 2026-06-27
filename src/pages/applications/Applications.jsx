@@ -8,6 +8,7 @@ import {
 import ApproveApplicationModal from "../../components/applications/ApproveApplicationModal.jsx";
 import StatusBadge from "../../components/ui/StatusBadge.jsx";
 import { useRealtime } from "../../hooks/useRealtime.js";
+import { findGuardianMatches } from "../../services/supabase/guardians.js";
 
 const STATUS_OPTIONS = ["pending", "approved", "rejected"];
 
@@ -16,6 +17,25 @@ const typeLabel = (value) =>
 
 const displayId = (row) =>
   row.application_number || `APP-${row.id.slice(0, 8).toUpperCase()}`;
+
+// Build the guardian named on an application, or null when none is given.
+const guardianOf = (row) => {
+  const d = row?.data ?? {};
+  const firstName = (d.guardianFirst ?? "").trim();
+  const lastName = (d.guardianLast ?? "").trim();
+  if (!firstName || !lastName) return null;
+  const middleName = (d.guardianMiddle ?? "").trim();
+  return {
+    firstName,
+    middleName,
+    lastName,
+    phone: (d.guardianContact ?? "").trim(),
+    fullName: [firstName, middleName, lastName].filter(Boolean).join(" "),
+  };
+};
+
+const normName = (v) => (v || "").trim().toLowerCase().replace(/\s+/g, " ");
+const normPhone = (v) => (v || "").replace(/\D/g, "");
 
 export default function Applications() {
   const [applications, setApplications] = useState([]);
@@ -29,6 +49,9 @@ export default function Applications() {
   const [approveTarget, setApproveTarget] = useState(null);
   const [isApproving, setIsApproving] = useState(false);
   const [approveError, setApproveError] = useState("");
+  const [guardianInfo, setGuardianInfo] = useState(null);
+  const [guardianMatches, setGuardianMatches] = useState([]);
+  const [guardianMatchesLoading, setGuardianMatchesLoading] = useState(false);
 
   const load = useCallback(async () => {
     const { applications: rows, error: fetchError } = await getApplications();
@@ -64,6 +87,26 @@ export default function Applications() {
     });
   }, [applications, search, typeFilter, statusFilter]);
 
+  // Flag pending applications that match an already-approved one (same name +
+  // mobile number) so the officer spots a duplicate before opening the modal.
+  const duplicateIds = useMemo(() => {
+    const approvedKeys = new Set();
+    for (const r of applications) {
+      if ((r.status || "") === "approved") {
+        approvedKeys.add(
+          `${normName(r.applicant_name)}|${normPhone(r.contact_number)}`
+        );
+      }
+    }
+    const dupes = new Set();
+    for (const r of applications) {
+      if ((r.status || "pending") === "approved") continue;
+      const key = `${normName(r.applicant_name)}|${normPhone(r.contact_number)}`;
+      if (normName(r.applicant_name) && approvedKeys.has(key)) dupes.add(r.id);
+    }
+    return dupes;
+  }, [applications]);
+
   const rollback = (id, previous) =>
     setApplications((prev) =>
       prev.map((item) => (item.id === id ? { ...item, status: previous } : item))
@@ -75,7 +118,21 @@ export default function Applications() {
     if (status === "approved") {
       // Approval requires the signature + officers modal; defer until confirm.
       setApproveError("");
+      const guardian = guardianOf(row);
+      setGuardianInfo(guardian);
+      setGuardianMatches([]);
       setApproveTarget(row);
+      // Look up existing guardian accounts so the officer can link this ward to
+      // one instead of creating a duplicate login.
+      if (guardian) {
+        setGuardianMatchesLoading(true);
+        const { matches } = await findGuardianMatches({
+          phone: guardian.phone,
+          name: guardian.fullName,
+        });
+        setGuardianMatches(matches);
+        setGuardianMatchesLoading(false);
+      }
       return;
     }
     const previous = row.status;
@@ -109,9 +166,12 @@ export default function Applications() {
         item.id === approveTarget.id ? { ...item, status: "approved" } : item
       )
     );
-    const guardianLine = result.guardian
-      ? ` · Guardian account — email: ${result.guardian.email} · password: ${result.guardian.password}`
-      : "";
+    let guardianLine = "";
+    if (result.guardian) {
+      guardianLine = result.guardian.linked
+        ? ` · Linked to existing guardian account — ${result.guardian.email}`
+        : ` · Guardian account — email: ${result.guardian.email} · password: ${result.guardian.password}`;
+    }
     setNotice(
       `Approved. PWD account for ${
         approveTarget.applicant_name || "applicant"
@@ -119,6 +179,8 @@ export default function Applications() {
     );
     setIsApproving(false);
     setApproveTarget(null);
+    setGuardianInfo(null);
+    setGuardianMatches([]);
   };
 
   const confirmReject = (row) => {
@@ -308,7 +370,17 @@ export default function Applications() {
                     className="border-b border-[color:var(--gov-border)] last:border-0"
                   >
                     <td className="py-3 pr-4 font-mono text-xs">{displayId(row)}</td>
-                    <td className="py-3 pr-4 font-medium">{row.applicant_name || "—"}</td>
+                    <td className="py-3 pr-4 font-medium">
+                      {row.applicant_name || "—"}
+                      {duplicateIds.has(row.id) ? (
+                        <span
+                          className="ml-2 gov-badge gov-badge--warning"
+                          title="Matches an applicant who already has an approved PWD account"
+                        >
+                          Possible duplicate
+                        </span>
+                      ) : null}
+                    </td>
                     <td className="py-3 pr-4 text-[color:var(--gov-muted)]">
                       {typeLabel(row.data?.appType)}
                     </td>
@@ -327,10 +399,17 @@ export default function Applications() {
       {approveTarget ? (
         <ApproveApplicationModal
           applicantName={approveTarget.applicant_name}
+          guardianInfo={guardianInfo}
+          guardianMatches={guardianMatches}
+          guardianMatchesLoading={guardianMatchesLoading}
           isSubmitting={isApproving}
           error={approveError}
           onCancel={() => {
-            if (!isApproving) setApproveTarget(null);
+            if (!isApproving) {
+              setApproveTarget(null);
+              setGuardianInfo(null);
+              setGuardianMatches([]);
+            }
           }}
           onConfirm={handleConfirmApprove}
         />

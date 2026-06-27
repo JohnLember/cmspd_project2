@@ -20,6 +20,58 @@ export async function createGuardian(payload) {
   return { result: data, error: null };
 }
 
+// Digits-only form of a phone number, so "0917 123 4567" and "09171234567"
+// compare equal.
+const phoneKey = (v) => (v || "").replace(/\D/g, "");
+
+// PDAO staff: find existing guardian accounts that likely match the guardian
+// named on an application, so a new ward can be linked to an account that
+// already exists instead of creating a duplicate. Matches on phone first
+// (reliable) and falls back to an exact name match. Returns deduped candidates
+// (one per guardian account) with the number of wards each already has.
+// `{ phone, name }` -> `{ matches: [{ guardianId, name, email, phone, wardCount }], error }`.
+export async function findGuardianMatches({ phone, name } = {}) {
+  const key = phoneKey(phone);
+  const trimmedName = (name || "").trim();
+  if (!key && !trimmedName) return { matches: [], error: null };
+
+  const { data, error } = await supabase
+    .from("guardian_ward_links")
+    .select("guardian_id, guardian_name, guardian_email, guardian_phone");
+  if (error) return { matches: [], error };
+
+  const byGuardian = new Map();
+  for (const row of data ?? []) {
+    const phoneHit = key && phoneKey(row.guardian_phone) === key;
+    const nameHit =
+      trimmedName &&
+      (row.guardian_name || "").trim().toLowerCase() ===
+        trimmedName.toLowerCase();
+    if (!phoneHit && !nameHit) continue;
+
+    const existing = byGuardian.get(row.guardian_id);
+    if (existing) {
+      existing.wardCount += 1;
+      existing.phoneHit = existing.phoneHit || phoneHit;
+    } else {
+      byGuardian.set(row.guardian_id, {
+        guardianId: row.guardian_id,
+        name: row.guardian_name,
+        email: row.guardian_email,
+        phone: row.guardian_phone,
+        wardCount: 1,
+        phoneHit,
+      });
+    }
+  }
+
+  // Phone matches first (strongest signal), then name-only matches.
+  const matches = [...byGuardian.values()].sort(
+    (a, b) => Number(b.phoneHit) - Number(a.phoneHit)
+  );
+  return { matches, error: null };
+}
+
 // PDAO staff: list guardians linked to a given PWD ward.
 export async function getGuardiansForPwd(pwdId) {
   const { data, error } = await supabase
