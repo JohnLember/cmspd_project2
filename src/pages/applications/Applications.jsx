@@ -6,6 +6,7 @@ import {
   updateApplicationStatus,
 } from "../../services/supabase/applications.js";
 import ApproveApplicationModal from "../../components/applications/ApproveApplicationModal.jsx";
+import ApplicationDetailModal from "../../components/applications/ApplicationDetailModal.jsx";
 import StatusBadge from "../../components/ui/StatusBadge.jsx";
 import { useRealtime } from "../../hooks/useRealtime.js";
 import { findGuardianMatches } from "../../services/supabase/guardians.js";
@@ -52,6 +53,7 @@ export default function Applications() {
   const [guardianInfo, setGuardianInfo] = useState(null);
   const [guardianMatches, setGuardianMatches] = useState([]);
   const [guardianMatchesLoading, setGuardianMatchesLoading] = useState(false);
+  const [viewTarget, setViewTarget] = useState(null);
 
   const load = useCallback(async () => {
     const { applications: rows, error: fetchError } = await getApplications();
@@ -343,21 +345,22 @@ export default function Applications() {
                 <th className="pb-3 pr-4 font-semibold">Applicant</th>
                 <th className="pb-3 pr-4 font-semibold">Type</th>
                 <th className="pb-3 pr-4 font-semibold">Barangay</th>
-                <th className="pb-3 font-semibold">Status</th>
+                <th className="pb-3 pr-4 font-semibold">Status</th>
+                <th className="pb-3 font-semibold">Action</th>
               </tr>
             </thead>
             <tbody className="text-[color:var(--gov-text)]">
               {isLoading ? (
                 [0, 1, 2].map((i) => (
                   <tr key={i} className="border-b border-[color:var(--gov-border)]">
-                    <td colSpan={5} className="py-3">
+                    <td colSpan={6} className="py-3">
                       <span className="gov-skeleton block h-6 w-full" />
                     </td>
                   </tr>
                 ))
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-10 text-center text-[color:var(--gov-muted)]">
+                  <td colSpan={6} className="py-10 text-center text-[color:var(--gov-muted)]">
                     {applications.length === 0
                       ? "No applications submitted yet."
                       : "No applications match your filters."}
@@ -387,7 +390,16 @@ export default function Applications() {
                     <td className="py-3 pr-4 text-[color:var(--gov-muted)]">
                       {row.barangay || "—"}
                     </td>
-                    <td className="py-3">{renderStatus(row)}</td>
+                    <td className="py-3 pr-4">{renderStatus(row)}</td>
+                    <td className="py-3">
+                      <button
+                        type="button"
+                        onClick={() => setViewTarget(row)}
+                        className="btn btn-ghost h-9 px-3 text-xs"
+                      >
+                        View
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -412,6 +424,13 @@ export default function Applications() {
             }
           }}
           onConfirm={handleConfirmApprove}
+        />
+      ) : null}
+
+      {viewTarget ? (
+        <ApplicationDetailModal
+          application={viewTarget}
+          onClose={() => setViewTarget(null)}
         />
       ) : null}
     </div>
