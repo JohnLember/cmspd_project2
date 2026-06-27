@@ -72,6 +72,44 @@ export async function findGuardianMatches({ phone, name } = {}) {
   return { matches, error: null };
 }
 
+// PDAO staff: list every guardian account, each with the wards it is linked to.
+// Rows in guardian_ward_links are grouped by guardian so one guardian with
+// several wards appears once. Returns
+// `{ guardians: [{ guardianId, name, email, phone, wards: [...] }], error }`.
+export async function getAllGuardians() {
+  const { data, error } = await supabase
+    .from("guardian_ward_links")
+    .select(
+      "id, guardian_id, guardian_name, guardian_email, guardian_phone, relationship, created_at, ward:pwd_id(id, full_name, pwd_id_number, barangay)"
+    )
+    .order("created_at", { ascending: true });
+  if (error) return { guardians: [], error };
+
+  const byGuardian = new Map();
+  for (const row of data ?? []) {
+    let g = byGuardian.get(row.guardian_id);
+    if (!g) {
+      g = {
+        guardianId: row.guardian_id,
+        name: row.guardian_name,
+        email: row.guardian_email,
+        phone: row.guardian_phone,
+        createdAt: row.created_at,
+        wards: [],
+      };
+      byGuardian.set(row.guardian_id, g);
+    }
+    if (row.ward) {
+      g.wards.push({
+        linkId: row.id,
+        relationship: row.relationship,
+        ...row.ward,
+      });
+    }
+  }
+  return { guardians: [...byGuardian.values()], error: null };
+}
+
 // PDAO staff: list guardians linked to a given PWD ward.
 export async function getGuardiansForPwd(pwdId) {
   const { data, error } = await supabase

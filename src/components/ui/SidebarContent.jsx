@@ -1,8 +1,80 @@
-import { LogOut } from "lucide-react";
-import { NavLink, useNavigate } from "react-router";
+import { useState } from "react";
+import { ChevronDown, LogOut } from "lucide-react";
+import { NavLink, useLocation, useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext.jsx";
 import loretoSeal from "../../assets/loreto_seal.jpg";
+
+// A single leaf nav link (used at top level and inside groups).
+function NavItem({ item, onNavigate, nested }) {
+  return (
+    <NavLink
+      to={item.to}
+      end={item.end}
+      onClick={onNavigate}
+      className={({ isActive }) =>
+        `gov-nav-link${isActive ? " is-active" : ""}${nested ? " pl-9" : ""}`
+      }
+    >
+      {({ isActive }) => (
+        <>
+          <item.icon
+            className="h-[1.15rem] w-[1.15rem] shrink-0"
+            aria-hidden="true"
+            strokeWidth={isActive ? 2.4 : 2}
+          />
+          <span className="truncate">{item.label}</span>
+        </>
+      )}
+    </NavLink>
+  );
+}
+
+// A collapsible group whose children are nav links. Stays open whenever one of
+// its children is the active route.
+function NavGroup({ item, onNavigate }) {
+  const location = useLocation();
+  const childActive = item.children.some(
+    (c) =>
+      location.pathname === c.to || location.pathname.startsWith(`${c.to}/`)
+  );
+  const [open, setOpen] = useState(childActive);
+  const expanded = open || childActive;
+
+  return (
+    <div className="flex flex-col gap-1">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={expanded}
+        className={`gov-nav-link${childActive ? " is-active" : ""}`}
+      >
+        <item.icon
+          className="h-[1.15rem] w-[1.15rem] shrink-0"
+          aria-hidden="true"
+          strokeWidth={childActive ? 2.4 : 2}
+        />
+        <span className="truncate">{item.label}</span>
+        <ChevronDown
+          className={`ml-auto h-4 w-4 shrink-0 transition-transform ${
+            expanded ? "rotate-180" : ""
+          }`}
+          aria-hidden="true"
+        />
+      </button>
+      {expanded
+        ? item.children.map((child) => (
+            <NavItem
+              key={child.to}
+              item={child}
+              onNavigate={onNavigate}
+              nested
+            />
+          ))
+        : null}
+    </div>
+  );
+}
 
 // Shared interior for both the desktop sidebar and the mobile drawer.
 // One brand mark + nav + logout, configured per portal.
@@ -76,28 +148,13 @@ export default function SidebarContent({
       </div>
 
       <nav className="flex flex-col gap-1" aria-label="Primary">
-        {nav.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.end}
-            onClick={onNavigate}
-            className={({ isActive }) =>
-              `gov-nav-link${isActive ? " is-active" : ""}`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <item.icon
-                  className="h-[1.15rem] w-[1.15rem] shrink-0"
-                  aria-hidden="true"
-                  strokeWidth={isActive ? 2.4 : 2}
-                />
-                <span className="truncate">{item.label}</span>
-              </>
-            )}
-          </NavLink>
-        ))}
+        {nav.map((item) =>
+          item.children ? (
+            <NavGroup key={item.label} item={item} onNavigate={onNavigate} />
+          ) : (
+            <NavItem key={item.to} item={item} onNavigate={onNavigate} />
+          )
+        )}
       </nav>
 
       <div className="mt-auto flex flex-col gap-3 border-t border-[color:var(--gov-border)] pt-4">
