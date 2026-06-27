@@ -1,11 +1,12 @@
 import { useRef, useState } from "react";
 import { toast } from "react-toastify";
-import { Camera } from "lucide-react";
+import { AlertTriangle, Camera, CheckCircle2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext.jsx";
 import PasswordField from "../../components/ui/PasswordField.jsx";
 import {
   signInWithEmail,
   updateAccountName,
+  updateAccountPhone,
   uploadAccountAvatar,
 } from "../../services/supabase/auth.js";
 import {
@@ -16,12 +17,17 @@ import {
 const initial = (name, email) =>
   (name || email || "?").trim().slice(0, 1).toUpperCase();
 
+// PH mobile: 11 digits starting 09, or +639 followed by 9 digits.
+const PH_MOBILE_RE = /^(09\d{9}|\+639\d{9})$/;
+const isValidPhone = (v) => PH_MOBILE_RE.test((v || "").replace(/\s/g, ""));
+
 export default function GuardianProfile() {
   const { user, setUser } = useAuth();
 
   const [form, setForm] = useState({
     fullName: user?.fullName ?? "",
     email: user?.email ?? "",
+    contactNumber: user?.contactNumber ?? "",
     currentPassword: "",
     password: "",
     confirmPassword: "",
@@ -95,6 +101,34 @@ export default function GuardianProfile() {
       );
     }
 
+    const phoneChanged =
+      form.contactNumber.trim() !== (user?.contactNumber ?? "");
+    if (phoneChanged) {
+      if (form.contactNumber.trim() && !isValidPhone(form.contactNumber)) {
+        setError("Enter a valid mobile number (e.g. 09171234567).");
+        setSaving(false);
+        return;
+      }
+      const { error: phoneError } = await updateAccountPhone(
+        form.contactNumber.trim()
+      );
+      if (phoneError) {
+        setError(phoneError.message || "Unable to update mobile number.");
+        setSaving(false);
+        return;
+      }
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              contactNumber: form.contactNumber.trim(),
+              contactNumberVerified: false,
+            }
+          : prev
+      );
+      messages.push("Your mobile number has been updated.");
+    }
+
     if (form.password) {
       if (!form.currentPassword) {
         setError("Enter your current password to set a new one.");
@@ -149,7 +183,7 @@ export default function GuardianProfile() {
       <header>
         <h2 className="text-2xl font-semibold tracking-[-0.01em]">My profile</h2>
         <p className="mt-1 text-[color:var(--gov-muted)]">
-          Update your photo, name, login email, and password.
+          Update your photo, name, login email, mobile number, and password.
         </p>
       </header>
 
@@ -219,6 +253,47 @@ export default function GuardianProfile() {
               placeholder="name@example.com"
               autoComplete="username"
             />
+          </div>
+          <div className="sm:col-span-2">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <label className="text-sm font-medium" htmlFor="g-phone">
+                Mobile number
+              </label>
+              {user?.contactNumber ? (
+                user.contactNumberVerified ? (
+                  <span className="gov-badge gov-badge--success">
+                    <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                    Verified
+                  </span>
+                ) : (
+                  <span className="gov-badge gov-badge--warning">
+                    <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+                    Not verified
+                  </span>
+                )
+              ) : null}
+            </div>
+            <input
+              id="g-phone"
+              type="tel"
+              inputMode="numeric"
+              value={form.contactNumber}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, contactNumber: e.target.value }))
+              }
+              className="gov-input"
+              placeholder="09171234567"
+              autoComplete="tel"
+              aria-invalid={
+                Boolean(form.contactNumber.trim()) &&
+                !isValidPhone(form.contactNumber)
+              }
+            />
+            <p className="mt-1 text-xs text-[color:var(--gov-muted)]">
+              {form.contactNumber.trim() && !isValidPhone(form.contactNumber)
+                ? "Enter a valid mobile number (e.g. 09171234567)."
+                : "Used by PDAO to reach you about your ward. Verification by SMS is coming soon."}
+            </p>
           </div>
           <div className="sm:col-span-2">
             <PasswordField

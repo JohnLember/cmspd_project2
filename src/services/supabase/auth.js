@@ -7,6 +7,8 @@ export const mapSessionUser = (user) => ({
   fullName:
     user.user_metadata?.full_name || user.user_metadata?.name || "",
   avatarUrl: user.user_metadata?.avatar_url || "",
+  contactNumber: user.user_metadata?.contact_number || "",
+  contactNumberVerified: Boolean(user.user_metadata?.contact_number_verified),
 });
 
 export async function getAuthSession() {
@@ -39,6 +41,16 @@ export async function signOut() {
 export async function updateAccountName(fullName) {
   const { error } = await supabase.auth.updateUser({
     data: { full_name: fullName },
+  });
+  return { error };
+}
+
+// Update the signed-in user's mobile number (stored in user_metadata). Any
+// change clears the verified flag, since a new number hasn't been confirmed yet.
+// Triggers a USER_UPDATED auth event, so AuthProvider refreshes automatically.
+export async function updateAccountPhone(contactNumber) {
+  const { error } = await supabase.auth.updateUser({
+    data: { contact_number: contactNumber, contact_number_verified: false },
   });
   return { error };
 }
