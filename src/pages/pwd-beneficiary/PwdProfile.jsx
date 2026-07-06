@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
+import { AlertTriangle, HeartHandshake, Phone, ShieldCheck } from "lucide-react";
 import { signInWithEmail } from "../../services/supabase/auth.js";
 import {
   getMyProfile,
@@ -10,7 +11,9 @@ import {
   uploadAvatar,
   verifyEmailOtp,
 } from "../../services/supabase/profile.js";
+import { getMyGuardians } from "../../services/supabase/guardians.js";
 import { sendSmsOtp, verifySmsOtp } from "../../services/supabase/sms.js";
+import { DISABILITY_LABELS } from "../../constants/disability.js";
 
 const SEX_OPTIONS = [
   { value: "", label: "Select sex" },
@@ -36,6 +39,14 @@ const initials = (name) =>
     .map((part) => part[0]?.toUpperCase())
     .join("") || "PWD";
 
+const guardianInitials = (name) =>
+  (name || "")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "G";
+
 const fieldClass = "gov-input mt-2";
 
 export default function PwdProfile() {
@@ -44,6 +55,7 @@ export default function PwdProfile() {
   const [loadError, setLoadError] = useState("");
   const [profile, setProfile] = useState(null);
   const [user, setUser] = useState(null);
+  const [guardians, setGuardians] = useState([]);
 
   const [form, setForm] = useState({
     full_name: "",
@@ -109,12 +121,18 @@ export default function PwdProfile() {
         });
         setAccount({ email: authUser.email ?? "", currentPassword: "", password: "", confirmPassword: "" });
       }
+      const { guardians: guardianRows } = await getMyGuardians();
+      if (isMounted) setGuardians(guardianRows ?? []);
       setIsLoading(false);
     })();
     return () => {
       isMounted = false;
     };
   }, []);
+
+  const disabilityTypes = Array.isArray(profile?.data?.disabilityTypes)
+    ? profile.data.disabilityTypes
+    : [];
 
   const personalEmailVerified = Boolean(profile?.personal_email_verified);
   const contactVerified = Boolean(profile?.contact_verified);
@@ -374,6 +392,104 @@ export default function PwdProfile() {
                 {avatarMsg}
               </p>
             ) : null}
+          </div>
+        </div>
+      </section>
+
+      {/* Disability type & guardian — read-only record info */}
+      <section className="gov-card rounded-2xl p-6">
+        <div className="grid gap-6 sm:grid-cols-2">
+          <div>
+            <h3 className="flex items-center gap-2 text-lg font-semibold">
+              <HeartHandshake
+                className="h-4 w-4 text-[color:var(--gov-primary)]"
+                aria-hidden="true"
+              />
+              {disabilityTypes.length === 1
+                ? "My disability type"
+                : "My disability types"}
+            </h3>
+            {disabilityTypes.length > 0 ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {disabilityTypes.map((t) => (
+                  <span key={t} className="gov-badge gov-badge--info">
+                    {DISABILITY_LABELS[t] || t}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-[color:var(--gov-muted)]">
+                No disability type on record.
+              </p>
+            )}
+          </div>
+
+          <div>
+            <h3 className="flex items-center gap-2 text-lg font-semibold">
+              <ShieldCheck
+                className="h-4 w-4 text-[color:var(--gov-primary)]"
+                aria-hidden="true"
+              />
+              {guardians.length === 1 ? "My guardian" : "My guardians"}
+            </h3>
+            {guardians.length > 0 ? (
+              <div className="mt-3 space-y-3">
+                {guardians.map((g) => {
+                  const active = g.guardian_active !== false;
+                  return (
+                    <div
+                      key={g.id}
+                      className="flex items-start gap-3 rounded-[var(--radius-md)] border border-[color:var(--gov-border)] p-3"
+                    >
+                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[color:var(--gov-primary)] text-sm font-semibold text-[color:var(--gov-on-primary)]">
+                        {guardianInitials(g.guardian_name)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-semibold text-[color:var(--gov-text)]">
+                            {g.guardian_name || "—"}
+                          </p>
+                          <span
+                            className={`gov-badge ${
+                              active ? "gov-badge--success" : "gov-badge--danger"
+                            }`}
+                          >
+                            {active ? "Active" : "Deactivated"}
+                          </span>
+                        </div>
+                        {g.relationship ? (
+                          <p className="text-xs text-[color:var(--gov-muted)]">
+                            {g.relationship}
+                          </p>
+                        ) : null}
+                        {g.guardian_phone ? (
+                          <p className="mt-1 flex items-center gap-1.5 text-sm text-[color:var(--gov-muted)]">
+                            <Phone
+                              className="h-3.5 w-3.5 shrink-0"
+                              aria-hidden="true"
+                            />
+                            {g.guardian_phone}
+                          </p>
+                        ) : null}
+                        {!active ? (
+                          <p className="mt-2 flex items-start gap-1.5 text-xs text-[color:var(--gov-warning-fg)]">
+                            <AlertTriangle
+                              className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                              aria-hidden="true"
+                            />
+                            This guardian account has been deactivated by PDAO.
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-[color:var(--gov-muted)]">
+                No guardian is linked to your account.
+              </p>
+            )}
           </div>
         </div>
       </section>

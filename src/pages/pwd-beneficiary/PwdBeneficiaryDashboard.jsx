@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   ArrowRight,
   Bell,
+  HeartHandshake,
   IdCard,
   Phone,
   ShieldCheck,
@@ -11,6 +12,7 @@ import {
 } from "lucide-react";
 import { getMyProfile } from "../../services/supabase/profile.js";
 import { getMyGuardians } from "../../services/supabase/guardians.js";
+import { DISABILITY_LABELS } from "../../constants/disability.js";
 import { getMissingIdFields } from "../../components/pwd/digitalIdFields.js";
 import AnnouncementsFeed from "../../components/ui/AnnouncementsFeed.jsx";
 import { useRealtime } from "../../hooks/useRealtime.js";
@@ -49,6 +51,9 @@ export default function PwdBeneficiaryDashboard() {
 
   const firstName = (profile?.full_name || "").split(" ")[0];
   const idReady = profile && getMissingIdFields(profile).length === 0;
+  const disabilityTypes = Array.isArray(profile?.data?.disabilityTypes)
+    ? profile.data.disabilityTypes
+    : [];
 
   return (
     <div className="space-y-6">
@@ -60,6 +65,27 @@ export default function PwdBeneficiaryDashboard() {
           View your Digital ID and the latest announcements from PDAO.
         </p>
       </header>
+
+      {!isLoading && disabilityTypes.length > 0 ? (
+        <section className="gov-card p-5">
+          <h3 className="flex items-center gap-2 font-semibold text-[color:var(--gov-text)]">
+            <HeartHandshake
+              className="h-4 w-4 text-[color:var(--gov-primary)]"
+              aria-hidden="true"
+            />
+            {disabilityTypes.length === 1
+              ? "My disability type"
+              : "My disability types"}
+          </h3>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {disabilityTypes.map((t) => (
+              <span key={t} className="gov-badge gov-badge--info">
+                {DISABILITY_LABELS[t] || t}
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {guardians.length > 0 ? (
         <section className="gov-card p-5">
