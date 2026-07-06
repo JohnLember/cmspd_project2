@@ -83,26 +83,26 @@ export async function exportAgeProfilePdf(profiles) {
   const pageWidth = doc.internal.pageSize.getWidth();
   const centerX = pageWidth / 2;
 
-  // ---- Header (logo + republic block) ----
+  // ---- Header (logo on the left + republic block centered) ----
   try {
     const sealData = await toDataUrl(loretoSeal);
-    doc.addImage(sealData, "JPEG", centerX - 90, 24, 46, 46);
+    doc.addImage(sealData, "JPEG", 40, 30, 58, 58);
   } catch {
     // header still renders without the seal
   }
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
-  doc.text("Republic of the Philippines", centerX, 36, { align: "center" });
+  doc.text("Republic of the Philippines", centerX, 40, { align: "center" });
   doc.setFont("helvetica", "bold");
-  doc.text("PROVINCE OF AGUSAN DEL SUR", centerX, 50, { align: "center" });
-  doc.text("Municipality of Loreto", centerX, 64, { align: "center" });
+  doc.text("PROVINCE OF AGUSAN DEL SUR", centerX, 55, { align: "center" });
+  doc.text("Municipality of Loreto", centerX, 70, { align: "center" });
 
   doc.setFontSize(12);
-  doc.text("Persons with Disability Affairs Office (PDAO)", centerX, 88, {
+  doc.text("Persons with Disability Affairs Office (PDAO)", centerX, 95, {
     align: "center",
   });
-  doc.text("SUMMARY OF PWD AGE PROFILE", centerX, 104, { align: "center" });
+  doc.text("SUMMARY OF PWD AGE PROFILE", centerX, 111, { align: "center" });
 
   const asOf = new Date().toLocaleString("en-US", {
     month: "long",
@@ -110,7 +110,7 @@ export async function exportAgeProfilePdf(profiles) {
   });
   doc.setTextColor(200, 30, 30);
   doc.setFontSize(11);
-  doc.text(`As of ${asOf}`, centerX, 120, { align: "center" });
+  doc.text(`As of ${asOf}`, centerX, 127, { align: "center" });
   doc.setTextColor(0, 0, 0);
 
   // ---- Table ----
@@ -177,25 +177,44 @@ export async function exportAgeProfilePdf(profiles) {
     ...totalRow.cells,
   ]);
 
+  // Two width tiers: Barangay, WWD, Overall Total and Remarks share the wider
+  // width; the 12 age-bracket columns (M/F/Total × 4) are narrower.
+  const COL_W = 48;
+  const AGE_W = 24;
+  const WIDE_W = 58; // Barangay, Overall Total and Remarks (a bit wider)
+  const YELLOW = [255, 244, 176];
+  const columnStyles = {};
+  for (let c = 0; c <= 15; c += 1) {
+    columnStyles[c] = { cellWidth: c >= 1 && c <= 12 ? AGE_W : COL_W };
+  }
+  columnStyles[0].cellWidth = WIDE_W;
+  columnStyles[0].halign = "left";
+  columnStyles[0].fontStyle = "bold";
+  [3, 6, 9, 12].forEach((c) => {
+    columnStyles[c].fillColor = YELLOW;
+  });
+  columnStyles[14].cellWidth = WIDE_W;
+  columnStyles[14].fillColor = [224, 123, 90];
+  columnStyles[14].textColor = [255, 255, 255];
+  columnStyles[14].fontStyle = "bold";
+  columnStyles[15].cellWidth = WIDE_W;
+  columnStyles[15].fillColor = [247, 208, 96];
+
+  // Centre the table on the page.
+  const tableW = WIDE_W * 3 + COL_W + AGE_W * 12;
+  const sideMargin = Math.max(18, (pageWidth - tableW) / 2);
+
   autoTable(doc, {
     head,
     body,
-    startY: 132,
+    startY: 140,
     theme: "grid",
-    margin: { left: 18, right: 18 },
+    margin: { left: sideMargin, right: sideMargin },
     tableWidth: "auto",
-    styles: { fontSize: 5, cellPadding: 1.5, halign: "center", overflow: "linebreak", lineColor: [120, 120, 120], lineWidth: 0.5 },
-    headStyles: { fontSize: 4.5, fontStyle: "bold", textColor: [0, 0, 0], fillColor: [235, 235, 235] },
-    columnStyles: {
-      0: { halign: "left", fontStyle: "bold", cellWidth: 46 },
-      3: { fillColor: [255, 244, 176] },
-      6: { fillColor: [255, 244, 176] },
-      9: { fillColor: [255, 244, 176] },
-      12: { fillColor: [255, 244, 176] },
-      14: { fillColor: [224, 123, 90], textColor: [255, 255, 255], fontStyle: "bold" },
-      15: { cellWidth: 66 },
-    },
-    // Emphasise the LORETO (TOTAL) row.
+    styles: { fontSize: 10, cellPadding: 2, halign: "center", valign: "middle", overflow: "linebreak", lineColor: [120, 120, 120], lineWidth: 0.5 },
+    headStyles: { fontSize: 9, fontStyle: "bold", textColor: [0, 0, 0], fillColor: [235, 235, 235] },
+    columnStyles,
+    // Emphasise the LORETO (TOTAL) row (leave the merged Remarks cell as-is).
     didParseCell: (data) => {
       const isTotalRow = data.section === "body" && data.row.index === body.length - 1;
       if (isTotalRow && data.column.index !== 15) {
