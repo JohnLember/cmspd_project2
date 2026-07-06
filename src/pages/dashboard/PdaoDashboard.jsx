@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ClipboardList, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { ClipboardList, Clock, CheckCircle2, XCircle, Users } from "lucide-react";
 import BarChartCard from "../../components/charts/BarChartCard.jsx";
 import StackedBarChartCard from "../../components/charts/StackedBarChartCard.jsx";
 import StatCard from "../../components/cards/StatCard.jsx";
@@ -143,7 +143,14 @@ export default function PdaoDashboard() {
         </div>
       ) : null}
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <StatCard
+          label="Registered PWDs"
+          value={isLoading ? "…" : profiles.length}
+          hint="Approved beneficiaries"
+          icon={Users}
+          tone="primary"
+        />
         <StatCard
           label="Total applications"
           value={isLoading ? "…" : stats.total}
