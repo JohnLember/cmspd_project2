@@ -1,32 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
-import { Activity, Download, MapPin, Printer, Users } from "lucide-react";
+import { toast } from "react-toastify";
+import { Activity, FileDown, MapPin, Users } from "lucide-react";
 import BarChartCard from "../../components/charts/BarChartCard.jsx";
 import StatCard from "../../components/cards/StatCard.jsx";
-import ExportReportModal from "../../components/reports/ExportReportModal.jsx";
 import { getProfiles } from "../../services/supabase/profile.js";
-import { DISABILITY_LABELS, disabilityLabel } from "../../constants/disability.js";
+import { DISABILITY_LABELS } from "../../constants/disability.js";
+import { exportAgeProfilePdf } from "../../utils/ageProfilePdf.js";
 
 const UNSPECIFIED = "Unspecified";
-
-const downloadCsv = (filename, rows) => {
-  const escape = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const csv = rows.map((r) => r.map(escape).join(",")).join("\r\n");
-  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-};
 
 export default function Reports() {
   const [profiles, setProfiles] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showExport, setShowExport] = useState(false);
-  const [exportBarangay, setExportBarangay] = useState("all");
-  const [exportType, setExportType] = useState("all");
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -95,41 +82,15 @@ export default function Reports() {
 
   const label = (t) => DISABILITY_LABELS[t] || "Unspecified";
 
-  const pwdId = (p) =>
-    p.pwd_id_number ||
-    p.application?.application_number ||
-    `PWD-${p.id.slice(0, 8).toUpperCase()}`;
-
-  // Registered PWDs matching the chosen barangay + disability-type filters.
-  const exportMatches = useMemo(() => {
-    return profiles.filter((p) => {
-      const b = (p.barangay || "").trim() || UNSPECIFIED;
-      const types = Array.isArray(p.data?.disabilityTypes)
-        ? p.data.disabilityTypes
-        : [];
-      const effectiveTypes = types.length ? types : ["unspecified"];
-      const matchBarangay = exportBarangay === "all" || b === exportBarangay;
-      const matchType = exportType === "all" || effectiveTypes.includes(exportType);
-      return matchBarangay && matchType;
-    });
-  }, [profiles, exportBarangay, exportType]);
-
-  const handleExport = () => {
-    const header = ["PWD ID", "Name", "Barangay", "Disability type(s)", "Mobile"];
-    const body = exportMatches.map((p) => [
-      pwdId(p),
-      p.full_name || "",
-      (p.barangay || "").trim() || UNSPECIFIED,
-      disabilityLabel(p.data?.disabilityTypes),
-      p.contact_number || "",
-    ]);
-    const slug = (v) =>
-      v === "all" ? "all" : String(v).toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    downloadCsv(
-      `pwd-report-${slug(exportBarangay)}-${slug(exportType)}.csv`,
-      [header, ...body]
-    );
-    setShowExport(false);
+  const handleExportPdf = async () => {
+    setIsExporting(true);
+    try {
+      await exportAgeProfilePdf(profiles);
+    } catch (err) {
+      toast.error(err?.message || "Unable to generate the PDF report.");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -146,21 +107,12 @@ export default function Reports() {
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => setShowExport(true)}
-            disabled={isLoading || report.total === 0}
-            className="btn btn-secondary h-10 px-4 text-xs"
-          >
-            <Download className="h-4 w-4" aria-hidden="true" />
-            Export CSV
-          </button>
-          <button
-            type="button"
-            onClick={() => window.print()}
-            disabled={isLoading || report.total === 0}
+            onClick={handleExportPdf}
+            disabled={isLoading || isExporting || report.total === 0}
             className="btn btn-primary h-10 px-4 text-xs"
           >
-            <Printer className="h-4 w-4" aria-hidden="true" />
-            Print / Save as PDF
+            <FileDown className="h-4 w-4" aria-hidden="true" />
+            {isExporting ? "Generating…" : "Export PDF"}
           </button>
         </div>
       </header>
@@ -261,20 +213,6 @@ export default function Reports() {
           </section>
         </>
       )}
-
-      {showExport ? (
-        <ExportReportModal
-          barangays={report.barangays}
-          typeColumns={report.typeColumns}
-          barangay={exportBarangay}
-          type={exportType}
-          matchCount={exportMatches.length}
-          onBarangayChange={setExportBarangay}
-          onTypeChange={setExportType}
-          onExport={handleExport}
-          onClose={() => setShowExport(false)}
-        />
-      ) : null}
     </div>
   );
 }
