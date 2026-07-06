@@ -83,16 +83,37 @@ export async function exportAgeProfilePdf(profiles) {
   const pageWidth = doc.internal.pageSize.getWidth();
   const centerX = pageWidth / 2;
 
-  // ---- Header (logo on the left + republic block centered) ----
+  // ---- Header: logo + republic block centered together (logo beside text) ----
+  let sealData = null;
   try {
-    const sealData = await toDataUrl(loretoSeal);
-    doc.addImage(sealData, "JPEG", 40, 30, 58, 58);
+    sealData = await toDataUrl(loretoSeal);
   } catch {
     // header still renders without the seal
   }
 
-  doc.setFont("helvetica", "normal");
+  // Measure the widest republic line so we can centre logo + text as one group.
   doc.setFontSize(11);
+  const repLines = [
+    { text: "Republic of the Philippines", font: "normal" },
+    { text: "PROVINCE OF AGUSAN DEL SUR", font: "bold" },
+    { text: "Municipality of Loreto", font: "bold" },
+  ];
+  let maxTextW = 0;
+  repLines.forEach((l) => {
+    doc.setFont("helvetica", l.font);
+    maxTextW = Math.max(maxTextW, doc.getTextWidth(l.text));
+  });
+
+  // Text stays centered on the page; the logo sits just left of the text block.
+  const logoW = 52;
+  const gap = 14;
+  const logoX = centerX - maxTextW / 2 - gap - logoW;
+
+  if (sealData) {
+    doc.addImage(sealData, "JPEG", logoX, 26, logoW, logoW);
+  }
+
+  doc.setFont("helvetica", "normal");
   doc.text("Republic of the Philippines", centerX, 40, { align: "center" });
   doc.setFont("helvetica", "bold");
   doc.text("PROVINCE OF AGUSAN DEL SUR", centerX, 55, { align: "center" });
