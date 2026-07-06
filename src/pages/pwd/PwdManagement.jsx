@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { getProfiles } from "../../services/supabase/profile.js";
 import { setAccountStatus } from "../../services/supabase/accounts.js";
-import { disabilityLabel } from "../../constants/disability.js";
+import { DISABILITY_LABELS, disabilityLabel } from "../../constants/disability.js";
 import PwdDetailModal from "../../components/pwd/PwdDetailModal.jsx";
 import { useRealtime } from "../../hooks/useRealtime.js";
 
@@ -17,6 +17,7 @@ export default function PwdManagement() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [barangayFilter, setBarangayFilter] = useState("all");
+  const [disabilityFilter, setDisabilityFilter] = useState("all");
   const [selected, setSelected] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
 
@@ -44,6 +45,20 @@ export default function PwdManagement() {
       profiles.map((p) => p.barangay).filter((b) => b && b.trim())
     );
     return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [profiles]);
+
+  // Disability types actually present across profiles, ordered by the known list.
+  const disabilityTypes = useMemo(() => {
+    const set = new Set();
+    profiles.forEach((p) => {
+      const types = Array.isArray(p.data?.disabilityTypes)
+        ? p.data.disabilityTypes
+        : [];
+      types.forEach((t) => t && set.add(t));
+    });
+    const known = Object.keys(DISABILITY_LABELS).filter((t) => set.has(t));
+    const extras = Array.from(set).filter((t) => !DISABILITY_LABELS[t]).sort();
+    return [...known, ...extras];
   }, [profiles]);
 
   const doToggle = async (row) => {
@@ -120,9 +135,14 @@ export default function PwdManagement() {
         displayId(row).toLowerCase().includes(term);
       const matchesBarangay =
         barangayFilter === "all" || row.barangay === barangayFilter;
-      return matchesSearch && matchesBarangay;
+      const types = Array.isArray(row.data?.disabilityTypes)
+        ? row.data.disabilityTypes
+        : [];
+      const matchesDisability =
+        disabilityFilter === "all" || types.includes(disabilityFilter);
+      return matchesSearch && matchesBarangay && matchesDisability;
     });
-  }, [profiles, search, barangayFilter]);
+  }, [profiles, search, barangayFilter, disabilityFilter]);
 
   return (
     <div className="space-y-6">
@@ -141,7 +161,7 @@ export default function PwdManagement() {
       </header>
 
       <section className="gov-card p-5">
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <input
             type="text"
             value={search}
@@ -161,6 +181,23 @@ export default function PwdManagement() {
               </option>
             ))}
           </select>
+          <select
+            value={disabilityFilter}
+            onChange={(e) => setDisabilityFilter(e.target.value)}
+            className="gov-input w-full sm:w-auto"
+          >
+            <option value="all">All disabilities</option>
+            {disabilityTypes.map((t) => (
+              <option key={t} value={t}>
+                {DISABILITY_LABELS[t] || t}
+              </option>
+            ))}
+          </select>
+          <span className="gov-badge gov-badge--info sm:ml-auto">
+            {disabilityFilter === "all"
+              ? `Total: ${filtered.length}`
+              : `${DISABILITY_LABELS[disabilityFilter] || disabilityFilter}: ${filtered.length}`}
+          </span>
         </div>
 
         {error ? (

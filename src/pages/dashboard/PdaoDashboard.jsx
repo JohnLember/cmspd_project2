@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ClipboardList, Clock, CheckCircle2, XCircle } from "lucide-react";
 import BarChartCard from "../../components/charts/BarChartCard.jsx";
+import StackedBarChartCard from "../../components/charts/StackedBarChartCard.jsx";
 import StatCard from "../../components/cards/StatCard.jsx";
 import StatusBadge from "../../components/ui/StatusBadge.jsx";
 import { getApplications } from "../../services/supabase/applications.js";
+import { getProfiles } from "../../services/supabase/profile.js";
+import {
+  DISABILITY_COLORS,
+  DISABILITY_LABELS,
+} from "../../constants/disability.js";
 import { useRealtime } from "../../hooks/useRealtime.js";
 
 const timeAgo = (iso) => {
@@ -39,15 +45,22 @@ const buildMonthlySeries = (rows) => {
 
 export default function PdaoDashboard() {
   const [applications, setApplications] = useState([]);
+  const [profiles, setProfiles] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
-    const { applications: rows, error: fetchError } = await getApplications();
-    if (fetchError) {
-      setError(fetchError.message || "Unable to load dashboard data.");
+    const [appsRes, profilesRes] = await Promise.all([
+      getApplications(),
+      getProfiles(),
+    ]);
+    if (appsRes.error) {
+      setError(appsRes.error.message || "Unable to load dashboard data.");
     } else {
-      setApplications(rows);
+      setApplications(appsRes.applications);
+    }
+    if (!profilesRes.error) {
+      setProfiles(profilesRes.profiles);
     }
     setIsLoading(false);
   }, []);
@@ -60,6 +73,8 @@ export default function PdaoDashboard() {
 
   // Live stats and recent activity as applications come in and change status.
   useRealtime("applications", load);
+  // Live disability distribution as profiles are created/updated.
+  useRealtime("profiles", load);
 
   const stats = useMemo(() => {
     const by = (status) =>
@@ -74,6 +89,39 @@ export default function PdaoDashboard() {
 
   const monthly = useMemo(() => buildMonthlySeries(applications), [applications]);
   const recent = useMemo(() => applications.slice(0, 5), [applications]);
+
+  // Registered PWDs per barangay, split by disability type (stacked bar chart).
+  const disabilityByBarangay = useMemo(() => {
+    const byBarangay = {}; // barangay -> { name, [type]: count }
+    const typeSet = new Set();
+    profiles.forEach((p) => {
+      const barangay = (p.barangay || "").trim() || "Unspecified";
+      byBarangay[barangay] ??= { name: barangay };
+      const types = Array.isArray(p.data?.disabilityTypes)
+        ? p.data.disabilityTypes
+        : [];
+      const effective = types.length ? types : ["unspecified"];
+      effective.forEach((t) => {
+        typeSet.add(t);
+        byBarangay[barangay][t] = (byBarangay[barangay][t] || 0) + 1;
+      });
+    });
+    const known = Object.keys(DISABILITY_LABELS).filter((t) => typeSet.has(t));
+    const extras = Array.from(typeSet)
+      .filter((t) => !DISABILITY_LABELS[t] && t !== "unspecified")
+      .sort();
+    const orderedTypes = [...known, ...extras];
+    if (typeSet.has("unspecified")) orderedTypes.push("unspecified");
+    const series = orderedTypes.map((t) => ({
+      key: t,
+      label: t === "unspecified" ? "Unspecified" : DISABILITY_LABELS[t] || t,
+      color: DISABILITY_COLORS[t] || "#94a3b8",
+    }));
+    const data = Object.values(byBarangay).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+    return { data, series };
+  }, [profiles]);
 
   return (
     <div className="space-y-6">
@@ -156,6 +204,20 @@ export default function PdaoDashboard() {
             )}
           </ul>
         </div>
+      </section>
+
+      <section>
+        <StackedBarChartCard
+          title="Registered PWDs per barangay by disability type"
+          subtitle={
+            isLoading
+              ? "Loading…"
+              : `${profiles.length} registered`
+          }
+          data={disabilityByBarangay.data}
+          series={disabilityByBarangay.series}
+          empty="No registered PWDs yet. Approve applications to populate this chart."
+        />
       </section>
 
       <section className="gov-card p-5">

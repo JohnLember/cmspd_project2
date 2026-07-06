@@ -12,6 +12,22 @@ export const DISABILITY_LABELS = {
   other: "Other",
 };
 
+// Distinct chart colours per disability type (used by stacked bar charts).
+export const DISABILITY_COLORS = {
+  deaf: "#2563eb",
+  intellectual: "#7c3aed",
+  learning: "#db2777",
+  mental: "#dc2626",
+  physical: "#ea580c",
+  psychosocial: "#d97706",
+  speech: "#0d9488",
+  visual: "#16a34a",
+  cancer: "#0891b2",
+  rare: "#4f46e5",
+  other: "#64748b",
+  unspecified: "#94a3b8",
+};
+
 // Turns a profile's stored disabilityTypes array into a readable string.
 export function disabilityLabel(types) {
   if (!Array.isArray(types) || types.length === 0) return "—";
