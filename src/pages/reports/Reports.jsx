@@ -5,7 +5,7 @@ import BarChartCard from "../../components/charts/BarChartCard.jsx";
 import StatCard from "../../components/cards/StatCard.jsx";
 import { getProfiles } from "../../services/supabase/profile.js";
 import { DISABILITY_LABELS } from "../../constants/disability.js";
-import { exportAgeProfilePdf } from "../../utils/ageProfilePdf.js";
+import { exportAgeProfilePdf } from "../../utils/ReportsPDF.js";
 
 const UNSPECIFIED = "Unspecified";
 
