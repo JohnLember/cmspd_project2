@@ -27,7 +27,14 @@ export async function createAnnouncement({ title, body }) {
     } catch {
       // keep the generic message
     }
-    return { announcement: null, emailedCount: 0, recipientCount: 0, error: { message } };
+    return {
+      announcement: null,
+      emailedCount: 0,
+      recipientCount: 0,
+      smsCount: 0,
+      smsRecipientCount: 0,
+      error: { message },
+    };
   }
 
   return {
@@ -35,6 +42,9 @@ export async function createAnnouncement({ title, body }) {
     emailedCount: data?.emailedCount ?? 0,
     recipientCount: data?.recipientCount ?? 0,
     emailError: data?.emailError ?? null,
+    smsCount: data?.smsCount ?? 0,
+    smsRecipientCount: data?.smsRecipientCount ?? 0,
+    smsError: data?.smsError ?? null,
     error: null,
   };
 }

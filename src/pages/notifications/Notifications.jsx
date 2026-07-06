@@ -81,11 +81,19 @@ export default function Notifications() {
       return;
     }
     setPosting(true);
-    const { announcement, emailedCount, recipientCount, emailError, error: postError } =
-      await createAnnouncement({
-        title: title.trim(),
-        body: body.trim(),
-      });
+    const {
+      announcement,
+      emailedCount,
+      recipientCount,
+      emailError,
+      smsCount,
+      smsRecipientCount,
+      smsError,
+      error: postError,
+    } = await createAnnouncement({
+      title: title.trim(),
+      body: body.trim(),
+    });
     if (postError) {
       setError(postError.message || "Unable to post announcement.");
     } else {
@@ -93,18 +101,27 @@ export default function Notifications() {
       setPage(1);
       setTitle("");
       setBody("");
+      toast.success("Announcement posted to PWDs and guardians.");
+
+      // Email delivery summary.
       if (emailError) {
-        toast.success("Announcement posted to PWDs and guardians.");
         toast.warn(emailError);
       } else if (recipientCount > 0) {
-        toast.success(
-          `Announcement posted and emailed to ${emailedCount} of ${recipientCount} verified ${
-            recipientCount === 1 ? "beneficiary" : "beneficiaries"
+        toast.info(
+          `Emailed to ${emailedCount} of ${recipientCount} verified ${
+            recipientCount === 1 ? "email recipient" : "email recipients"
           }.`
         );
-      } else {
-        toast.success(
-          "Announcement posted. No beneficiaries have a verified email yet, so no emails were sent."
+      }
+
+      // SMS delivery summary.
+      if (smsError) {
+        toast.warn(smsError);
+      } else if (smsRecipientCount > 0) {
+        toast.info(
+          `SMS sent to ${smsCount} of ${smsRecipientCount} verified mobile ${
+            smsRecipientCount === 1 ? "number" : "numbers"
+          }.`
         );
       }
     }

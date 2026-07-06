@@ -10,6 +10,7 @@ import {
   uploadAvatar,
   verifyEmailOtp,
 } from "../../services/supabase/profile.js";
+import { sendSmsOtp, verifySmsOtp } from "../../services/supabase/sms.js";
 
 const SEX_OPTIONS = [
   { value: "", label: "Select sex" },
@@ -68,6 +69,15 @@ export default function PwdProfile() {
 
   // Personal email verification (code sent via Resend).
   const [otp, setOtp] = useState({
+    open: false,
+    code: "",
+    sending: false,
+    verifying: false,
+    msg: "",
+  });
+
+  // Mobile number verification (code sent via Semaphore SMS).
+  const [smsOtp, setSmsOtp] = useState({
     open: false,
     code: "",
     sending: false,
@@ -251,10 +261,49 @@ export default function PwdProfile() {
     }
   };
 
+  const sendSmsCode = async () => {
+    setSmsOtp((p) => ({ ...p, sending: true, msg: "" }));
+    const { ok, sentTo, error } = await sendSmsOtp();
+    if (!ok) {
+      setSmsOtp((p) => ({ ...p, sending: false, msg: error || "Unable to send code." }));
+    } else {
+      setSmsOtp((p) => ({
+        ...p,
+        sending: false,
+        msg: `A 6-digit code was sent by SMS to ${sentTo}. It expires in 10 minutes.`,
+      }));
+    }
+  };
+
+  const startSmsVerify = async () => {
+    setSmsOtp({ open: true, code: "", sending: false, verifying: false, msg: "" });
+    await sendSmsCode();
+  };
+
+  const confirmSmsCode = async () => {
+    if (!/^\d{6}$/.test(smsOtp.code.trim())) {
+      setSmsOtp((p) => ({ ...p, msg: "Enter the 6-digit code." }));
+      return;
+    }
+    setSmsOtp((p) => ({ ...p, verifying: true, msg: "" }));
+    const { ok, error } = await verifySmsOtp(smsOtp.code.trim());
+    if (!ok) {
+      setSmsOtp((p) => ({ ...p, verifying: false, msg: error || "Verification failed." }));
+    } else {
+      setProfile((prev) => ({ ...prev, contact_verified: true }));
+      setSmsOtp({ open: false, code: "", sending: false, verifying: false, msg: "" });
+      toast.success("Your mobile number has been verified.");
+    }
+  };
+
   // Verification requires a saved (not just typed) personal email.
   const emailUnsaved = form.personal_email !== (profile?.personal_email ?? "");
   const canVerifyEmail =
     Boolean(profile?.personal_email) && !personalEmailVerified;
+
+  // Verification requires a saved (not just typed) mobile number.
+  const contactUnsaved = form.contact_number !== (profile?.contact_number ?? "");
+  const canVerifyContact = Boolean(profile?.contact_number) && !contactVerified;
 
   if (isLoading) {
     return (
@@ -368,6 +417,82 @@ export default function PwdProfile() {
               className={fieldClass}
               placeholder="09xx xxx xxxx"
             />
+            {canVerifyContact && !smsOtp.open ? (
+              <div className="mt-2">
+                {contactUnsaved ? (
+                  <p className="text-xs text-[color:var(--gov-warning-fg)]">
+                    Save your changes first, then verify this number.
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={startSmsVerify}
+                    className="text-xs font-semibold text-[color:var(--gov-primary)] hover:underline"
+                  >
+                    Verify this number
+                  </button>
+                )}
+              </div>
+            ) : null}
+            {smsOtp.open ? (
+              <div className="mt-3 rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] p-3">
+                <p className="text-xs font-medium text-[color:var(--gov-text)]">
+                  Enter the 6-digit code sent by SMS
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={smsOtp.code}
+                    onChange={(e) =>
+                      setSmsOtp((p) => ({
+                        ...p,
+                        code: e.target.value.replace(/\D/g, "").slice(0, 6),
+                      }))
+                    }
+                    className="gov-input w-32 text-center tracking-[0.3em]"
+                    placeholder="000000"
+                  />
+                  <button
+                    type="button"
+                    onClick={confirmSmsCode}
+                    disabled={smsOtp.verifying}
+                    className="btn btn-primary h-9 px-3 text-xs"
+                  >
+                    {smsOtp.verifying ? "Verifying…" : "Confirm"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={sendSmsCode}
+                    disabled={smsOtp.sending}
+                    className="text-xs font-semibold text-[color:var(--gov-primary)] hover:underline disabled:opacity-60"
+                  >
+                    {smsOtp.sending ? "Sending…" : "Resend code"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSmsOtp({
+                        open: false,
+                        code: "",
+                        sending: false,
+                        verifying: false,
+                        msg: "",
+                      })
+                    }
+                    className="text-xs font-semibold text-[color:var(--gov-muted)]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                {smsOtp.msg ? (
+                  <p className="mt-2 text-xs text-[color:var(--gov-muted)]">
+                    {smsOtp.msg}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
           <div>
             <label className="text-sm font-medium" htmlFor="personal_email">

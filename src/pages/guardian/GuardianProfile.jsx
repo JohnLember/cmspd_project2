@@ -13,6 +13,7 @@ import {
   updateAccountEmail,
   updateAccountPassword,
 } from "../../services/supabase/profile.js";
+import { sendSmsOtp, verifySmsOtp } from "../../services/supabase/sms.js";
 
 const initial = (name, email) =>
   (name || email || "?").trim().slice(0, 1).toUpperCase();
@@ -39,6 +40,59 @@ export default function GuardianProfile() {
   const avatarInputRef = useRef(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarMsg, setAvatarMsg] = useState("");
+
+  // Mobile number verification (code sent via Semaphore SMS).
+  const [smsOtp, setSmsOtp] = useState({
+    open: false,
+    code: "",
+    sending: false,
+    verifying: false,
+    msg: "",
+  });
+
+  const sendSmsCode = async () => {
+    setSmsOtp((p) => ({ ...p, sending: true, msg: "" }));
+    const { ok, sentTo, error } = await sendSmsOtp();
+    if (!ok) {
+      setSmsOtp((p) => ({ ...p, sending: false, msg: error || "Unable to send code." }));
+    } else {
+      setSmsOtp((p) => ({
+        ...p,
+        sending: false,
+        msg: `A 6-digit code was sent by SMS to ${sentTo}. It expires in 10 minutes.`,
+      }));
+    }
+  };
+
+  const startSmsVerify = async () => {
+    setSmsOtp({ open: true, code: "", sending: false, verifying: false, msg: "" });
+    await sendSmsCode();
+  };
+
+  const confirmSmsCode = async () => {
+    if (!/^\d{6}$/.test(smsOtp.code.trim())) {
+      setSmsOtp((p) => ({ ...p, msg: "Enter the 6-digit code." }));
+      return;
+    }
+    setSmsOtp((p) => ({ ...p, verifying: true, msg: "" }));
+    const { ok, error } = await verifySmsOtp(smsOtp.code.trim());
+    if (!ok) {
+      setSmsOtp((p) => ({ ...p, verifying: false, msg: error || "Verification failed." }));
+    } else {
+      setUser((prev) =>
+        prev ? { ...prev, contactNumberVerified: true } : prev
+      );
+      setSmsOtp({ open: false, code: "", sending: false, verifying: false, msg: "" });
+      toast.success("Your mobile number has been verified.");
+    }
+  };
+
+  // Verification needs a saved, valid, not-yet-verified number.
+  const contactUnsaved = form.contactNumber.trim() !== (user?.contactNumber ?? "");
+  const canVerifyContact =
+    Boolean(user?.contactNumber) &&
+    !user?.contactNumberVerified &&
+    isValidPhone(user?.contactNumber);
 
   const handleAvatar = async (e) => {
     const file = e.target.files?.[0];
@@ -292,8 +346,84 @@ export default function GuardianProfile() {
             <p className="mt-1 text-xs text-[color:var(--gov-muted)]">
               {form.contactNumber.trim() && !isValidPhone(form.contactNumber)
                 ? "Enter a valid mobile number (e.g. 09171234567)."
-                : "Used by PDAO to reach you about your ward. Verification by SMS is coming soon."}
+                : "Used by PDAO to reach you about your ward and to send SMS announcements."}
             </p>
+            {canVerifyContact && !smsOtp.open ? (
+              <div className="mt-2">
+                {contactUnsaved ? (
+                  <p className="text-xs text-[color:var(--gov-warning-fg)]">
+                    Save your changes first, then verify this number.
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={startSmsVerify}
+                    className="text-xs font-semibold text-[color:var(--gov-primary)] hover:underline"
+                  >
+                    Verify this number
+                  </button>
+                )}
+              </div>
+            ) : null}
+            {smsOtp.open ? (
+              <div className="mt-3 rounded-xl border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] p-3">
+                <p className="text-xs font-medium text-[color:var(--gov-text)]">
+                  Enter the 6-digit code sent by SMS
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={smsOtp.code}
+                    onChange={(e) =>
+                      setSmsOtp((p) => ({
+                        ...p,
+                        code: e.target.value.replace(/\D/g, "").slice(0, 6),
+                      }))
+                    }
+                    className="gov-input w-32 text-center tracking-[0.3em]"
+                    placeholder="000000"
+                  />
+                  <button
+                    type="button"
+                    onClick={confirmSmsCode}
+                    disabled={smsOtp.verifying}
+                    className="btn btn-primary h-9 px-3 text-xs"
+                  >
+                    {smsOtp.verifying ? "Verifying…" : "Confirm"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={sendSmsCode}
+                    disabled={smsOtp.sending}
+                    className="text-xs font-semibold text-[color:var(--gov-primary)] hover:underline disabled:opacity-60"
+                  >
+                    {smsOtp.sending ? "Sending…" : "Resend code"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSmsOtp({
+                        open: false,
+                        code: "",
+                        sending: false,
+                        verifying: false,
+                        msg: "",
+                      })
+                    }
+                    className="text-xs font-semibold text-[color:var(--gov-muted)]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                {smsOtp.msg ? (
+                  <p className="mt-2 text-xs text-[color:var(--gov-muted)]">
+                    {smsOtp.msg}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
           <div className="sm:col-span-2">
             <PasswordField
