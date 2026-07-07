@@ -12,9 +12,15 @@ export async function getAnnouncements() {
 // PDAO only. Runs the notify-announcement edge function, which creates the
 // announcement AND emails every PWD beneficiary with a verified personal email
 // (via Resend). Returns the created row plus how many recipients were emailed.
-export async function createAnnouncement({ title, body }) {
+export async function createAnnouncement({ title, body, eventDate, startTime, endTime }) {
   const { data, error } = await supabase.functions.invoke("notify-announcement", {
-    body: { title, body },
+    body: {
+      title,
+      body,
+      eventDate: eventDate || null,
+      startTime: startTime || null,
+      endTime: endTime || null,
+    },
   });
 
   if (error) {
@@ -49,10 +55,15 @@ export async function createAnnouncement({ title, body }) {
   };
 }
 
-export async function updateAnnouncement(id, { title, body }) {
+export async function updateAnnouncement(id, { title, body, eventDate, startTime, endTime }) {
+  const updates = { title, body };
+  // Only touch these when the caller passes them (undefined = leave as-is).
+  if (eventDate !== undefined) updates.event_date = eventDate || null;
+  if (startTime !== undefined) updates.start_time = startTime || null;
+  if (endTime !== undefined) updates.end_time = endTime || null;
   const { data, error } = await supabase
     .from("announcements")
-    .update({ title, body })
+    .update(updates)
     .eq("id", id)
     .select()
     .single();

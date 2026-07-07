@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getAnnouncements } from "../../services/supabase/announcements.js";
 import { useRealtime } from "../../hooks/useRealtime.js";
+import { fmtEventWhen } from "../../utils/eventFormat.js";
 
 const PAGE_SIZE = 10;
 
@@ -109,6 +110,13 @@ export default function AnnouncementsFeed({ emptyText, limit, paginate = false }
               {fmt(item.created_at)}
             </span>
           </div>
+          {fmtEventWhen(item.event_date, item.start_time, item.end_time) ? (
+            <p className="mt-2">
+              <span className="gov-badge gov-badge--info">
+                When: {fmtEventWhen(item.event_date, item.start_time, item.end_time)}
+              </span>
+            </p>
+          ) : null}
           <p className="mt-2 whitespace-pre-line text-sm text-[color:var(--gov-muted)]">
             {item.body}
           </p>

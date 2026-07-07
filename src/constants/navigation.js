@@ -1,5 +1,6 @@
 import {
   Bell,
+  CalendarDays,
   ClipboardList,
   FileText,
   Gauge,
@@ -22,5 +23,6 @@ export const navigationItems = [
   { label: "Applications", to: "/app/applications", icon: ClipboardList },
   { label: "Reports", to: "/app/reports", icon: FileText },
   { label: "Announcements", to: "/app/notifications", icon: Bell },
+  { label: "Events", to: "/app/events", icon: CalendarDays },
   { label: "Settings", to: "/app/settings", icon: Settings },
 ];

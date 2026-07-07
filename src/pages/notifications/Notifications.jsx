@@ -8,6 +8,7 @@ import {
   updateAnnouncement,
 } from "../../services/supabase/announcements.js";
 import { useRealtime } from "../../hooks/useRealtime.js";
+import { fmtEventDate, fmtTimeRange } from "../../utils/eventFormat.js";
 
 const fmt = (iso) =>
   iso
@@ -44,10 +45,16 @@ export default function Notifications() {
   const [error, setError] = useState("");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [eventDate, setEventDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [posting, setPosting] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState("");
   const [editBody, setEditBody] = useState("");
+  const [editEventDate, setEditEventDate] = useState("");
+  const [editStartTime, setEditStartTime] = useState("");
+  const [editEndTime, setEditEndTime] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
 
   const load = useCallback(async () => {
@@ -93,14 +100,26 @@ export default function Notifications() {
     } = await createAnnouncement({
       title: title.trim(),
       body: body.trim(),
+      eventDate,
+      startTime,
+      endTime,
     });
     if (postError) {
       setError(postError.message || "Unable to post announcement.");
     } else {
-      setAnnouncements((prev) => [announcement, ...prev]);
+      // Guard against a duplicate: the realtime INSERT event may have already
+      // added this row while the edge function was still finishing its work.
+      setAnnouncements((prev) =>
+        prev.some((a) => a.id === announcement.id)
+          ? prev
+          : [announcement, ...prev]
+      );
       setPage(1);
       setTitle("");
       setBody("");
+      setEventDate("");
+      setStartTime("");
+      setEndTime("");
       toast.success("Announcement posted to PWDs and guardians.");
 
       // Email delivery summary.
@@ -132,12 +151,19 @@ export default function Notifications() {
     setEditingId(item.id);
     setEditTitle(item.title);
     setEditBody(item.body);
+    setEditEventDate(item.event_date || "");
+    // Time columns come back as "HH:MM:SS"; the time input needs "HH:MM".
+    setEditStartTime(item.start_time ? item.start_time.slice(0, 5) : "");
+    setEditEndTime(item.end_time ? item.end_time.slice(0, 5) : "");
   };
 
   const cancelEdit = () => {
     setEditingId(null);
     setEditTitle("");
     setEditBody("");
+    setEditEventDate("");
+    setEditStartTime("");
+    setEditEndTime("");
   };
 
   const saveEdit = async (id) => {
@@ -149,6 +175,9 @@ export default function Notifications() {
     const { announcement, error: editError } = await updateAnnouncement(id, {
       title: editTitle.trim(),
       body: editBody.trim(),
+      eventDate: editEventDate,
+      startTime: editStartTime,
+      endTime: editEndTime,
     });
     if (editError) {
       toast.error(editError.message || "Unable to save changes.");
@@ -242,6 +271,48 @@ export default function Notifications() {
               placeholder="Write the advisory details here…"
             />
           </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <label className="mb-2 block text-sm font-medium" htmlFor="ann-when">
+                When
+              </label>
+              <input
+                id="ann-when"
+                type="date"
+                value={eventDate}
+                onChange={(e) => setEventDate(e.target.value)}
+                className="gov-input"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium" htmlFor="ann-start">
+                Start time
+              </label>
+              <input
+                id="ann-start"
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="gov-input"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium" htmlFor="ann-end">
+                End time
+              </label>
+              <input
+                id="ann-end"
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className="gov-input"
+              />
+            </div>
+          </div>
+          <p className="-mt-2 text-xs text-[color:var(--gov-muted)]">
+            The date and time the event happens. Shown on the Events calendar and
+            in the email. Optional.
+          </p>
           {error ? (
             <div
               role="alert"
@@ -297,6 +368,41 @@ export default function Notifications() {
                       onChange={(e) => setEditBody(e.target.value)}
                       className="gov-input"
                     />
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-[color:var(--gov-muted)]">
+                          When
+                        </label>
+                        <input
+                          type="date"
+                          value={editEventDate}
+                          onChange={(e) => setEditEventDate(e.target.value)}
+                          className="gov-input"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-[color:var(--gov-muted)]">
+                          Start time
+                        </label>
+                        <input
+                          type="time"
+                          value={editStartTime}
+                          onChange={(e) => setEditStartTime(e.target.value)}
+                          className="gov-input"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-[color:var(--gov-muted)]">
+                          End time
+                        </label>
+                        <input
+                          type="time"
+                          value={editEndTime}
+                          onChange={(e) => setEditEndTime(e.target.value)}
+                          className="gov-input"
+                        />
+                      </div>
+                    </div>
                     <div className="flex justify-end gap-2">
                       <button
                         type="button"
@@ -344,9 +450,17 @@ export default function Notifications() {
                         </button>
                       </div>
                     </div>
-                    <p className="mt-3 text-xs text-[color:var(--gov-muted)]">
-                      {fmt(item.created_at)}
-                    </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[color:var(--gov-muted)]">
+                      {item.event_date ? (
+                        <span className="gov-badge gov-badge--info">
+                          When: {fmtEventDate(item.event_date)}
+                          {fmtTimeRange(item.start_time, item.end_time)
+                            ? `, ${fmtTimeRange(item.start_time, item.end_time)}`
+                            : ""}
+                        </span>
+                      ) : null}
+                      <span>Posted {fmt(item.created_at)}</span>
+                    </div>
                   </>
                 )}
               </div>
