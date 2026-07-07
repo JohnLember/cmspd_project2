@@ -9,7 +9,7 @@ export default function PwdAnnouncements() {
           Official advisories and updates from PDAO.
         </p>
       </header>
-      <AnnouncementsFeed emptyText="No announcements from PDAO yet." />
+      <AnnouncementsFeed paginate emptyText="No announcements from PDAO yet." />
     </div>
   );
 }

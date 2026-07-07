@@ -148,7 +148,7 @@ export default function GuardianDashboard() {
         <h3 className="font-semibold">Announcements</h3>
         <p className="mt-1 text-sm text-[color:var(--gov-muted)]">Updates from PDAO.</p>
         <div className="mt-4">
-          <AnnouncementsFeed emptyText="No announcements from PDAO yet." />
+          <AnnouncementsFeed paginate emptyText="No announcements from PDAO yet." />
         </div>
       </section>
     </div>
