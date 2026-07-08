@@ -10,6 +10,8 @@ import {
 } from "../../services/supabase/announcements.js";
 import { useRealtime } from "../../hooks/useRealtime.js";
 import { fmtEventDate, fmtTimeRange } from "../../utils/eventFormat.js";
+import DisabilityTargetToggle from "../../components/ui/DisabilityTargetToggle.jsx";
+import { targetLabel } from "../../constants/disability.js";
 
 const fmt = (iso) =>
   iso
@@ -50,6 +52,7 @@ export default function Notifications() {
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [itemType, setItemType] = useState("");
+  const [targetTypes, setTargetTypes] = useState(null); // null = All Types
   const [posting, setPosting] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState("");
@@ -57,6 +60,7 @@ export default function Notifications() {
   const [editEventDate, setEditEventDate] = useState("");
   const [editStartTime, setEditStartTime] = useState("");
   const [editEndTime, setEditEndTime] = useState("");
+  const [editTargetTypes, setEditTargetTypes] = useState(null);
   const [savingEdit, setSavingEdit] = useState(false);
 
   const load = useCallback(async () => {
@@ -106,6 +110,7 @@ export default function Notifications() {
       startTime,
       endTime,
       itemType,
+      disabilityTypes: targetTypes,
     });
     if (postError) {
       setError(postError.message || "Unable to post announcement.");
@@ -124,6 +129,7 @@ export default function Notifications() {
       setStartTime("");
       setEndTime("");
       setItemType("");
+      setTargetTypes(null);
       toast.success("Announcement posted to PWDs and guardians.");
 
       // Email delivery summary.
@@ -159,6 +165,11 @@ export default function Notifications() {
     // Time columns come back as "HH:MM:SS"; the time input needs "HH:MM".
     setEditStartTime(item.start_time ? item.start_time.slice(0, 5) : "");
     setEditEndTime(item.end_time ? item.end_time.slice(0, 5) : "");
+    setEditTargetTypes(
+      Array.isArray(item.disability_types) && item.disability_types.length
+        ? item.disability_types
+        : null
+    );
   };
 
   const cancelEdit = () => {
@@ -168,6 +179,7 @@ export default function Notifications() {
     setEditEventDate("");
     setEditStartTime("");
     setEditEndTime("");
+    setEditTargetTypes(null);
   };
 
   const saveEdit = async (id) => {
@@ -182,6 +194,7 @@ export default function Notifications() {
       eventDate: editEventDate,
       startTime: editStartTime,
       endTime: editEndTime,
+      disabilityTypes: editTargetTypes,
     });
     if (editError) {
       toast.error(editError.message || "Unable to save changes.");
@@ -334,6 +347,16 @@ export default function Notifications() {
               receipts on the event page. Optional.
             </p>
           </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">
+              Disability type
+            </label>
+            <DisabilityTargetToggle value={targetTypes} onChange={setTargetTypes} />
+            <p className="mt-2 text-xs text-[color:var(--gov-muted)]">
+              Who this announcement is for. “All Types” targets every PWD; pick one
+              or more to target specific disabilities.
+            </p>
+          </div>
           {error ? (
             <div
               role="alert"
@@ -424,6 +447,15 @@ export default function Notifications() {
                         />
                       </div>
                     </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-[color:var(--gov-muted)]">
+                        Disability type
+                      </label>
+                      <DisabilityTargetToggle
+                        value={editTargetTypes}
+                        onChange={setEditTargetTypes}
+                      />
+                    </div>
                     <div className="flex justify-end gap-2">
                       <button
                         type="button"
@@ -483,6 +515,11 @@ export default function Notifications() {
                         <span className="gov-badge gov-badge--info">
                           <Package className="h-3 w-3" aria-hidden="true" />
                           {item.item_type}
+                        </span>
+                      ) : null}
+                      {targetLabel(item.disability_types) ? (
+                        <span className="gov-badge gov-badge--warning">
+                          For: {targetLabel(item.disability_types)}
                         </span>
                       ) : null}
                       {item.event_date ? (

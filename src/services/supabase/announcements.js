@@ -29,7 +29,13 @@ export async function createAnnouncement({
   startTime,
   endTime,
   itemType,
+  disabilityTypes,
 }) {
+  // null / empty = target all PWDs (All Types).
+  const targets =
+    Array.isArray(disabilityTypes) && disabilityTypes.length
+      ? disabilityTypes
+      : null;
   const { data, error } = await supabase.functions.invoke("notify-announcement", {
     body: {
       title,
@@ -38,6 +44,7 @@ export async function createAnnouncement({
       startTime: startTime || null,
       endTime: endTime || null,
       itemType: itemType || null,
+      disabilityTypes: targets,
     },
   });
 
@@ -62,12 +69,15 @@ export async function createAnnouncement({
   }
 
   let announcement = data?.announcement ?? null;
-  // The notify-announcement edge function doesn't handle item_type, so set it
-  // with a follow-up update (PDAO-gated by RLS) when creating a distribution.
-  if (announcement && itemType) {
+  // Safety net: if the edge function version in use doesn't persist item_type /
+  // disability_types yet, set them with a follow-up update (PDAO-gated by RLS).
+  const followUp = {};
+  if (itemType) followUp.item_type = itemType;
+  if (targets) followUp.disability_types = targets;
+  if (announcement && Object.keys(followUp).length) {
     const { data: updated } = await supabase
       .from("announcements")
-      .update({ item_type: itemType })
+      .update(followUp)
       .eq("id", announcement.id)
       .select()
       .single();
@@ -86,7 +96,7 @@ export async function createAnnouncement({
   };
 }
 
-export async function updateAnnouncement(id, { title, body, eventDate, startTime, endTime, itemType }) {
+export async function updateAnnouncement(id, { title, body, eventDate, startTime, endTime, itemType, disabilityTypes }) {
   const updates = {};
   if (title !== undefined) updates.title = title;
   if (body !== undefined) updates.body = body;
@@ -95,6 +105,12 @@ export async function updateAnnouncement(id, { title, body, eventDate, startTime
   if (startTime !== undefined) updates.start_time = startTime || null;
   if (endTime !== undefined) updates.end_time = endTime || null;
   if (itemType !== undefined) updates.item_type = itemType || null;
+  if (disabilityTypes !== undefined) {
+    updates.disability_types =
+      Array.isArray(disabilityTypes) && disabilityTypes.length
+        ? disabilityTypes
+        : null;
+  }
   const { data, error } = await supabase
     .from("announcements")
     .update(updates)

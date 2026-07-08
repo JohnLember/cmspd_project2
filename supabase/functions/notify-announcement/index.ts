@@ -27,6 +27,26 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^\d{2}:\d{2}$/;
 
+// Keep in sync with src/constants/disability.js.
+const DISABILITY_LABELS: Record<string, string> = {
+  deaf: "Deaf or Hard of Hearing",
+  intellectual: "Intellectual Disability",
+  learning: "Learning Disability",
+  mental: "Mental Disability",
+  physical: "Physical Disability (Orthopedic)",
+  psychosocial: "Psychosocial Disability",
+  speech: "Speech and Language Impairment",
+  visual: "Visual Disability",
+  cancer: "Cancer (RA11215)",
+  rare: "Rare Disease (RA10747)",
+  other: "Other",
+};
+
+function disabilityTargetText(types: string[] | null): string {
+  if (!types || types.length === 0) return "";
+  return types.map((t) => DISABILITY_LABELS[t] || t).join(", ");
+}
+
 // Normalize a PH mobile number to 09xxxxxxxxx, or null if invalid.
 function normalizePhone(raw: string): string | null {
   let d = (raw || "").replace(/\D/g, "");
@@ -71,13 +91,17 @@ function announcementHtml(
   message: string,
   whenText: string,
   itemText: string,
+  forText: string,
 ): string {
   const safeBody = escapeHtml(message).replace(/\n/g, "<br/>");
   const whenBlock = whenText
     ? `<p style="margin:0 0 6px;color:#0f172a;font-size:14px"><strong>When:</strong> ${escapeHtml(whenText)}</p>`
     : "";
   const itemBlock = itemText
-    ? `<p style="margin:0 0 14px;color:#0f172a;font-size:14px"><strong>Item / Assistance:</strong> ${escapeHtml(itemText)}</p>`
+    ? `<p style="margin:0 0 6px;color:#0f172a;font-size:14px"><strong>Item / Assistance:</strong> ${escapeHtml(itemText)}</p>`
+    : "";
+  const forBlock = forText
+    ? `<p style="margin:0 0 14px;color:#0f172a;font-size:14px"><strong>For:</strong> ${escapeHtml(forText)}</p>`
     : "";
   return `
     <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:560px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:16px;background:#ffffff">
@@ -85,6 +109,7 @@ function announcementHtml(
       <h2 style="margin:0 0 12px;color:#0f172a;font-size:20px">${escapeHtml(title)}</h2>
       ${whenBlock}
       ${itemBlock}
+      ${forBlock}
       <div style="color:#374151;font-size:15px;line-height:1.6">${safeBody}</div>
       <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0"/>
       <p style="margin:0;color:#6b7280;font-size:13px">Hi ${escapeHtml(name)}, you are receiving this because your personal email is verified in the CMSPD portal. Sign in to view all announcements.</p>
@@ -93,10 +118,11 @@ function announcementHtml(
 
 // Build the SMS body. SMS bills per 160-char segment, so cap the length to keep
 // the cost predictable and point recipients to the portal for the full text.
-function announcementSms(title: string, message: string, whenText: string, itemText: string): string {
+function announcementSms(title: string, message: string, whenText: string, itemText: string, forText: string): string {
   const when = whenText ? ` (When: ${whenText})` : "";
   const item = itemText ? ` [Item: ${itemText}]` : "";
-  const base = `[PDAO Loreto] ${title}${when}${item}: ${message}`;
+  const target = forText ? ` [For: ${forText}]` : "";
+  const base = `[PDAO Loreto] ${title}${when}${item}${target}: ${message}`;
   const text = base.length > 300 ? `${base.slice(0, 297)}...` : base;
   return text;
 }
@@ -175,12 +201,18 @@ Deno.serve(async (req) => {
     // Optional item/assistance for a distribution event.
     const rawItem = String(body.itemType ?? "").trim();
     const itemType = rawItem || null;
+    // Optional target disability types (null / empty = all PWDs).
+    const rawTargets = Array.isArray(body.disabilityTypes)
+      ? body.disabilityTypes.filter((t: unknown) => typeof t === "string" && t)
+      : [];
+    const disabilityTypes = rawTargets.length ? rawTargets : null;
     if (!title || !message) {
       return json({ error: "Title and message are required." }, 400);
     }
 
     const whenText = buildWhen(eventDate, startTime, endTime);
     const itemText = itemType ?? "";
+    const forText = disabilityTargetText(disabilityTypes);
 
     // Create the announcement (this is what every portal already reads).
     const { data: announcement, error: insErr } = await admin
@@ -192,6 +224,7 @@ Deno.serve(async (req) => {
         start_time: startTime,
         end_time: endTime,
         item_type: itemType,
+        disability_types: disabilityTypes,
         created_by: caller.user.id,
       })
       .select()
@@ -226,7 +259,7 @@ Deno.serve(async (req) => {
           from: fromAddress,
           to: r.email,
           subject,
-          html: announcementHtml(r.name, title, message, whenText, itemText),
+          html: announcementHtml(r.name, title, message, whenText, itemText, forText),
         }));
         const res = await fetch("https://api.resend.com/emails/batch", {
           method: "POST",
@@ -304,7 +337,7 @@ Deno.serve(async (req) => {
           smsApiKey,
           smsSender,
           numbers,
-          announcementSms(title, message, whenText, itemText),
+          announcementSms(title, message, whenText, itemText, forText),
         );
         smsCount = sent;
         smsError = error;

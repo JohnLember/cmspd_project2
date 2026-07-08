@@ -33,3 +33,10 @@ export function disabilityLabel(types) {
   if (!Array.isArray(types) || types.length === 0) return "—";
   return types.map((t) => DISABILITY_LABELS[t] || t).join(", ");
 }
+
+// Readable label for an announcement's target disability types. Returns null
+// when it targets everyone (empty/null), so callers can hide the "For:" badge.
+export function targetLabel(types) {
+  if (!Array.isArray(types) || types.length === 0) return null;
+  return types.map((t) => DISABILITY_LABELS[t] || t).join(", ");
+}

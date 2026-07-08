@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Package } from "lucide-react";
 import { getAnnouncements } from "../../services/supabase/announcements.js";
 import { useRealtime } from "../../hooks/useRealtime.js";
 import { fmtEventWhen } from "../../utils/eventFormat.js";
+import { targetLabel } from "../../constants/disability.js";
 
 const PAGE_SIZE = 10;
 
@@ -111,12 +112,18 @@ export default function AnnouncementsFeed({ emptyText, limit, paginate = false }
             </span>
           </div>
           {item.item_type ||
+          targetLabel(item.disability_types) ||
           fmtEventWhen(item.event_date, item.start_time, item.end_time) ? (
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {item.item_type ? (
                 <span className="gov-badge gov-badge--success">
                   <Package className="h-3 w-3" aria-hidden="true" />
                   {item.item_type}
+                </span>
+              ) : null}
+              {targetLabel(item.disability_types) ? (
+                <span className="gov-badge gov-badge--warning">
+                  For: {targetLabel(item.disability_types)}
                 </span>
               ) : null}
               {fmtEventWhen(item.event_date, item.start_time, item.end_time) ? (

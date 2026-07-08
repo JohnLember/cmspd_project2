@@ -373,6 +373,7 @@ export default function EventManage() {
               <tr className="border-b border-[color:var(--gov-border)] text-xs font-semibold text-[color:var(--gov-muted)]">
                 <th className="pb-3 pr-4 font-semibold">PWD</th>
                 <th className="pb-3 pr-4 font-semibold">Barangay</th>
+                <th className="pb-3 pr-4 font-semibold">Disability</th>
                 <th className="pb-3 pr-4 font-semibold">Qty</th>
                 <th className="pb-3 pr-4 font-semibold">Status</th>
                 <th className="pb-3 pr-4 font-semibold">Received</th>
@@ -382,7 +383,7 @@ export default function EventManage() {
             <tbody className="text-[color:var(--gov-text)]">
               {sorted.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-[color:var(--gov-muted)]">
+                  <td colSpan={7} className="py-10 text-center text-[color:var(--gov-muted)]">
                     No recipients yet. Use “Check-in” at the event, or “Add recipients” to prepare the list.
                   </td>
                 </tr>
@@ -395,13 +396,15 @@ export default function EventManage() {
                         <p className="font-medium">{r.profile?.full_name || "—"}</p>
                         <p className="text-xs text-[color:var(--gov-muted)]">
                           {displayId(r.profile)}
-                          {r.profile?.data?.disabilityTypes
-                            ? ` · ${disabilityLabel(r.profile.data.disabilityTypes)}`
-                            : ""}
                         </p>
                       </td>
                       <td className="py-3 pr-4 text-[color:var(--gov-muted)]">
                         {r.profile?.barangay || "—"}
+                      </td>
+                      <td className="py-3 pr-4 text-[color:var(--gov-muted)]">
+                        {r.profile?.data?.disabilityTypes
+                          ? disabilityLabel(r.profile.data.disabilityTypes)
+                          : "—"}
                       </td>
                       <td className="py-3 pr-4">
                         <input
