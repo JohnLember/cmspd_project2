@@ -9,6 +9,19 @@ import {
 import { checkInByPwdId } from "../../services/supabase/recipients.js";
 import { exportRecipientReceipt } from "../../utils/receiptPdf.js";
 
+// Auto-format typed digits into the PWD ID pattern RR-PP-MM-BB-NNNNNN
+// (groups of 2-2-2-2-6) so staff never has to type the dashes.
+const formatPwdId = (raw) => {
+  const d = (raw || "").replace(/\D/g, "").slice(0, 14);
+  const parts = [];
+  if (d.length > 0) parts.push(d.slice(0, 2));
+  if (d.length > 2) parts.push(d.slice(2, 4));
+  if (d.length > 4) parts.push(d.slice(4, 6));
+  if (d.length > 6) parts.push(d.slice(6, 8));
+  if (d.length > 8) parts.push(d.slice(8, 14));
+  return parts.join("-");
+};
+
 // Staff-operated check-in. Stays open across successive beneficiaries: after
 // each check-in the input clears + refocuses. Closes only via the Done button
 // (backdrop click / Escape are intentionally disabled to avoid losing the
@@ -101,10 +114,11 @@ export default function CheckInModal({ announcementId, item, onClose, onChange }
               id="checkin-id"
               ref={inputRef}
               type="text"
+              inputMode="numeric"
               value={pwdId}
-              onChange={(e) => setPwdId(e.target.value)}
+              onChange={(e) => setPwdId(formatPwdId(e.target.value))}
               className="gov-input text-lg tracking-wide"
-              placeholder="Enter or scan the PWD ID"
+              placeholder="16-03-05-05-000012"
               autoComplete="off"
             />
           </div>

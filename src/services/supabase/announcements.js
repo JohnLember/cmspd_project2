@@ -37,6 +37,7 @@ export async function createAnnouncement({
       eventDate: eventDate || null,
       startTime: startTime || null,
       endTime: endTime || null,
+      itemType: itemType || null,
     },
   });
 
