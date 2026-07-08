@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Package } from "lucide-react";
 import { getAnnouncements } from "../../services/supabase/announcements.js";
 import { useRealtime } from "../../hooks/useRealtime.js";
 import { fmtEventWhen } from "../../utils/eventFormat.js";
@@ -110,12 +110,21 @@ export default function AnnouncementsFeed({ emptyText, limit, paginate = false }
               {fmt(item.created_at)}
             </span>
           </div>
-          {fmtEventWhen(item.event_date, item.start_time, item.end_time) ? (
-            <p className="mt-2">
-              <span className="gov-badge gov-badge--info">
-                When: {fmtEventWhen(item.event_date, item.start_time, item.end_time)}
-              </span>
-            </p>
+          {item.item_type ||
+          fmtEventWhen(item.event_date, item.start_time, item.end_time) ? (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {item.item_type ? (
+                <span className="gov-badge gov-badge--success">
+                  <Package className="h-3 w-3" aria-hidden="true" />
+                  {item.item_type}
+                </span>
+              ) : null}
+              {fmtEventWhen(item.event_date, item.start_time, item.end_time) ? (
+                <span className="gov-badge gov-badge--info">
+                  When: {fmtEventWhen(item.event_date, item.start_time, item.end_time)}
+                </span>
+              ) : null}
+            </div>
           ) : null}
           <p className="mt-2 whitespace-pre-line text-sm text-[color:var(--gov-muted)]">
             {item.body}
