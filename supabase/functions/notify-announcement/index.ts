@@ -47,6 +47,26 @@ function disabilityTargetText(types: string[] | null): string {
   return types.map((t) => DISABILITY_LABELS[t] || t).join(", ");
 }
 
+// A profile matches the announcement's targeting when its barangay is in the
+// target barangays (or all) AND it has one of the target disability types (or
+// all). Empty/null targets mean "everyone".
+function matchesTarget(
+  barangay: string | null | undefined,
+  types: unknown,
+  targetBarangays: string[] | null,
+  targetTypes: string[] | null,
+): boolean {
+  const barangayOk =
+    !targetBarangays ||
+    targetBarangays.length === 0 ||
+    (barangay ? targetBarangays.includes(barangay) : false);
+  const typesOk =
+    !targetTypes ||
+    targetTypes.length === 0 ||
+    (Array.isArray(types) && types.some((t) => targetTypes.includes(t)));
+  return barangayOk && typesOk;
+}
+
 // Normalize a PH mobile number to 09xxxxxxxxx, or null if invalid.
 function normalizePhone(raw: string): string | null {
   let d = (raw || "").replace(/\D/g, "");
@@ -92,23 +112,24 @@ function announcementHtml(
   whenText: string,
   itemText: string,
   forText: string,
+  areaText: string,
 ): string {
   const safeBody = escapeHtml(message).replace(/\n/g, "<br/>");
-  const whenBlock = whenText
-    ? `<p style="margin:0 0 6px;color:#0f172a;font-size:14px"><strong>When:</strong> ${escapeHtml(whenText)}</p>`
-    : "";
-  const itemBlock = itemText
-    ? `<p style="margin:0 0 6px;color:#0f172a;font-size:14px"><strong>Item / Assistance:</strong> ${escapeHtml(itemText)}</p>`
-    : "";
-  const forBlock = forText
-    ? `<p style="margin:0 0 14px;color:#0f172a;font-size:14px"><strong>For:</strong> ${escapeHtml(forText)}</p>`
-    : "";
+  const line = (label: string, val: string, mb: number) =>
+    val
+      ? `<p style="margin:0 0 ${mb}px;color:#0f172a;font-size:14px"><strong>${label}:</strong> ${escapeHtml(val)}</p>`
+      : "";
+  const whenBlock = line("When", whenText, 6);
+  const itemBlock = line("Item / Assistance", itemText, 6);
+  const areaBlock = line("Barangay", areaText, 6);
+  const forBlock = line("For", forText, 14);
   return `
     <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:560px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:16px;background:#ffffff">
       <p style="margin:0 0 4px;font-size:13px;color:#1d4ed8;font-weight:600">PDAO — Municipality of Loreto</p>
       <h2 style="margin:0 0 12px;color:#0f172a;font-size:20px">${escapeHtml(title)}</h2>
       ${whenBlock}
       ${itemBlock}
+      ${areaBlock}
       ${forBlock}
       <div style="color:#374151;font-size:15px;line-height:1.6">${safeBody}</div>
       <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0"/>
@@ -118,11 +139,12 @@ function announcementHtml(
 
 // Build the SMS body. SMS bills per 160-char segment, so cap the length to keep
 // the cost predictable and point recipients to the portal for the full text.
-function announcementSms(title: string, message: string, whenText: string, itemText: string, forText: string): string {
+function announcementSms(title: string, message: string, whenText: string, itemText: string, forText: string, areaText: string): string {
   const when = whenText ? ` (When: ${whenText})` : "";
   const item = itemText ? ` [Item: ${itemText}]` : "";
+  const area = areaText ? ` [Barangay: ${areaText}]` : "";
   const target = forText ? ` [For: ${forText}]` : "";
-  const base = `[PDAO Loreto] ${title}${when}${item}${target}: ${message}`;
+  const base = `[PDAO Loreto] ${title}${when}${item}${area}${target}: ${message}`;
   const text = base.length > 300 ? `${base.slice(0, 297)}...` : base;
   return text;
 }
@@ -206,6 +228,11 @@ Deno.serve(async (req) => {
       ? body.disabilityTypes.filter((t: unknown) => typeof t === "string" && t)
       : [];
     const disabilityTypes = rawTargets.length ? rawTargets : null;
+    // Optional target barangays (null / empty = all barangays).
+    const rawBarangays = Array.isArray(body.barangays)
+      ? body.barangays.filter((b: unknown) => typeof b === "string" && b)
+      : [];
+    const barangays = rawBarangays.length ? rawBarangays : null;
     if (!title || !message) {
       return json({ error: "Title and message are required." }, 400);
     }
@@ -213,6 +240,7 @@ Deno.serve(async (req) => {
     const whenText = buildWhen(eventDate, startTime, endTime);
     const itemText = itemType ?? "";
     const forText = disabilityTargetText(disabilityTypes);
+    const areaText = barangays ? barangays.join(", ") : "";
 
     // Create the announcement (this is what every portal already reads).
     const { data: announcement, error: insErr } = await admin
@@ -225,20 +253,24 @@ Deno.serve(async (req) => {
         end_time: endTime,
         item_type: itemType,
         disability_types: disabilityTypes,
+        barangays,
         created_by: caller.user.id,
       })
       .select()
       .single();
     if (insErr) return json({ error: insErr.message }, 400);
 
-    // ---- Email broadcast: profiles whose personal email is verified ----
+    // ---- Email broadcast: verified PWD emails matching the target ----
     const { data: rows } = await admin
       .from("profiles")
-      .select("personal_email, full_name")
+      .select("personal_email, full_name, barangay, data")
       .eq("personal_email_verified", true)
       .not("personal_email", "is", null);
 
     const recipients = (rows ?? [])
+      .filter((r) =>
+        matchesTarget(r.barangay, r.data?.disabilityTypes, barangays, disabilityTypes)
+      )
       .map((r) => ({
         email: String(r.personal_email ?? "").trim(),
         name: r.full_name || "PWD beneficiary",
@@ -259,7 +291,7 @@ Deno.serve(async (req) => {
           from: fromAddress,
           to: r.email,
           subject,
-          html: announcementHtml(r.name, title, message, whenText, itemText, forText),
+          html: announcementHtml(r.name, title, message, whenText, itemText, forText, areaText),
         }));
         const res = await fetch("https://api.resend.com/emails/batch", {
           method: "POST",
@@ -290,17 +322,37 @@ Deno.serve(async (req) => {
 
     const phoneSet = new Set<string>();
 
+    // PWD numbers: verified + matching the target barangay/disability.
     const { data: pwdRows } = await admin
       .from("profiles")
-      .select("contact_number")
+      .select("contact_number, barangay, data")
       .eq("contact_verified", true)
       .not("contact_number", "is", null);
     for (const r of pwdRows ?? []) {
+      if (!matchesTarget(r.barangay, r.data?.disabilityTypes, barangays, disabilityTypes)) {
+        continue;
+      }
       const n = normalizePhone(String(r.contact_number ?? ""));
       if (n) phoneSet.add(n);
     }
 
-    // Guardians: page through auth users and pick verified guardian numbers.
+    // Guardians qualify when any of their linked wards matches the target.
+    const matchingGuardianIds = new Set<string>();
+    const { data: links } = await admin
+      .from("guardian_ward_links")
+      .select("guardian_id, ward:pwd_id(barangay, data)");
+    for (const link of links ?? []) {
+      const ward = (link as { ward?: { barangay?: string; data?: { disabilityTypes?: unknown } } }).ward;
+      if (
+        ward &&
+        matchesTarget(ward.barangay, ward.data?.disabilityTypes, barangays, disabilityTypes)
+      ) {
+        matchingGuardianIds.add((link as { guardian_id: string }).guardian_id);
+      }
+    }
+
+    // Guardians: page through auth users and pick verified guardian numbers
+    // whose ward matches the target.
     try {
       let page = 1;
       for (;;) {
@@ -312,7 +364,8 @@ Deno.serve(async (req) => {
         for (const u of users) {
           if (
             u.user_metadata?.role === "guardian" &&
-            u.user_metadata?.contact_number_verified
+            u.user_metadata?.contact_number_verified &&
+            matchingGuardianIds.has(u.id)
           ) {
             const n = normalizePhone(String(u.user_metadata?.contact_number ?? ""));
             if (n) phoneSet.add(n);
@@ -337,7 +390,7 @@ Deno.serve(async (req) => {
           smsApiKey,
           smsSender,
           numbers,
-          announcementSms(title, message, whenText, itemText, forText),
+          announcementSms(title, message, whenText, itemText, forText, areaText),
         );
         smsCount = sent;
         smsError = error;

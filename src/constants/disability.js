@@ -12,6 +12,11 @@ export const DISABILITY_LABELS = {
   other: "Other",
 };
 
+// Ready-made { key, label } options for a TargetToggle / picker.
+export const DISABILITY_OPTIONS = Object.entries(DISABILITY_LABELS).map(
+  ([key, label]) => ({ key, label })
+);
+
 // Distinct chart colours per disability type (used by stacked bar charts).
 export const DISABILITY_COLORS = {
   deaf: "#2563eb",

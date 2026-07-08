@@ -1,8 +1,7 @@
-import { DISABILITY_LABELS } from "../../constants/disability.js";
-
-// Toggle group to target an announcement at specific disability types.
-// `value` is an array of type keys, or null/empty which means "All Types".
-export default function DisabilityTargetToggle({ value, onChange }) {
+// Generic multi-select toggle-pill group for targeting an announcement.
+// `value` is an array of selected keys, or null/empty which means "all"
+// (the `allLabel` pill). `options` is [{ key, label }].
+export default function TargetToggle({ allLabel, options, value, onChange }) {
   const selected = Array.isArray(value) ? value : [];
   const isAll = selected.length === 0;
 
@@ -13,11 +12,11 @@ export default function DisabilityTargetToggle({ value, onChange }) {
         : "border-[color:var(--gov-border)] text-[color:var(--gov-muted)] hover:bg-[color:var(--gov-card)] hover:text-[color:var(--gov-text)]"
     }`;
 
-  const toggleType = (key) => {
+  const toggle = (key) => {
     const next = selected.includes(key)
       ? selected.filter((k) => k !== key)
       : [...selected, key];
-    onChange(next.length ? next : null); // empty selection = All Types
+    onChange(next.length ? next : null); // empty selection = all
   };
 
   return (
@@ -28,17 +27,17 @@ export default function DisabilityTargetToggle({ value, onChange }) {
         aria-pressed={isAll}
         className={pill(isAll)}
       >
-        All Types
+        {allLabel}
       </button>
-      {Object.entries(DISABILITY_LABELS).map(([key, label]) => (
+      {options.map((o) => (
         <button
           type="button"
-          key={key}
-          onClick={() => toggleType(key)}
-          aria-pressed={selected.includes(key)}
-          className={pill(!isAll && selected.includes(key))}
+          key={o.key}
+          onClick={() => toggle(o.key)}
+          aria-pressed={selected.includes(o.key)}
+          className={pill(!isAll && selected.includes(o.key))}
         >
-          {label}
+          {o.label}
         </button>
       ))}
     </div>

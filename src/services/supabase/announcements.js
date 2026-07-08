@@ -30,12 +30,15 @@ export async function createAnnouncement({
   endTime,
   itemType,
   disabilityTypes,
+  barangays,
 }) {
-  // null / empty = target all PWDs (All Types).
+  // null / empty = target everyone (All Types / All Barangay).
   const targets =
     Array.isArray(disabilityTypes) && disabilityTypes.length
       ? disabilityTypes
       : null;
+  const targetBarangays =
+    Array.isArray(barangays) && barangays.length ? barangays : null;
   const { data, error } = await supabase.functions.invoke("notify-announcement", {
     body: {
       title,
@@ -45,6 +48,7 @@ export async function createAnnouncement({
       endTime: endTime || null,
       itemType: itemType || null,
       disabilityTypes: targets,
+      barangays: targetBarangays,
     },
   });
 
@@ -74,6 +78,7 @@ export async function createAnnouncement({
   const followUp = {};
   if (itemType) followUp.item_type = itemType;
   if (targets) followUp.disability_types = targets;
+  if (targetBarangays) followUp.barangays = targetBarangays;
   if (announcement && Object.keys(followUp).length) {
     const { data: updated } = await supabase
       .from("announcements")
@@ -96,7 +101,7 @@ export async function createAnnouncement({
   };
 }
 
-export async function updateAnnouncement(id, { title, body, eventDate, startTime, endTime, itemType, disabilityTypes }) {
+export async function updateAnnouncement(id, { title, body, eventDate, startTime, endTime, itemType, disabilityTypes, barangays }) {
   const updates = {};
   if (title !== undefined) updates.title = title;
   if (body !== undefined) updates.body = body;
@@ -110,6 +115,10 @@ export async function updateAnnouncement(id, { title, body, eventDate, startTime
       Array.isArray(disabilityTypes) && disabilityTypes.length
         ? disabilityTypes
         : null;
+  }
+  if (barangays !== undefined) {
+    updates.barangays =
+      Array.isArray(barangays) && barangays.length ? barangays : null;
   }
   const { data, error } = await supabase
     .from("announcements")

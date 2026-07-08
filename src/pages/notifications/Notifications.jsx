@@ -10,8 +10,12 @@ import {
 } from "../../services/supabase/announcements.js";
 import { useRealtime } from "../../hooks/useRealtime.js";
 import { fmtEventDate, fmtTimeRange } from "../../utils/eventFormat.js";
-import DisabilityTargetToggle from "../../components/ui/DisabilityTargetToggle.jsx";
-import { targetLabel } from "../../constants/disability.js";
+import TargetToggle from "../../components/ui/TargetToggle.jsx";
+import { DISABILITY_OPTIONS, targetLabel } from "../../constants/disability.js";
+import { getLoretoBarangays } from "../../services/psgc.js";
+
+const barangayLabel = (list) =>
+  Array.isArray(list) && list.length ? list.join(", ") : null;
 
 const fmt = (iso) =>
   iso
@@ -53,6 +57,7 @@ export default function Notifications() {
   const [endTime, setEndTime] = useState("");
   const [itemType, setItemType] = useState("");
   const [targetTypes, setTargetTypes] = useState(null); // null = All Types
+  const [targetBarangays, setTargetBarangays] = useState(null); // null = All Barangay
   const [posting, setPosting] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState("");
@@ -61,7 +66,26 @@ export default function Notifications() {
   const [editStartTime, setEditStartTime] = useState("");
   const [editEndTime, setEditEndTime] = useState("");
   const [editTargetTypes, setEditTargetTypes] = useState(null);
+  const [editTargetBarangays, setEditTargetBarangays] = useState(null);
   const [savingEdit, setSavingEdit] = useState(false);
+
+  // Loreto barangays (same PSGC source as the apply form, so names match
+  // exactly what is stored on profiles for filtering).
+  const [barangayOptions, setBarangayOptions] = useState([]);
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const names = await getLoretoBarangays();
+        if (mounted) setBarangayOptions(names.map((b) => ({ key: b, label: b })));
+      } catch {
+        // Barangay targeting simply falls back to "All Barangay" if the list fails.
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const load = useCallback(async () => {
     const { announcements: rows, error: loadError } = await getAnnouncements();
@@ -111,6 +135,7 @@ export default function Notifications() {
       endTime,
       itemType,
       disabilityTypes: targetTypes,
+      barangays: targetBarangays,
     });
     if (postError) {
       setError(postError.message || "Unable to post announcement.");
@@ -130,6 +155,7 @@ export default function Notifications() {
       setEndTime("");
       setItemType("");
       setTargetTypes(null);
+      setTargetBarangays(null);
       toast.success("Announcement posted to PWDs and guardians.");
 
       // Email delivery summary.
@@ -170,6 +196,11 @@ export default function Notifications() {
         ? item.disability_types
         : null
     );
+    setEditTargetBarangays(
+      Array.isArray(item.barangays) && item.barangays.length
+        ? item.barangays
+        : null
+    );
   };
 
   const cancelEdit = () => {
@@ -180,6 +211,7 @@ export default function Notifications() {
     setEditStartTime("");
     setEditEndTime("");
     setEditTargetTypes(null);
+    setEditTargetBarangays(null);
   };
 
   const saveEdit = async (id) => {
@@ -195,6 +227,7 @@ export default function Notifications() {
       startTime: editStartTime,
       endTime: editEndTime,
       disabilityTypes: editTargetTypes,
+      barangays: editTargetBarangays,
     });
     if (editError) {
       toast.error(editError.message || "Unable to save changes.");
@@ -349,12 +382,29 @@ export default function Notifications() {
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium">
+              Barangay
+            </label>
+            <TargetToggle
+              allLabel="All Barangay"
+              options={barangayOptions}
+              value={targetBarangays}
+              onChange={setTargetBarangays}
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">
               Disability type
             </label>
-            <DisabilityTargetToggle value={targetTypes} onChange={setTargetTypes} />
+            <TargetToggle
+              allLabel="All Types"
+              options={DISABILITY_OPTIONS}
+              value={targetTypes}
+              onChange={setTargetTypes}
+            />
             <p className="mt-2 text-xs text-[color:var(--gov-muted)]">
-              Who this announcement is for. “All Types” targets every PWD; pick one
-              or more to target specific disabilities.
+              Only PWDs (and their guardians) matching the selected barangay
+              <em> and</em> disability type receive this announcement’s email and
+              SMS. “All Barangay” / “All Types” mean everyone.
             </p>
           </div>
           {error ? (
@@ -449,9 +499,22 @@ export default function Notifications() {
                     </div>
                     <div>
                       <label className="mb-1 block text-xs font-medium text-[color:var(--gov-muted)]">
+                        Barangay
+                      </label>
+                      <TargetToggle
+                        allLabel="All Barangay"
+                        options={barangayOptions}
+                        value={editTargetBarangays}
+                        onChange={setEditTargetBarangays}
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-[color:var(--gov-muted)]">
                         Disability type
                       </label>
-                      <DisabilityTargetToggle
+                      <TargetToggle
+                        allLabel="All Types"
+                        options={DISABILITY_OPTIONS}
                         value={editTargetTypes}
                         onChange={setEditTargetTypes}
                       />
@@ -515,6 +578,11 @@ export default function Notifications() {
                         <span className="gov-badge gov-badge--info">
                           <Package className="h-3 w-3" aria-hidden="true" />
                           {item.item_type}
+                        </span>
+                      ) : null}
+                      {barangayLabel(item.barangays) ? (
+                        <span className="gov-badge gov-badge--warning">
+                          Barangay: {barangayLabel(item.barangays)}
                         </span>
                       ) : null}
                       {targetLabel(item.disability_types) ? (

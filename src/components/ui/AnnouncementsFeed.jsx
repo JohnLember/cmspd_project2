@@ -112,6 +112,7 @@ export default function AnnouncementsFeed({ emptyText, limit, paginate = false }
             </span>
           </div>
           {item.item_type ||
+          item.barangays?.length ||
           targetLabel(item.disability_types) ||
           fmtEventWhen(item.event_date, item.start_time, item.end_time) ? (
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -119,6 +120,11 @@ export default function AnnouncementsFeed({ emptyText, limit, paginate = false }
                 <span className="gov-badge gov-badge--success">
                   <Package className="h-3 w-3" aria-hidden="true" />
                   {item.item_type}
+                </span>
+              ) : null}
+              {item.barangays?.length ? (
+                <span className="gov-badge gov-badge--warning">
+                  Barangay: {item.barangays.join(", ")}
                 </span>
               ) : null}
               {targetLabel(item.disability_types) ? (
