@@ -9,10 +9,27 @@ export async function getAnnouncements() {
   return { announcements: data ?? [], error };
 }
 
+// One announcement/event by id (used by the event management page).
+export async function getAnnouncement(id) {
+  const { data, error } = await supabase
+    .from("announcements")
+    .select("*")
+    .eq("id", id)
+    .single();
+  return { announcement: data ?? null, error };
+}
+
 // PDAO only. Runs the notify-announcement edge function, which creates the
 // announcement AND emails every PWD beneficiary with a verified personal email
 // (via Resend). Returns the created row plus how many recipients were emailed.
-export async function createAnnouncement({ title, body, eventDate, startTime, endTime }) {
+export async function createAnnouncement({
+  title,
+  body,
+  eventDate,
+  startTime,
+  endTime,
+  itemType,
+}) {
   const { data, error } = await supabase.functions.invoke("notify-announcement", {
     body: {
       title,
@@ -43,8 +60,21 @@ export async function createAnnouncement({ title, body, eventDate, startTime, en
     };
   }
 
+  let announcement = data?.announcement ?? null;
+  // The notify-announcement edge function doesn't handle item_type, so set it
+  // with a follow-up update (PDAO-gated by RLS) when creating a distribution.
+  if (announcement && itemType) {
+    const { data: updated } = await supabase
+      .from("announcements")
+      .update({ item_type: itemType })
+      .eq("id", announcement.id)
+      .select()
+      .single();
+    if (updated) announcement = updated;
+  }
+
   return {
-    announcement: data?.announcement ?? null,
+    announcement,
     emailedCount: data?.emailedCount ?? 0,
     recipientCount: data?.recipientCount ?? 0,
     emailError: data?.emailError ?? null,
@@ -55,12 +85,15 @@ export async function createAnnouncement({ title, body, eventDate, startTime, en
   };
 }
 
-export async function updateAnnouncement(id, { title, body, eventDate, startTime, endTime }) {
-  const updates = { title, body };
+export async function updateAnnouncement(id, { title, body, eventDate, startTime, endTime, itemType }) {
+  const updates = {};
+  if (title !== undefined) updates.title = title;
+  if (body !== undefined) updates.body = body;
   // Only touch these when the caller passes them (undefined = leave as-is).
   if (eventDate !== undefined) updates.event_date = eventDate || null;
   if (startTime !== undefined) updates.start_time = startTime || null;
   if (endTime !== undefined) updates.end_time = endTime || null;
+  if (itemType !== undefined) updates.item_type = itemType || null;
   const { data, error } = await supabase
     .from("announcements")
     .update(updates)

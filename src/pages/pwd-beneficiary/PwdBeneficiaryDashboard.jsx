@@ -4,6 +4,8 @@ import {
   AlertTriangle,
   ArrowRight,
   Bell,
+  Download,
+  Gift,
   HeartHandshake,
   IdCard,
   Phone,
@@ -12,8 +14,11 @@ import {
 } from "lucide-react";
 import { getMyProfile } from "../../services/supabase/profile.js";
 import { getMyGuardians } from "../../services/supabase/guardians.js";
+import { getMyAssistance } from "../../services/supabase/recipients.js";
 import { DISABILITY_LABELS } from "../../constants/disability.js";
 import { getMissingIdFields } from "../../components/pwd/digitalIdFields.js";
+import { fmtEventDate } from "../../utils/eventFormat.js";
+import { exportReceiptPdf } from "../../utils/receiptPdf.js";
 import AnnouncementsFeed from "../../components/ui/AnnouncementsFeed.jsx";
 import { useRealtime } from "../../hooks/useRealtime.js";
 
@@ -29,12 +34,15 @@ export default function PwdBeneficiaryDashboard() {
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [guardians, setGuardians] = useState([]);
+  const [assistance, setAssistance] = useState([]);
 
   const load = useCallback(async () => {
     const { profile: row } = await getMyProfile();
     setProfile(row);
     const { guardians: rows } = await getMyGuardians();
     setGuardians(rows ?? []);
+    const { recipients } = await getMyAssistance();
+    setAssistance(recipients ?? []);
     setIsLoading(false);
   }, []);
 
@@ -48,6 +56,19 @@ export default function PwdBeneficiaryDashboard() {
   useRealtime("profiles", load);
   // Live: reflects a linked guardian being deactivated/reactivated.
   useRealtime("guardian_ward_links", load);
+  // Live: reflects assistance being marked received by PDAO.
+  useRealtime("announcement_recipients", load);
+
+  const downloadReceipt = (r) =>
+    exportReceiptPdf({
+      receiptNumber: r.receipt_number,
+      receivedAt: r.received_at,
+      fullName: profile?.full_name,
+      pwdId: profile?.pwd_id_number,
+      barangay: profile?.barangay,
+      item: r.announcement?.item_type || r.announcement?.title || "Assistance",
+      quantity: r.quantity,
+    });
 
   const firstName = (profile?.full_name || "").split(" ")[0];
   const idReady = profile && getMissingIdFields(profile).length === 0;
@@ -83,6 +104,61 @@ export default function PwdBeneficiaryDashboard() {
                 {DISABILITY_LABELS[t] || t}
               </span>
             ))}
+          </div>
+        </section>
+      ) : null}
+
+      {!isLoading && assistance.length > 0 ? (
+        <section className="gov-card p-5">
+          <h3 className="flex items-center gap-2 font-semibold text-[color:var(--gov-text)]">
+            <Gift className="h-4 w-4 text-[color:var(--gov-primary)]" aria-hidden="true" />
+            Assistance from PDAO
+          </h3>
+          <div className="mt-4 space-y-3">
+            {assistance.map((r) => {
+              const received = r.status === "received";
+              const item =
+                r.announcement?.item_type || r.announcement?.title || "Assistance";
+              return (
+                <div
+                  key={r.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[color:var(--gov-border)] p-4"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-[color:var(--gov-text)]">{item}</p>
+                      {r.quantity > 1 ? (
+                        <span className="gov-badge gov-badge--neutral">x{r.quantity}</span>
+                      ) : null}
+                      {received ? (
+                        <span className="gov-badge gov-badge--success">Received</span>
+                      ) : (
+                        <span className="gov-badge gov-badge--warning">Pending</span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs text-[color:var(--gov-muted)]">
+                      {received
+                        ? `Received ${fmtEventDate(
+                            (r.received_at || "").slice(0, 10)
+                          )}`
+                        : r.announcement?.event_date
+                        ? `Scheduled ${fmtEventDate(r.announcement.event_date)}`
+                        : "Not yet released"}
+                    </p>
+                  </div>
+                  {received && r.receipt_number ? (
+                    <button
+                      type="button"
+                      onClick={() => downloadReceipt(r)}
+                      className="btn btn-secondary h-9 px-3 text-xs"
+                    >
+                      <Download className="h-4 w-4" aria-hidden="true" />
+                      Receipt
+                    </button>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         </section>
       ) : null}

@@ -38,6 +38,7 @@ const Notifications = lazy(
   () => import("../pages/notifications/Notifications.jsx")
 );
 const Events = lazy(() => import("../pages/events/Events.jsx"));
+const EventManage = lazy(() => import("../pages/events/EventManage.jsx"));
 const Settings = lazy(() => import("../pages/settings/Settings.jsx"));
 const NotFound = lazy(() => import("../pages/system/NotFound.jsx"));
 const BeneficiaryApply = lazy(
@@ -73,6 +74,7 @@ export default function AppRouter() {
           <Route path="reports" element={<Reports />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="events" element={<Events />} />
+          <Route path="events/:id" element={<EventManage />} />
           <Route path="settings" element={<Settings />} />
         </Route>
 

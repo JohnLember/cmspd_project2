@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router";
 import { toast } from "react-toastify";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Package, Settings2 } from "lucide-react";
 import {
   createAnnouncement,
   deleteAnnouncement,
@@ -48,6 +49,7 @@ export default function Notifications() {
   const [eventDate, setEventDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [itemType, setItemType] = useState("");
   const [posting, setPosting] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState("");
@@ -103,6 +105,7 @@ export default function Notifications() {
       eventDate,
       startTime,
       endTime,
+      itemType,
     });
     if (postError) {
       setError(postError.message || "Unable to post announcement.");
@@ -120,6 +123,7 @@ export default function Notifications() {
       setEventDate("");
       setStartTime("");
       setEndTime("");
+      setItemType("");
       toast.success("Announcement posted to PWDs and guardians.");
 
       // Email delivery summary.
@@ -313,6 +317,23 @@ export default function Notifications() {
             The date and time the event happens. Shown on the Events calendar and
             in the email. Optional.
           </p>
+          <div>
+            <label className="mb-2 block text-sm font-medium" htmlFor="ann-item">
+              Item / assistance given
+            </label>
+            <input
+              id="ann-item"
+              type="text"
+              value={itemType}
+              onChange={(e) => setItemType(e.target.value)}
+              className="gov-input w-full sm:max-w-xs"
+              placeholder="e.g. Wheelchair"
+            />
+            <p className="mt-1 text-xs text-[color:var(--gov-muted)]">
+              Only for distribution events. Enables recipient check-in and
+              receipts on the event page. Optional.
+            </p>
+          </div>
           {error ? (
             <div
               role="alert"
@@ -434,6 +455,13 @@ export default function Notifications() {
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-1">
+                        <Link
+                          to={`/app/events/${item.id}`}
+                          className="btn btn-ghost h-9 px-3 text-xs"
+                        >
+                          <Settings2 className="h-3.5 w-3.5" aria-hidden="true" />
+                          Manage
+                        </Link>
                         <button
                           type="button"
                           onClick={() => startEdit(item)}
@@ -451,8 +479,14 @@ export default function Notifications() {
                       </div>
                     </div>
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[color:var(--gov-muted)]">
-                      {item.event_date ? (
+                      {item.item_type ? (
                         <span className="gov-badge gov-badge--info">
+                          <Package className="h-3 w-3" aria-hidden="true" />
+                          {item.item_type}
+                        </span>
+                      ) : null}
+                      {item.event_date ? (
+                        <span className="gov-badge gov-badge--neutral">
                           When: {fmtEventDate(item.event_date)}
                           {fmtTimeRange(item.start_time, item.end_time)
                             ? `, ${fmtTimeRange(item.start_time, item.end_time)}`

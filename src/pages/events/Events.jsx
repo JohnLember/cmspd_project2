@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { Link } from "react-router";
+import { ArrowRight, CalendarDays, ChevronLeft, ChevronRight, Package } from "lucide-react";
 import { getAnnouncements } from "../../services/supabase/announcements.js";
 import { useRealtime } from "../../hooks/useRealtime.js";
 import { fmtEventDate, fmtTimeRange } from "../../utils/eventFormat.js";
@@ -210,6 +211,9 @@ export default function Events() {
           <h3 className="font-semibold text-[color:var(--gov-text)]">
             {fmtEventDate(selected)}
           </h3>
+          <p className="mt-1 text-xs text-[color:var(--gov-muted)]">
+            Click an event to manage it and its recipients.
+          </p>
           {selectedEvents.length === 0 ? (
             <p className="mt-3 text-sm text-[color:var(--gov-muted)]">
               No events on this day.
@@ -217,24 +221,37 @@ export default function Events() {
           ) : (
             <div className="mt-4 space-y-3">
               {selectedEvents.map((e) => (
-                <article
+                <Link
                   key={e.id}
-                  className="rounded-[var(--radius-md)] border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] p-4"
+                  to={`/app/events/${e.id}`}
+                  className="group card-press block rounded-[var(--radius-md)] border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] p-4 hover:border-[color:var(--gov-primary)]"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="font-semibold text-[color:var(--gov-text)]">
-                      {e.title}
-                    </p>
-                    {fmtTimeRange(e.start_time, e.end_time) ? (
-                      <span className="gov-badge gov-badge--info">
-                        {fmtTimeRange(e.start_time, e.end_time)}
-                      </span>
-                    ) : null}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-[color:var(--gov-text)]">
+                        {e.title}
+                      </p>
+                      {e.item_type ? (
+                        <span className="gov-badge gov-badge--info">
+                          <Package className="h-3 w-3" aria-hidden="true" />
+                          {e.item_type}
+                        </span>
+                      ) : null}
+                      {fmtTimeRange(e.start_time, e.end_time) ? (
+                        <span className="gov-badge gov-badge--neutral">
+                          {fmtTimeRange(e.start_time, e.end_time)}
+                        </span>
+                      ) : null}
+                    </div>
+                    <ArrowRight
+                      className="h-5 w-5 shrink-0 text-[color:var(--gov-muted)] transition-transform group-hover:translate-x-0.5 group-hover:text-[color:var(--gov-primary)] motion-reduce:transition-none"
+                      aria-hidden="true"
+                    />
                   </div>
                   <p className="mt-1 whitespace-pre-line text-sm text-[color:var(--gov-muted)]">
                     {e.body}
                   </p>
-                </article>
+                </Link>
               ))}
             </div>
           )}
