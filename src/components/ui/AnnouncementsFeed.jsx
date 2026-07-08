@@ -1,9 +1,13 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Package } from "lucide-react";
 import { getAnnouncements } from "../../services/supabase/announcements.js";
+import { getMyProfile } from "../../services/supabase/profile.js";
+import { getMyWards } from "../../services/supabase/guardians.js";
 import { useRealtime } from "../../hooks/useRealtime.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 import { fmtEventWhen } from "../../utils/eventFormat.js";
 import { targetLabel } from "../../constants/disability.js";
+import { announcementVisibleTo } from "../../utils/announcementTargeting.js";
 
 const PAGE_SIZE = 10;
 
@@ -35,10 +39,16 @@ function getPageNumbers(current, total) {
 }
 
 export default function AnnouncementsFeed({ emptyText, limit, paginate = false }) {
+  const { role } = useAuth();
   const [announcements, setAnnouncements] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
+  // Viewer targeting: a PWD sees announcements aimed at their own barangay/
+  // disability; a guardian sees those aimed at any of their wards. `null` until
+  // resolved. Only pwd/guardian feeds are filtered.
+  const shouldFilter = role === "pwd" || role === "guardian";
+  const [targets, setTargets] = useState(null);
 
   const load = useCallback(async () => {
     const { announcements: rows, error: loadError } = await getAnnouncements();
@@ -53,10 +63,55 @@ export default function AnnouncementsFeed({ emptyText, limit, paginate = false }
     })();
   }, [load]);
 
+  // Resolve the viewer's targeting profile once.
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (role === "pwd") {
+        const { profile } = await getMyProfile();
+        if (mounted) {
+          setTargets([
+            {
+              barangay: profile?.barangay,
+              types: profile?.data?.disabilityTypes,
+            },
+          ]);
+        }
+      } else if (role === "guardian") {
+        const { wards } = await getMyWards();
+        if (mounted) {
+          setTargets(
+            (wards ?? [])
+              .map((w) => w.ward)
+              .filter(Boolean)
+              .map((ward) => ({
+                barangay: ward.barangay,
+                types: ward.data?.disabilityTypes,
+              }))
+          );
+        }
+      } else if (mounted) {
+        setTargets([]);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [role]);
+
   // Live updates when PDAO posts, edits, or deletes an announcement.
   useRealtime("announcements", load);
 
-  if (isLoading) {
+  // Only announcements aimed at this viewer (or everyone).
+  const filtered = useMemo(() => {
+    if (!shouldFilter) return announcements;
+    if (targets === null) return announcements;
+    return announcements.filter((a) => announcementVisibleTo(a, targets));
+  }, [announcements, targets, shouldFilter]);
+
+  const stillLoading = isLoading || (shouldFilter && targets === null);
+
+  if (stillLoading) {
     return (
       <div className="space-y-3">
         {[0, 1].map((i) => (
@@ -75,7 +130,7 @@ export default function AnnouncementsFeed({ emptyText, limit, paginate = false }
       </div>
     );
   }
-  if (announcements.length === 0) {
+  if (filtered.length === 0) {
     return (
       <p className="rounded-[var(--radius-md)] bg-[color:var(--gov-surface)] px-4 py-8 text-center text-sm text-[color:var(--gov-muted)]">
         {emptyText || "No announcements yet."}
@@ -84,14 +139,14 @@ export default function AnnouncementsFeed({ emptyText, limit, paginate = false }
   }
 
   // Paginated (10 per page) or simple slice by `limit`.
-  const totalPages = Math.max(1, Math.ceil(announcements.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   // Derive a valid page so a shrinking list never strands us on an empty page.
   const currentPage = Math.min(page, totalPages);
   const visible = paginate
-    ? announcements.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+    ? filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
     : limit
-    ? announcements.slice(0, limit)
-    : announcements;
+    ? filtered.slice(0, limit)
+    : filtered;
 
   return (
     <div className="space-y-3">
