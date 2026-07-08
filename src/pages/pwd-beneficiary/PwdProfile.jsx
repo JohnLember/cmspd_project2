@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { AlertTriangle, HeartHandshake, Phone, ShieldCheck } from "lucide-react";
-import { signInWithEmail } from "../../services/supabase/auth.js";
+import { signInWithEmail, updateAccountName } from "../../services/supabase/auth.js";
 import {
   getMyProfile,
   sendEmailOtp,
@@ -49,6 +49,30 @@ const guardianInitials = (name) =>
 
 const fieldClass = "gov-input mt-2";
 
+// Combine name parts into a single display name.
+const joinName = ({ firstName, middleName, lastName }) =>
+  [firstName, middleName, lastName]
+    .map((s) => (s || "").trim())
+    .filter(Boolean)
+    .join(" ");
+
+// Best-effort split of an existing full name into parts (for older profiles
+// that only have full_name and no firstName/lastName in their data).
+const splitName = (full) => {
+  const parts = (full || "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) {
+    return { firstName: parts[0] ?? "", middleName: "", lastName: "" };
+  }
+  if (parts.length === 2) {
+    return { firstName: parts[0], middleName: "", lastName: parts[1] };
+  }
+  return {
+    firstName: parts[0],
+    middleName: parts.slice(1, -1).join(" "),
+    lastName: parts[parts.length - 1],
+  };
+};
+
 export default function PwdProfile() {
   const fileInputRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,7 +82,9 @@ export default function PwdProfile() {
   const [guardians, setGuardians] = useState([]);
 
   const [form, setForm] = useState({
-    full_name: "",
+    firstName: "",
+    middleName: "",
+    lastName: "",
     contact_number: "",
     personal_email: "",
     address: "",
@@ -107,8 +133,18 @@ export default function PwdProfile() {
       } else {
         setProfile(row);
         setUser(authUser);
+        // Seed name parts from the application data; fall back to splitting the
+        // stored full_name for older profiles that have no parts saved.
+        const hasParts = row.data?.firstName || row.data?.lastName;
+        const nameParts = hasParts
+          ? {
+              firstName: row.data?.firstName ?? "",
+              middleName: row.data?.middleName ?? "",
+              lastName: row.data?.lastName ?? "",
+            }
+          : splitName(row.full_name);
         setForm({
-          full_name: row.full_name ?? "",
+          ...nameParts,
           contact_number: row.contact_number ?? "",
           personal_email: row.personal_email ?? "",
           address: row.address ?? "",
@@ -143,25 +179,42 @@ export default function PwdProfile() {
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     setProfileMsg("");
+    if (!form.firstName.trim() || !form.lastName.trim()) {
+      setProfileMsg("First name and last name are required.");
+      return;
+    }
     setSavingProfile(true);
     // Changing the mobile or personal email invalidates any prior verification.
     const contactChanged = form.contact_number !== (profile.contact_number ?? "");
     const emailChanged = form.personal_email !== (profile.personal_email ?? "");
-    // contactPerson / telNos live in the profile's `data` JSON, not as columns.
-    const { contactPerson, telNos, ...columns } = form;
+    // Name parts + contactPerson / telNos live in the profile's `data` JSON;
+    // the combined display name is stored in the full_name column.
+    const { firstName, middleName, lastName, contactPerson, telNos, ...columns } = form;
+    const fullName = joinName({ firstName, middleName, lastName });
     const updates = {
       ...columns,
-      data: { ...(profile.data ?? {}), contactPerson, telNos },
+      full_name: fullName,
+      data: {
+        ...(profile.data ?? {}),
+        firstName: firstName.trim(),
+        middleName: middleName.trim(),
+        lastName: lastName.trim(),
+        contactPerson,
+        telNos,
+      },
       ...(contactChanged ? { contact_verified: false } : {}),
       ...(emailChanged ? { personal_email_verified: false } : {}),
     };
     const { error } = await updateProfile(profile.id, updates);
     if (error) {
       setProfileMsg(error.message || "Unable to save changes.");
-    } else {
-      setProfile((prev) => ({ ...prev, ...updates }));
-      setProfileMsg("Your personal information has been saved.");
+      setSavingProfile(false);
+      return;
     }
+    // Keep the auth user_metadata name in sync so the sidebar/user chip updates.
+    await updateAccountName(fullName);
+    setProfile((prev) => ({ ...prev, ...updates }));
+    setProfileMsg("Your personal information has been saved.");
     setSavingProfile(false);
   };
 
@@ -368,7 +421,7 @@ export default function PwdProfile() {
             />
           ) : (
             <div className="grid h-20 w-20 place-items-center rounded-full bg-[color:var(--gov-primary)] text-lg font-semibold text-[color:var(--gov-on-primary)]">
-              {initials(form.full_name)}
+              {initials(joinName(form))}
             </div>
           )}
           <div>
@@ -498,15 +551,42 @@ export default function PwdProfile() {
       <section className="gov-card rounded-2xl p-6">
         <h3 className="text-lg font-semibold">Personal information</h3>
         <form className="mt-6 grid gap-4 sm:grid-cols-2" onSubmit={handleSaveProfile}>
-          <div className="sm:col-span-2">
-            <label className="text-sm font-medium" htmlFor="full_name">
-              Full name
+          <div>
+            <label className="text-sm font-medium" htmlFor="firstName">
+              First name
             </label>
             <input
-              id="full_name"
-              name="full_name"
+              id="firstName"
+              name="firstName"
               type="text"
-              value={form.full_name}
+              value={form.firstName}
+              onChange={handleField}
+              className={fieldClass}
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium" htmlFor="middleName">
+              Middle name
+            </label>
+            <input
+              id="middleName"
+              name="middleName"
+              type="text"
+              value={form.middleName}
+              onChange={handleField}
+              className={fieldClass}
+              placeholder="Optional"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-sm font-medium" htmlFor="lastName">
+              Last name
+            </label>
+            <input
+              id="lastName"
+              name="lastName"
+              type="text"
+              value={form.lastName}
               onChange={handleField}
               className={fieldClass}
             />
