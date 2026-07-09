@@ -367,8 +367,10 @@ export default function EventManage() {
           </div>
         </div>
         <p className="mt-1 text-xs text-[color:var(--gov-muted)]">
-          Qty is for countable items (e.g. wheelchairs). For cash or food, leave
-          it at 1 and put the amount in the item name.
+          Qty is the <strong>planned</strong> amount (editable while pending); it
+          locks to the <strong>actual</strong> amount at check-in. For cash or
+          food, leave it at 1 and put the amount in the item name. To correct a
+          received qty, use Undo then check in again.
         </p>
 
         <div className="mt-4 overflow-x-auto">
@@ -411,15 +413,23 @@ export default function EventManage() {
                           : "—"}
                       </td>
                       <td className="py-3 pr-4">
-                        <input
-                          key={`qty-${r.id}-${r.quantity}`}
-                          type="number"
-                          min={1}
-                          defaultValue={r.quantity}
-                          onBlur={(e) => saveQuantity(r, e.target.value)}
-                          className="gov-input h-9 w-16 px-2 py-1 text-sm"
-                          aria-label="Quantity"
-                        />
+                        {received ? (
+                          // Locked once received — this is the actual amount given
+                          // (matches the receipt). Undo to correct it.
+                          <span className="tnum inline-block w-16 text-sm">
+                            {r.quantity}
+                          </span>
+                        ) : (
+                          <input
+                            key={`qty-${r.id}-${r.quantity}`}
+                            type="number"
+                            min={1}
+                            defaultValue={r.quantity}
+                            onBlur={(e) => saveQuantity(r, e.target.value)}
+                            className="gov-input h-9 w-16 px-2 py-1 text-sm"
+                            aria-label="Planned quantity"
+                          />
+                        )}
                       </td>
                       <td className="py-3 pr-4">
                         {received ? (

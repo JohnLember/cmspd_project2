@@ -99,6 +99,37 @@ export async function setReceived(recipientId, received, { quantity } = {}) {
   return { recipient: data ?? null, error };
 }
 
+// Pre-check-in lookup: resolve a typed PWD ID to its profile + existing
+// recipient row (if any) so the check-in modal can show who it is and pre-fill
+// the planned quantity BEFORE confirming. Returns { status, profile?, recipient? }
+// where status is: "not_found" | "already" | "on_list" (pending) | "walk_in"
+// (not on the list yet) | "error".
+export async function findCheckInTarget(announcementId, pwdIdNumber) {
+  const idNumber = (pwdIdNumber || "").trim();
+  if (!idNumber) return { status: "not_found" };
+
+  const { data: profile, error: profErr } = await supabase
+    .from("profiles")
+    .select(PROFILE_COLS)
+    .ilike("pwd_id_number", idNumber)
+    .maybeSingle();
+  if (profErr) return { status: "error", error: profErr };
+  if (!profile) return { status: "not_found" };
+
+  const { data: existing } = await supabase
+    .from("announcement_recipients")
+    .select("*")
+    .eq("announcement_id", announcementId)
+    .eq("pwd_id", profile.id)
+    .maybeSingle();
+
+  if (existing?.status === "received") {
+    return { status: "already", profile, recipient: existing };
+  }
+  if (existing) return { status: "on_list", profile, recipient: existing };
+  return { status: "walk_in", profile };
+}
+
 // Check-in by typed PWD ID number. Handles: not found, already received,
 // pending recipient, and walk-ins (not yet on the list). On success the row is
 // marked received with a receipt number.
