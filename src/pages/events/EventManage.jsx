@@ -288,7 +288,7 @@ export default function EventManage() {
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium">Item / assistance</label>
-              <input type="text" value={form.itemType} onChange={(e) => setForm((p) => ({ ...p, itemType: e.target.value }))} className="gov-input" placeholder="e.g. Wheelchair" />
+              <input type="text" value={form.itemType} onChange={(e) => setForm((p) => ({ ...p, itemType: e.target.value }))} className="gov-input" placeholder="e.g. Wheelchair, Rice (5kg), Cash (₱500)" />
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium">When</label>
@@ -366,6 +366,10 @@ export default function EventManage() {
             </button>
           </div>
         </div>
+        <p className="mt-1 text-xs text-[color:var(--gov-muted)]">
+          Qty is for countable items (e.g. wheelchairs). For cash or food, leave
+          it at 1 and put the amount in the item name.
+        </p>
 
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[46rem] border-collapse text-left text-sm">

@@ -125,7 +125,7 @@ export default function CheckInModal({ announcementId, item, onClose, onChange }
           <div className="flex items-end gap-3">
             <div className="w-24">
               <label className="mb-1 block text-sm font-medium" htmlFor="checkin-qty">
-                Quantity
+                Qty
               </label>
               <input
                 id="checkin-qty"
@@ -136,6 +136,7 @@ export default function CheckInModal({ announcementId, item, onClose, onChange }
                   setQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))
                 }
                 className="gov-input"
+                title="For countable items only. Leave at 1 for cash or food."
               />
             </div>
             <button

@@ -373,11 +373,12 @@ export default function Notifications() {
               value={itemType}
               onChange={(e) => setItemType(e.target.value)}
               className="gov-input w-full sm:max-w-xs"
-              placeholder="e.g. Wheelchair"
+              placeholder="e.g. Wheelchair, Rice (5kg), Cash (₱500)"
             />
             <p className="mt-1 text-xs text-[color:var(--gov-muted)]">
               Only for distribution events. Enables recipient check-in and
-              receipts on the event page. Optional.
+              receipts. Include the amount/detail here (e.g. “Cash (₱500)”, “Rice
+              (5kg)”). Optional.
             </p>
           </div>
           <div>
