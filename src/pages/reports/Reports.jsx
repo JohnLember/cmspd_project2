@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 import { Activity, FileDown, MapPin, Users } from "lucide-react";
 import BarChartCard from "../../components/charts/BarChartCard.jsx";
 import StatCard from "../../components/cards/StatCard.jsx";
+import ExportReportModal from "../../components/reports/ExportReportModal.jsx";
 import { getProfiles } from "../../services/supabase/profile.js";
 import { DISABILITY_LABELS } from "../../constants/disability.js";
 import { exportAgeProfilePdf } from "../../utils/ReportsPDF.js";
@@ -14,6 +15,9 @@ export default function Reports() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [isExporting, setIsExporting] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+  const [exportBarangay, setExportBarangay] = useState("all");
+  const [exportType, setExportType] = useState("all");
 
   useEffect(() => {
     let isMounted = true;
@@ -82,10 +86,29 @@ export default function Reports() {
 
   const label = (t) => DISABILITY_LABELS[t] || "Unspecified";
 
+  // Profiles matching the chosen barangay + disability type in the export modal.
+  const exportMatches = useMemo(() => {
+    return profiles.filter((p) => {
+      const b = (p.barangay || "").trim() || UNSPECIFIED;
+      const types = Array.isArray(p.data?.disabilityTypes)
+        ? p.data.disabilityTypes
+        : [];
+      const effectiveTypes = types.length ? types : ["unspecified"];
+      const matchBarangay = exportBarangay === "all" || b === exportBarangay;
+      const matchType = exportType === "all" || effectiveTypes.includes(exportType);
+      return matchBarangay && matchType;
+    });
+  }, [profiles, exportBarangay, exportType]);
+
   const handleExportPdf = async () => {
     setIsExporting(true);
     try {
-      await exportAgeProfilePdf(profiles);
+      const parts = [];
+      if (exportBarangay !== "all") parts.push(`Barangay: ${exportBarangay}`);
+      if (exportType !== "all") parts.push(`Disability: ${label(exportType)}`);
+      const scopeText = parts.join("   •   ");
+      await exportAgeProfilePdf(exportMatches, scopeText);
+      setShowExport(false);
     } catch (err) {
       toast.error(err?.message || "Unable to generate the PDF report.");
     } finally {
@@ -107,12 +130,12 @@ export default function Reports() {
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={handleExportPdf}
-            disabled={isLoading || isExporting || report.total === 0}
+            onClick={() => setShowExport(true)}
+            disabled={isLoading || report.total === 0}
             className="btn btn-primary h-10 px-4 text-xs"
           >
             <FileDown className="h-4 w-4" aria-hidden="true" />
-            {isExporting ? "Generating…" : "Export PDF"}
+            Export PDF
           </button>
         </div>
       </header>
@@ -213,6 +236,21 @@ export default function Reports() {
           </section>
         </>
       )}
+
+      {showExport ? (
+        <ExportReportModal
+          barangays={report.barangays}
+          typeColumns={report.typeColumns}
+          barangay={exportBarangay}
+          type={exportType}
+          matchCount={exportMatches.length}
+          exporting={isExporting}
+          onBarangayChange={setExportBarangay}
+          onTypeChange={setExportType}
+          onExport={handleExportPdf}
+          onClose={() => setShowExport(false)}
+        />
+      ) : null}
     </div>
   );
 }

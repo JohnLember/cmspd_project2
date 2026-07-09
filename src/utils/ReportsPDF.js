@@ -74,7 +74,7 @@ const rowCells = (row) => {
   return { cells, wwd, overall };
 };
 
-export async function exportAgeProfilePdf(profiles) {
+export async function exportAgeProfilePdf(profiles, scopeText = "") {
   const { jsPDF } = await import("jspdf");
   const autoTable = (await import("jspdf-autotable")).default;
 
@@ -133,6 +133,15 @@ export async function exportAgeProfilePdf(profiles) {
   doc.setFontSize(11);
   doc.text(`As of ${asOf}`, centerX, 127, { align: "center" });
   doc.setTextColor(0, 0, 0);
+
+  // Optional filter scope (barangay / disability) chosen in the export modal.
+  if (scopeText) {
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(10);
+    doc.text(scopeText, centerX, 140, { align: "center" });
+    doc.setFont("helvetica", "normal");
+  }
+  const tableStartY = scopeText ? 152 : 140;
 
   // ---- Table ----
   const head = [
@@ -228,7 +237,7 @@ export async function exportAgeProfilePdf(profiles) {
   autoTable(doc, {
     head,
     body,
-    startY: 140,
+    startY: tableStartY,
     theme: "grid",
     margin: { left: sideMargin, right: sideMargin },
     tableWidth: "auto",
