@@ -172,12 +172,13 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (!rec) return json({ error: "No active deletion for this account." }, 404);
 
-    // -------- RESTORE --------
+    // -------- RESTORE (account comes back DEACTIVATED; PDAO reactivates it) --------
     if (action === "restore") {
       if (type === "pwd") {
+        // Un-hide from PWD Management but keep it deactivated (active=false).
         await admin
           .from("profiles")
-          .update({ deleted_at: null, active: true })
+          .update({ deleted_at: null, active: false })
           .eq("id", targetId);
         // Un-dismiss so guardians see the restored ward again.
         await admin
@@ -185,11 +186,15 @@ Deno.serve(async (req) => {
           .update({ dismissed_at: null })
           .eq("pwd_id", targetId);
       } else {
-        // Guardian restore only lifts the ban. Ward links keep their removed_at,
-        // so the guardian is NOT re-added to any PWD (its wards were reassigned).
+        // Guardian: ward links keep their removed_at (never re-added). Flag them
+        // deactivated so it shows wardless + deactivated in Guardian Management.
+        await admin
+          .from("guardian_ward_links")
+          .update({ guardian_active: false })
+          .eq("guardian_id", targetId);
       }
-      // Lift the sign-in ban so the restored account is usable again.
-      await admin.auth.admin.updateUserById(targetId, { ban_duration: "none" });
+      // The sign-in ban is intentionally KEPT — a restored account is deactivated
+      // until PDAO reactivates it via the Activate action.
 
       await admin
         .from("deleted_accounts")

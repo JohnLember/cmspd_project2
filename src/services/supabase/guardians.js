@@ -119,12 +119,13 @@ export async function findGuardianMatches({ phone, name } = {}) {
 // several wards appears once. Returns
 // `{ guardians: [{ guardianId, name, email, phone, wards: [...] }], error }`.
 export async function getAllGuardians() {
+  // Fetch all links (incl. removed) so a restored, ward-reassigned guardian still
+  // appears — as deactivated with no wards. removed links are NOT counted as wards.
   const { data, error } = await supabase
     .from("guardian_ward_links")
     .select(
-      "id, guardian_id, guardian_name, guardian_email, guardian_phone, guardian_active, relationship, created_at, ward:pwd_id(id, full_name, pwd_id_number, barangay, active)"
+      "id, guardian_id, guardian_name, guardian_email, guardian_phone, guardian_active, relationship, created_at, removed_at, ward:pwd_id(id, full_name, pwd_id_number, barangay, active)"
     )
-    .is("removed_at", null)
     .order("created_at", { ascending: true });
   if (error) return { guardians: [], error };
 
@@ -143,7 +144,7 @@ export async function getAllGuardians() {
       };
       byGuardian.set(row.guardian_id, g);
     }
-    if (row.ward) {
+    if (row.ward && !row.removed_at) {
       g.wards.push({
         linkId: row.id,
         relationship: row.relationship,
