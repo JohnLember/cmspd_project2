@@ -1,7 +1,16 @@
 import { useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { Copy, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { reassignWard } from "../../services/supabase/guardians.js";
+
+const copyText = async (value, label) => {
+  try {
+    await navigator.clipboard.writeText(value);
+    toast.success(`${label} copied.`, { autoClose: 1500 });
+  } catch {
+    toast.error("Unable to copy.");
+  }
+};
 
 const wardLabel = (w) =>
   w.full_name || w.pwd_id_number || `PWD-${(w.id || "").slice(0, 8).toUpperCase()}`;
@@ -26,6 +35,7 @@ export default function ReassignWardsModal({
     )
   );
   const [busy, setBusy] = useState(false);
+  const [createdCreds, setCreatedCreds] = useState([]);
 
   const setRow = (wardId, patch) =>
     setRows((prev) => ({ ...prev, [wardId]: { ...prev[wardId], ...patch } }));
@@ -44,6 +54,7 @@ export default function ReassignWardsModal({
   const handleConfirm = async () => {
     if (!ready) return;
     setBusy(true);
+    const created = [];
     for (const w of wards) {
       const r = rows[w.id];
       const payload =
@@ -63,7 +74,7 @@ export default function ReassignWardsModal({
               mode: "existing",
               guardian: otherGuardians.find((g) => g.guardianId === r.target),
             };
-      const { error } = await reassignWard(payload);
+      const { error, created: cred } = await reassignWard(payload);
       if (error) {
         toast.error(
           `Could not reassign ${wardLabel(w)}: ${error.message || "error"}.`
@@ -71,9 +82,14 @@ export default function ReassignWardsModal({
         setBusy(false);
         return;
       }
+      if (cred?.email) {
+        created.push({ ward: wardLabel(w), email: cred.email, password: cred.password });
+      }
     }
     setBusy(false);
-    onDone();
+    // Show the new guardians' temporary logins before finishing the delete.
+    if (created.length) setCreatedCreds(created);
+    else onDone();
   };
 
   return (
@@ -105,6 +121,50 @@ export default function ReassignWardsModal({
           </button>
         </div>
 
+        {createdCreds.length > 0 ? (
+          <div className="mt-5 space-y-3">
+            <p className="text-sm text-[color:var(--gov-text)]">
+              New guardian account{createdCreds.length === 1 ? "" : "s"} created.
+              Share these temporary logins before finishing.
+            </p>
+            {createdCreds.map((c) => (
+              <div
+                key={c.email}
+                className="rounded-[var(--radius-md)] border border-[color:var(--gov-border)] p-4"
+              >
+                <p className="text-xs font-medium text-[color:var(--gov-muted)]">
+                  For {c.ward}
+                </p>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className="font-mono text-sm text-[color:var(--gov-text)]">
+                    {c.email}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => copyText(c.email, "Login email")}
+                    className="btn btn-ghost h-8 w-8 px-0"
+                    aria-label="Copy login email"
+                  >
+                    <Copy className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+                <div className="mt-1 flex items-center gap-2">
+                  <span className="font-mono text-sm text-[color:var(--gov-text)]">
+                    {c.password}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => copyText(c.password, "Password")}
+                    className="btn btn-ghost h-8 w-8 px-0"
+                    aria-label="Copy password"
+                  >
+                    <Copy className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
         <div className="mt-5 space-y-4">
           {wards.map((w) => {
             const r = rows[w.id];
@@ -173,24 +233,37 @@ export default function ReassignWardsModal({
             );
           })}
         </div>
+        )}
 
         <div className="mt-6 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={busy}
-            className="btn btn-secondary"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleConfirm}
-            disabled={!ready || busy}
-            className="btn btn-primary"
-          >
-            {busy ? "Reassigning…" : "Reassign & delete"}
-          </button>
+          {createdCreds.length > 0 ? (
+            <button
+              type="button"
+              onClick={onDone}
+              className="btn btn-primary"
+            >
+              Finish & delete
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={onCancel}
+                disabled={busy}
+                className="btn btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirm}
+                disabled={!ready || busy}
+                className="btn btn-primary"
+              >
+                {busy ? "Reassigning…" : "Reassign & delete"}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

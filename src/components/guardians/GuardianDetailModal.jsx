@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { X } from "lucide-react";
+import AccountCredentials from "../ui/AccountCredentials.jsx";
 
 const wardLabel = (w) =>
   w.full_name || w.pwd_id_number || `PWD-${(w.id || "").slice(0, 8).toUpperCase()}`;
@@ -78,6 +79,8 @@ export default function GuardianDetailModal({ guardian, onClose }) {
           <Row label="Mobile number" value={guardian.phone} />
           <Row label="Login email" value={guardian.email} />
         </div>
+
+        <AccountCredentials targetId={guardian.guardianId} type="guardian" />
 
         <div className="mt-8">
           <h3 className="font-semibold text-[color:var(--gov-text)]">

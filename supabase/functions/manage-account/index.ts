@@ -141,6 +141,14 @@ Deno.serve(async (req) => {
           email: targetUser?.user?.email ?? null,
           wards: links.map((l: any) => l.ward?.full_name).filter(Boolean),
         };
+        // End each ward relationship. removed_at persists through a later
+        // account restore, so this guardian is never re-added to the PWD; the
+        // PWD sees it as "removed" until they dismiss it.
+        await admin
+          .from("guardian_ward_links")
+          .update({ removed_at: new Date().toISOString() })
+          .eq("guardian_id", targetId)
+          .is("removed_at", null);
       }
 
       const { error: insErr } = await admin.from("deleted_accounts").insert({
@@ -177,10 +185,8 @@ Deno.serve(async (req) => {
           .update({ dismissed_at: null })
           .eq("pwd_id", targetId);
       } else {
-        await admin
-          .from("guardian_ward_links")
-          .update({ guardian_active: true })
-          .eq("guardian_id", targetId);
+        // Guardian restore only lifts the ban. Ward links keep their removed_at,
+        // so the guardian is NOT re-added to any PWD (its wards were reassigned).
       }
       // Lift the sign-in ban so the restored account is usable again.
       await admin.auth.admin.updateUserById(targetId, { ban_duration: "none" });

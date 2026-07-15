@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
+import { toast } from "react-toastify";
 import {
   AlertTriangle,
   ArrowRight,
@@ -11,9 +12,13 @@ import {
   Phone,
   ShieldCheck,
   User,
+  X,
 } from "lucide-react";
 import { getMyProfile } from "../../services/supabase/profile.js";
-import { getMyGuardians } from "../../services/supabase/guardians.js";
+import {
+  getMyGuardians,
+  dismissRemovedGuardian,
+} from "../../services/supabase/guardians.js";
 import { getMyAssistance } from "../../services/supabase/recipients.js";
 import { DISABILITY_LABELS } from "../../constants/disability.js";
 import { getMissingIdFields } from "../../components/pwd/digitalIdFields.js";
@@ -35,6 +40,24 @@ export default function PwdBeneficiaryDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [guardians, setGuardians] = useState([]);
   const [assistance, setAssistance] = useState([]);
+  const [dismissingId, setDismissingId] = useState(null);
+
+  // A removed guardian (its account was deleted by PDAO and the ward reassigned)
+  // shows as a dismissible notice; the current guardian stays active.
+  const activeGuardians = guardians.filter((g) => !g.removed_at);
+  const removedGuardians = guardians.filter((g) => g.removed_at);
+
+  const handleDismissGuardian = async (link) => {
+    setDismissingId(link.id);
+    const { ok, error } = await dismissRemovedGuardian(link.id);
+    if (!ok) {
+      toast.error(error?.message || "Unable to dismiss guardian.");
+    } else {
+      setGuardians((prev) => prev.filter((g) => g.id !== link.id));
+      toast.success("Removed guardian dismissed.");
+    }
+    setDismissingId(null);
+  };
 
   const load = useCallback(async () => {
     const { profile: row } = await getMyProfile();
@@ -163,14 +186,14 @@ export default function PwdBeneficiaryDashboard() {
         </section>
       ) : null}
 
-      {guardians.length > 0 ? (
+      {activeGuardians.length > 0 ? (
         <section className="gov-card p-5">
           <h3 className="flex items-center gap-2 font-semibold text-[color:var(--gov-text)]">
             <ShieldCheck className="h-4 w-4 text-[color:var(--gov-primary)]" aria-hidden="true" />
-            {guardians.length === 1 ? "My guardian" : "My guardians"}
+            {activeGuardians.length === 1 ? "My guardian" : "My guardians"}
           </h3>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {guardians.map((g) => {
+            {activeGuardians.map((g) => {
               const active = g.guardian_active !== false;
               return (
                 <div
@@ -218,6 +241,50 @@ export default function PwdBeneficiaryDashboard() {
                 </div>
               );
             })}
+          </div>
+        </section>
+      ) : null}
+
+      {removedGuardians.length > 0 ? (
+        <section className="gov-card p-5">
+          <h3 className="flex items-center gap-2 font-semibold text-[color:var(--gov-text)]">
+            <AlertTriangle
+              className="h-4 w-4 text-[color:var(--gov-warning-fg)]"
+              aria-hidden="true"
+            />
+            Removed guardian{removedGuardians.length === 1 ? "" : "s"}
+          </h3>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {removedGuardians.map((g) => (
+              <div
+                key={g.id}
+                className="flex items-start gap-3 rounded-[var(--radius-md)] border border-[color:var(--gov-border)] p-4"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold text-[color:var(--gov-text)]">
+                      {g.guardian_name || "—"}
+                    </p>
+                    <span className="gov-badge gov-badge--danger">
+                      Removed by PDAO
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-[color:var(--gov-muted)]">
+                    This guardian is no longer assigned to you. You can dismiss
+                    this notice.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleDismissGuardian(g)}
+                  disabled={dismissingId === g.id}
+                  className="btn btn-ghost h-9 px-3 text-xs"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                  {dismissingId === g.id ? "…" : "Dismiss"}
+                </button>
+              </div>
+            ))}
           </div>
         </section>
       ) : null}

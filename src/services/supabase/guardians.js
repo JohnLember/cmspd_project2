@@ -28,8 +28,10 @@ export async function createGuardian(payload) {
 // `{ pwdId, mode, guardian?, newGuardian? }` -> `{ error }`.
 export async function reassignWard({ pwdId, mode, guardian, newGuardian }) {
   if (mode === "new") {
-    const { error } = await createGuardian({ pwdId, ...newGuardian });
-    return { error };
+    // createGuardian returns { email, password, guardianId } — surface it so the
+    // caller can show the new guardian's temporary login.
+    const { result, error } = await createGuardian({ pwdId, ...newGuardian });
+    return { error, created: result };
   }
   // existing: PDAO has RLS write on guardian_ward_links, so link directly.
   const {
@@ -47,7 +49,7 @@ export async function reassignWard({ pwdId, mode, guardian, newGuardian }) {
     },
     { onConflict: "guardian_id,pwd_id", ignoreDuplicates: true }
   );
-  return { error };
+  return { error, created: null };
 }
 
 // Guardian: dismiss (or undo) a deleted ward from their own dashboard view.
@@ -76,7 +78,8 @@ export async function findGuardianMatches({ phone, name } = {}) {
 
   const { data, error } = await supabase
     .from("guardian_ward_links")
-    .select("guardian_id, guardian_name, guardian_email, guardian_phone");
+    .select("guardian_id, guardian_name, guardian_email, guardian_phone")
+    .is("removed_at", null);
   if (error) return { matches: [], error };
 
   const byGuardian = new Map();
@@ -121,6 +124,7 @@ export async function getAllGuardians() {
     .select(
       "id, guardian_id, guardian_name, guardian_email, guardian_phone, guardian_active, relationship, created_at, ward:pwd_id(id, full_name, pwd_id_number, barangay, active)"
     )
+    .is("removed_at", null)
     .order("created_at", { ascending: true });
   if (error) return { guardians: [], error };
 
@@ -175,11 +179,21 @@ export async function getMyGuardians() {
   const { data, error } = await supabase
     .from("guardian_ward_links")
     .select(
-      "id, guardian_id, guardian_name, guardian_email, guardian_phone, guardian_active, relationship"
+      "id, guardian_id, guardian_name, guardian_email, guardian_phone, guardian_active, relationship, removed_at, dismissed_at"
     )
     .eq("pwd_id", user.id)
+    .is("dismissed_at", null)
     .order("created_at", { ascending: true });
   return { guardians: data ?? [], error };
+}
+
+// PWD beneficiary: dismiss a removed guardian from their own dashboard view.
+export async function dismissRemovedGuardian(linkId) {
+  const { data, error } = await supabase.functions.invoke("dismiss-guardian", {
+    body: { linkId },
+  });
+  if (error) return { ok: false, error };
+  return { ok: Boolean(data?.ok), error: null };
 }
 
 // PDAO staff: list guardians linked to a given PWD ward. Soft-deleted guardians
@@ -189,6 +203,7 @@ export async function getGuardiansForPwd(pwdId) {
     .from("guardian_ward_links")
     .select("*")
     .eq("pwd_id", pwdId)
+    .is("removed_at", null)
     .order("created_at", { ascending: true });
   if (error) return { guardians: [], error };
 
@@ -220,6 +235,7 @@ export async function getMyWards() {
       "id, relationship, dismissed_at, ward:pwd_id(*, application:application_id(application_number, status, approval, submitted_at))"
     )
     .eq("guardian_id", user.id)
+    .is("removed_at", null)
     .order("created_at", { ascending: true });
 
   return { wards: data ?? [], error };

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { disabilityLabel } from "../../constants/disability.js";
 import { getGuardiansForPwd } from "../../services/supabase/guardians.js";
+import AccountCredentials from "../ui/AccountCredentials.jsx";
 import DigitalIdCard from "./DigitalIdCard.jsx";
 
 const Row = ({ label, value }) => (
@@ -172,6 +173,8 @@ export default function PwdDetailModal({ profile, onClose }) {
             </div>
           )}
         </div>
+
+        <AccountCredentials targetId={profile.id} type="pwd" />
 
         <div className="mt-8">
           <h3 className="font-semibold text-[color:var(--gov-text)]">Digital ID</h3>

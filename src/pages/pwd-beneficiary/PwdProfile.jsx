@@ -158,7 +158,9 @@ export default function PwdProfile() {
         setAccount({ email: authUser.email ?? "", currentPassword: "", password: "", confirmPassword: "" });
       }
       const { guardians: guardianRows } = await getMyGuardians();
-      if (isMounted) setGuardians(guardianRows ?? []);
+      // Show only the current (active) guardian; removed ones are dismissible on
+      // the dashboard, not here.
+      if (isMounted) setGuardians((guardianRows ?? []).filter((g) => !g.removed_at));
       setIsLoading(false);
     })();
     return () => {

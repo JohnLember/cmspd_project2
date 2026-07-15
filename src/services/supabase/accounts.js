@@ -52,6 +52,35 @@ export const restoreAccount = ({ targetId, type }) =>
 export const purgeAccount = ({ targetId, type }) =>
   manageAccount({ action: "purge", targetId, type });
 
+// PDAO: reveal a beneficiary's login email + deterministic temporary password
+// (and optionally reset the password back to it). Backs the "Login credentials"
+// panel in the PWD/Guardian detail modals.
+export async function getAccountCredentials({ targetId, type, reset = false }) {
+  const { data, error } = await supabase.functions.invoke("account-credentials", {
+    body: { targetId, type, reset },
+  });
+  if (error) {
+    let message = error.message;
+    try {
+      const b = await error.context?.json?.();
+      if (b?.error) message = b.error;
+    } catch {
+      // keep generic message
+    }
+    return { ok: false, error: { message } };
+  }
+  if (!data?.ok) {
+    return { ok: false, error: { message: data?.error || "Unable to load credentials." } };
+  }
+  return {
+    ok: true,
+    email: data.email,
+    password: data.password,
+    wasReset: Boolean(data.wasReset),
+    error: null,
+  };
+}
+
 // PDAO: the deleted-account history (active soft-deletions only — restored and
 // purged rows drop off). Backs the Settings "Deleted history" section.
 export async function getDeletedAccounts() {
