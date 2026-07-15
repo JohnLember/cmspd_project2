@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getAllGuardians } from "../../services/supabase/guardians.js";
 import { setAccountStatus } from "../../services/supabase/accounts.js";
 import GuardianDetailModal from "../../components/guardians/GuardianDetailModal.jsx";
 import { useRealtime } from "../../hooks/useRealtime.js";
+import { PAGE_SIZE, getPageNumbers } from "../../utils/pagination.js";
 
 const wardLabel = (w) =>
   w.full_name || w.pwd_id_number || `PWD-${(w.id || "").slice(0, 8).toUpperCase()}`;
@@ -15,6 +17,7 @@ export default function GuardianManagement() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
+  const [page, setPage] = useState(1);
 
   const load = useCallback(async () => {
     const { guardians: rows, error: fetchError } = await getAllGuardians();
@@ -114,6 +117,13 @@ export default function GuardianManagement() {
     );
   }, [guardians, search]);
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  // Clamp to a valid page so filtering/realtime shrinking never strands us on
+  // an empty page — no effect/setState needed.
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const pageItems = filtered.slice(pageStart, pageStart + PAGE_SIZE);
+
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
@@ -136,7 +146,10 @@ export default function GuardianManagement() {
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             placeholder="Search by guardian, ward, email, or mobile"
             className="gov-input w-full sm:max-w-sm"
           />
@@ -184,7 +197,7 @@ export default function GuardianManagement() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((g) => (
+                pageItems.map((g) => (
                   <tr
                     key={g.guardianId}
                     className="border-b border-[color:var(--gov-border)] align-top last:border-0"
@@ -260,10 +273,66 @@ export default function GuardianManagement() {
           </table>
         </div>
 
-        {!isLoading ? (
-          <div className="mt-4 text-xs text-[color:var(--gov-muted)]">
-            Showing {filtered.length} of {guardians.length} guardians
-          </div>
+        {!isLoading && filtered.length > 0 ? (
+          <p className="mt-4 text-xs text-[color:var(--gov-muted)]">
+            Showing {pageStart + 1}–{pageStart + pageItems.length} of{" "}
+            {filtered.length}
+          </p>
+        ) : null}
+
+        {!isLoading && totalPages > 1 ? (
+          <nav
+            className="mt-5 flex items-center justify-between gap-2 border-t border-[color:var(--gov-border)] pt-4"
+            aria-label="Guardian account pages"
+          >
+            <button
+              type="button"
+              onClick={() => setPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="btn btn-secondary h-9 px-3 text-xs"
+            >
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden sm:inline">Previous</span>
+            </button>
+
+            <div className="flex items-center gap-1">
+              {getPageNumbers(currentPage, totalPages).map((p) =>
+                typeof p === "number" ? (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPage(p)}
+                    aria-current={p === currentPage ? "page" : undefined}
+                    className={`tnum grid h-9 min-w-9 place-items-center rounded-[var(--radius-md)] px-2 text-xs font-semibold transition-colors ${
+                      p === currentPage
+                        ? "bg-[color:var(--gov-primary)] text-[color:var(--gov-on-primary)]"
+                        : "text-[color:var(--gov-muted)] hover:bg-[color:var(--gov-card)] hover:text-[color:var(--gov-text)]"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ) : (
+                  <span
+                    key={p}
+                    className="px-1 text-xs text-[color:var(--gov-faint)]"
+                    aria-hidden="true"
+                  >
+                    …
+                  </span>
+                )
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="btn btn-secondary h-9 px-3 text-xs"
+            >
+              <span className="hidden sm:inline">Next</span>
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </nav>
         ) : null}
       </section>
 

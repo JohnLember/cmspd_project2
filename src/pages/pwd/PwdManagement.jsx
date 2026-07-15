@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getProfiles } from "../../services/supabase/profile.js";
 import { setAccountStatus } from "../../services/supabase/accounts.js";
 import { DISABILITY_LABELS, disabilityLabel } from "../../constants/disability.js";
 import PwdDetailModal from "../../components/pwd/PwdDetailModal.jsx";
 import { useRealtime } from "../../hooks/useRealtime.js";
+import { PAGE_SIZE, getPageNumbers } from "../../utils/pagination.js";
 
 const displayId = (row) =>
   row.pwd_id_number ||
@@ -20,6 +22,7 @@ export default function PwdManagement() {
   const [disabilityFilter, setDisabilityFilter] = useState("all");
   const [selected, setSelected] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
+  const [page, setPage] = useState(1);
 
   const load = useCallback(async () => {
     const { profiles: rows, error: fetchError } = await getProfiles();
@@ -144,6 +147,13 @@ export default function PwdManagement() {
     });
   }, [profiles, search, barangayFilter, disabilityFilter]);
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  // Clamp to a valid page so filtering/realtime shrinking never strands us on
+  // an empty page — no effect/setState needed.
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const pageItems = filtered.slice(pageStart, pageStart + PAGE_SIZE);
+
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
@@ -165,13 +175,19 @@ export default function PwdManagement() {
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             placeholder="Search by name or ID"
             className="gov-input w-full sm:max-w-xs"
           />
           <select
             value={barangayFilter}
-            onChange={(e) => setBarangayFilter(e.target.value)}
+            onChange={(e) => {
+              setBarangayFilter(e.target.value);
+              setPage(1);
+            }}
             className="gov-input w-full sm:w-auto"
           >
             <option value="all">All barangays</option>
@@ -183,7 +199,10 @@ export default function PwdManagement() {
           </select>
           <select
             value={disabilityFilter}
-            onChange={(e) => setDisabilityFilter(e.target.value)}
+            onChange={(e) => {
+              setDisabilityFilter(e.target.value);
+              setPage(1);
+            }}
             className="gov-input w-full sm:w-auto"
           >
             <option value="all">All disabilities</option>
@@ -239,7 +258,7 @@ export default function PwdManagement() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((row) => (
+                pageItems.map((row) => (
                   <tr
                     key={row.id}
                     className="border-b border-[color:var(--gov-border)] last:border-0"
@@ -295,10 +314,66 @@ export default function PwdManagement() {
           </table>
         </div>
 
-        {!isLoading ? (
-          <div className="mt-4 text-xs text-[color:var(--gov-muted)]">
-            Showing {filtered.length} of {profiles.length} profiles
-          </div>
+        {!isLoading && filtered.length > 0 ? (
+          <p className="mt-4 text-xs text-[color:var(--gov-muted)]">
+            Showing {pageStart + 1}–{pageStart + pageItems.length} of{" "}
+            {filtered.length}
+          </p>
+        ) : null}
+
+        {!isLoading && totalPages > 1 ? (
+          <nav
+            className="mt-5 flex items-center justify-between gap-2 border-t border-[color:var(--gov-border)] pt-4"
+            aria-label="PWD profile pages"
+          >
+            <button
+              type="button"
+              onClick={() => setPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="btn btn-secondary h-9 px-3 text-xs"
+            >
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+              <span className="hidden sm:inline">Previous</span>
+            </button>
+
+            <div className="flex items-center gap-1">
+              {getPageNumbers(currentPage, totalPages).map((p) =>
+                typeof p === "number" ? (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPage(p)}
+                    aria-current={p === currentPage ? "page" : undefined}
+                    className={`tnum grid h-9 min-w-9 place-items-center rounded-[var(--radius-md)] px-2 text-xs font-semibold transition-colors ${
+                      p === currentPage
+                        ? "bg-[color:var(--gov-primary)] text-[color:var(--gov-on-primary)]"
+                        : "text-[color:var(--gov-muted)] hover:bg-[color:var(--gov-card)] hover:text-[color:var(--gov-text)]"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ) : (
+                  <span
+                    key={p}
+                    className="px-1 text-xs text-[color:var(--gov-faint)]"
+                    aria-hidden="true"
+                  >
+                    …
+                  </span>
+                )
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="btn btn-secondary h-9 px-3 text-xs"
+            >
+              <span className="hidden sm:inline">Next</span>
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </nav>
         ) : null}
       </section>
 
