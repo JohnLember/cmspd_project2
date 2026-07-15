@@ -19,3 +19,47 @@ export async function setAccountStatus({ targetId, type, active }) {
   }
   return { ok: Boolean(data?.ok), error: null };
 }
+
+// Account lifecycle (soft delete / restore / permanent purge) via the
+// `manage-account` edge function. Delete is soft — it hides the account and
+// keeps sign-in blocked, but retains data so it can be restored. Only a
+// deactivated account can be deleted.
+async function manageAccount(payload) {
+  const { data, error } = await supabase.functions.invoke("manage-account", {
+    body: payload,
+  });
+  if (error) {
+    let message = error.message;
+    let unreassigned = null;
+    try {
+      const b = await error.context?.json?.();
+      if (b?.error) message = b.error;
+      if (b?.unreassigned) unreassigned = b.unreassigned;
+    } catch {
+      // keep generic message
+    }
+    return { ok: false, error: { message }, unreassigned };
+  }
+  return { ok: Boolean(data?.ok), error: null, unreassigned: null };
+}
+
+export const deleteAccount = ({ targetId, type }) =>
+  manageAccount({ action: "delete", targetId, type });
+
+export const restoreAccount = ({ targetId, type }) =>
+  manageAccount({ action: "restore", targetId, type });
+
+export const purgeAccount = ({ targetId, type }) =>
+  manageAccount({ action: "purge", targetId, type });
+
+// PDAO: the deleted-account history (active soft-deletions only — restored and
+// purged rows drop off). Backs the Settings "Deleted history" section.
+export async function getDeletedAccounts() {
+  const { data, error } = await supabase
+    .from("deleted_accounts")
+    .select("*")
+    .is("restored_at", null)
+    .is("purged_at", null)
+    .order("deleted_at", { ascending: false });
+  return { records: data ?? [], error };
+}

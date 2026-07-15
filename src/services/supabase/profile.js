@@ -62,6 +62,7 @@ export async function getProfiles() {
     .select(
       "*, application:application_id(application_number, status, subsidy_type, approval, submitted_at)"
     )
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
   return { profiles: data ?? [], error };
 }

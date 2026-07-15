@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getProfiles } from "../../services/supabase/profile.js";
-import { setAccountStatus } from "../../services/supabase/accounts.js";
+import { setAccountStatus, deleteAccount } from "../../services/supabase/accounts.js";
 import { DISABILITY_LABELS, disabilityLabel } from "../../constants/disability.js";
 import PwdDetailModal from "../../components/pwd/PwdDetailModal.jsx";
 import { useRealtime } from "../../hooks/useRealtime.js";
@@ -22,6 +22,7 @@ export default function PwdManagement() {
   const [disabilityFilter, setDisabilityFilter] = useState("all");
   const [selected, setSelected] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const [page, setPage] = useState(1);
 
   const load = useCallback(async () => {
@@ -121,6 +122,60 @@ export default function PwdManagement() {
       ),
       {
         toastId: `pwd-status-${row.id}`,
+        closeButton: false,
+        autoClose: false,
+        closeOnClick: false,
+        className: "gov-card",
+      }
+    );
+  };
+
+  const doDelete = async (row) => {
+    setDeletingId(row.id);
+    const { ok, error: delErr } = await deleteAccount({
+      targetId: row.id,
+      type: "pwd",
+    });
+    if (!ok) {
+      toast.error(delErr?.message || "Unable to delete account.");
+    } else {
+      setProfiles((prev) => prev.filter((p) => p.id !== row.id));
+      toast.success("Account deleted. Restore it from Settings › Deleted history.");
+    }
+    setDeletingId(null);
+  };
+
+  const confirmDelete = (row) => {
+    toast(
+      ({ closeToast }) => (
+        <div className="space-y-3 text-sm text-[color:var(--gov-text)]">
+          <p className="font-semibold">Delete this account?</p>
+          <p className="text-xs text-[color:var(--gov-muted)]">
+            {`${row.full_name || "This PWD"} will be removed from the system. Their record is kept in Settings › Deleted history and can be restored.`}
+          </p>
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={closeToast}
+              className="btn btn-secondary h-9 px-3 text-xs"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                doDelete(row);
+                closeToast();
+              }}
+              className="btn btn-danger h-9 px-3 text-xs"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        toastId: `pwd-delete-${row.id}`,
         closeButton: false,
         autoClose: false,
         closeOnClick: false,
@@ -305,6 +360,16 @@ export default function PwdManagement() {
                             ? "Activate"
                             : "Deactivate"}
                         </button>
+                        {row.active === false ? (
+                          <button
+                            type="button"
+                            onClick={() => confirmDelete(row)}
+                            disabled={deletingId === row.id}
+                            className="btn btn-danger h-9 px-3 text-xs"
+                          >
+                            {deletingId === row.id ? "…" : "Delete"}
+                          </button>
+                        ) : null}
                       </div>
                     </td>
                   </tr>

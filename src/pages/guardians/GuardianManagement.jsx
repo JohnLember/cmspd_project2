@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getAllGuardians } from "../../services/supabase/guardians.js";
-import { setAccountStatus } from "../../services/supabase/accounts.js";
+import { setAccountStatus, deleteAccount } from "../../services/supabase/accounts.js";
 import GuardianDetailModal from "../../components/guardians/GuardianDetailModal.jsx";
+import ReassignWardsModal from "../../components/guardians/ReassignWardsModal.jsx";
 import { useRealtime } from "../../hooks/useRealtime.js";
 import { PAGE_SIZE, getPageNumbers } from "../../utils/pagination.js";
 
@@ -17,6 +18,8 @@ export default function GuardianManagement() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [reassignFor, setReassignFor] = useState(null);
   const [page, setPage] = useState(1);
 
   const load = useCallback(async () => {
@@ -103,6 +106,38 @@ export default function GuardianManagement() {
         className: "gov-card",
       }
     );
+  };
+
+  const doDelete = async (g) => {
+    setDeletingId(g.guardianId);
+    const { ok, error: delErr } = await deleteAccount({
+      targetId: g.guardianId,
+      type: "guardian",
+    });
+    if (!ok) {
+      toast.error(delErr?.message || "Unable to delete guardian.");
+      setDeletingId(null);
+      return;
+    }
+    toast.success("Guardian deleted. Restore it from Settings › Deleted history.");
+    setDeletingId(null);
+    await load();
+  };
+
+  // A guardian in this list always has at least one ward (the list is built
+  // from ward links), so deleting always routes through ward reassignment.
+  const confirmDelete = (g) => {
+    if ((g.wards?.length ?? 0) > 0) {
+      setReassignFor(g);
+      return;
+    }
+    doDelete(g);
+  };
+
+  const handleReassignDone = async () => {
+    const g = reassignFor;
+    setReassignFor(null);
+    if (g) await doDelete(g);
   };
 
   const filtered = useMemo(() => {
@@ -264,6 +299,16 @@ export default function GuardianManagement() {
                             ? "Activate"
                             : "Deactivate"}
                         </button>
+                        {g.active === false ? (
+                          <button
+                            type="button"
+                            onClick={() => confirmDelete(g)}
+                            disabled={deletingId === g.guardianId}
+                            className="btn btn-danger h-9 px-3 text-xs"
+                          >
+                            {deletingId === g.guardianId ? "…" : "Delete"}
+                          </button>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -340,6 +385,17 @@ export default function GuardianManagement() {
         <GuardianDetailModal
           guardian={selected}
           onClose={() => setSelected(null)}
+        />
+      ) : null}
+
+      {reassignFor ? (
+        <ReassignWardsModal
+          guardian={reassignFor}
+          otherGuardians={guardians.filter(
+            (x) => x.guardianId !== reassignFor.guardianId && x.active !== false
+          )}
+          onCancel={() => setReassignFor(null)}
+          onDone={handleReassignDone}
         />
       ) : null}
     </div>

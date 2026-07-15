@@ -20,6 +20,45 @@ export async function createGuardian(payload) {
   return { result: data, error: null };
 }
 
+// Reassign a ward (PWD) to a replacement guardian so its current guardian can
+// be deleted. `mode: "existing"` links an existing guardian account; `mode:
+// "new"` creates a fresh guardian via the create-guardian edge function. Either
+// way the ward ends up linked to another guardian (the old link stays for
+// restore and is hidden once the old guardian is soft-deleted).
+// `{ pwdId, mode, guardian?, newGuardian? }` -> `{ error }`.
+export async function reassignWard({ pwdId, mode, guardian, newGuardian }) {
+  if (mode === "new") {
+    const { error } = await createGuardian({ pwdId, ...newGuardian });
+    return { error };
+  }
+  // existing: PDAO has RLS write on guardian_ward_links, so link directly.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { error } = await supabase.from("guardian_ward_links").upsert(
+    {
+      guardian_id: guardian.guardianId,
+      pwd_id: pwdId,
+      guardian_name: guardian.name ?? null,
+      guardian_email: guardian.email ?? null,
+      guardian_phone: guardian.phone ?? null,
+      guardian_active: true,
+      created_by: user?.id ?? null,
+    },
+    { onConflict: "guardian_id,pwd_id", ignoreDuplicates: true }
+  );
+  return { error };
+}
+
+// Guardian: dismiss (or undo) a deleted ward from their own dashboard view.
+export async function dismissDeletedWard(linkId, undo = false) {
+  const { data, error } = await supabase.functions.invoke("dismiss-ward", {
+    body: { linkId, undo },
+  });
+  if (error) return { ok: false, error };
+  return { ok: Boolean(data?.ok), error: null };
+}
+
 // Digits-only form of a phone number, so "0917 123 4567" and "09171234567"
 // compare equal.
 const phoneKey = (v) => (v || "").replace(/\D/g, "");
@@ -108,7 +147,20 @@ export async function getAllGuardians() {
       });
     }
   }
-  return { guardians: [...byGuardian.values()], error: null };
+
+  // Hide soft-deleted guardians (they live on in deleted_accounts for restore).
+  const { data: del } = await supabase
+    .from("deleted_accounts")
+    .select("target_id")
+    .eq("account_type", "guardian")
+    .is("restored_at", null)
+    .is("purged_at", null);
+  const deletedIds = new Set((del ?? []).map((d) => d.target_id));
+
+  const guardians = [...byGuardian.values()].filter(
+    (g) => !deletedIds.has(g.guardianId)
+  );
+  return { guardians, error: null };
 }
 
 // PWD beneficiary: list the guardian account(s) linked to the signed-in PWD,
@@ -130,14 +182,28 @@ export async function getMyGuardians() {
   return { guardians: data ?? [], error };
 }
 
-// PDAO staff: list guardians linked to a given PWD ward.
+// PDAO staff: list guardians linked to a given PWD ward. Soft-deleted guardians
+// are excluded (their link lingers for restore but shouldn't display).
 export async function getGuardiansForPwd(pwdId) {
   const { data, error } = await supabase
     .from("guardian_ward_links")
     .select("*")
     .eq("pwd_id", pwdId)
     .order("created_at", { ascending: true });
-  return { guardians: data ?? [], error };
+  if (error) return { guardians: [], error };
+
+  const { data: del } = await supabase
+    .from("deleted_accounts")
+    .select("target_id")
+    .eq("account_type", "guardian")
+    .is("restored_at", null)
+    .is("purged_at", null);
+  const deletedIds = new Set((del ?? []).map((d) => d.target_id));
+
+  return {
+    guardians: (data ?? []).filter((g) => !deletedIds.has(g.guardian_id)),
+    error: null,
+  };
 }
 
 // Guardian: list the wards linked to the signed-in guardian, with each ward's
@@ -151,7 +217,7 @@ export async function getMyWards() {
   const { data, error } = await supabase
     .from("guardian_ward_links")
     .select(
-      "id, relationship, ward:pwd_id(*, application:application_id(application_number, status, approval, submitted_at))"
+      "id, relationship, dismissed_at, ward:pwd_id(*, application:application_id(application_number, status, approval, submitted_at))"
     )
     .eq("guardian_id", user.id)
     .order("created_at", { ascending: true });

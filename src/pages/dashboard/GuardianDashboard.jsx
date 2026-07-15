@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { getMyWards } from "../../services/supabase/guardians.js";
+import { toast } from "react-toastify";
+import { getMyWards, dismissDeletedWard } from "../../services/supabase/guardians.js";
 import { disabilityLabel } from "../../constants/disability.js";
 import DigitalIdCard from "../../components/pwd/DigitalIdCard.jsx";
 import AnnouncementsFeed from "../../components/ui/AnnouncementsFeed.jsx";
@@ -11,6 +12,7 @@ export default function GuardianDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [openId, setOpenId] = useState(null);
+  const [dismissingId, setDismissingId] = useState(null);
 
   const load = useCallback(async () => {
     const { wards: rows, error: loadError } = await getMyWards();
@@ -18,6 +20,21 @@ export default function GuardianDashboard() {
     else setWards(rows);
     setIsLoading(false);
   }, []);
+
+  const handleDismiss = async (link) => {
+    setDismissingId(link.id);
+    const { ok, error: dismissError } = await dismissDeletedWard(link.id);
+    if (!ok) {
+      toast.error(dismissError?.message || "Unable to dismiss ward.");
+    } else {
+      setWards((prev) => prev.filter((l) => l.id !== link.id));
+      toast.success("Removed ward dismissed.");
+    }
+    setDismissingId(null);
+  };
+
+  // Wards the guardian has dismissed stay hidden from their view.
+  const visibleWards = wards.filter((l) => !l.dismissed_at);
 
   useEffect(() => {
     (async () => {
@@ -54,16 +71,17 @@ export default function GuardianDashboard() {
         <div className="gov-card p-6">
           <div className="gov-skeleton h-16 w-full" />
         </div>
-      ) : wards.length === 0 ? (
+      ) : visibleWards.length === 0 ? (
         <div className="gov-card p-8 text-center text-sm text-[color:var(--gov-muted)]">
           No PWD ward is linked to your account yet. Please coordinate with the
           PDAO office.
         </div>
       ) : (
-        wards.map((link) => {
+        visibleWards.map((link) => {
           const ward = link.ward;
           if (!ward) return null;
           const isOpen = openId === link.id;
+          const isDeleted = Boolean(ward.deleted_at);
           return (
             <section key={link.id} className="gov-card p-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
@@ -89,7 +107,11 @@ export default function GuardianDashboard() {
                       <h3 className="text-base font-semibold">
                         {ward.full_name || "—"}
                       </h3>
-                      {ward.active === false ? (
+                      {isDeleted ? (
+                        <span className="gov-badge gov-badge--danger">
+                          Removed by PDAO
+                        </span>
+                      ) : ward.active === false ? (
                         <span className="gov-badge gov-badge--danger">
                           Deactivated account
                         </span>
@@ -101,14 +123,25 @@ export default function GuardianDashboard() {
                     </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setOpenId(isOpen ? null : link.id)}
-                  className="btn btn-secondary"
-                  aria-expanded={isOpen}
-                >
-                  {isOpen ? "Hide Digital ID" : "View Digital ID"}
-                </button>
+                {isDeleted ? (
+                  <button
+                    type="button"
+                    onClick={() => handleDismiss(link)}
+                    disabled={dismissingId === link.id}
+                    className="btn btn-danger"
+                  >
+                    {dismissingId === link.id ? "Dismissing…" : "Dismiss"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setOpenId(isOpen ? null : link.id)}
+                    className="btn btn-secondary"
+                    aria-expanded={isOpen}
+                  >
+                    {isOpen ? "Hide Digital ID" : "View Digital ID"}
+                  </button>
+                )}
               </div>
 
               <div className="mt-5 grid gap-4 border-t border-[color:var(--gov-border)] pt-4 text-sm sm:grid-cols-3">

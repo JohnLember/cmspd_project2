@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import { Camera, UserCog, UserPlus, Users } from "lucide-react";
+import { Camera, History, RotateCcw, UserCog, UserPlus, Users } from "lucide-react";
 import ThemeToggle from "../../components/ui/ThemeToggle.jsx";
 import PasswordField from "../../components/ui/PasswordField.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -14,6 +14,11 @@ import {
   updateAccountPassword,
 } from "../../services/supabase/profile.js";
 import { createPdaoUser, listPdaoUsers } from "../../services/supabase/pdao.js";
+import {
+  getDeletedAccounts,
+  restoreAccount,
+  purgeAccount,
+} from "../../services/supabase/accounts.js";
 import { subscribeOnline } from "../../services/supabase/presence.js";
 
 const fmtDate = (iso) =>
@@ -76,6 +81,89 @@ export default function Settings() {
 
   // Live online/offline status from Realtime presence.
   useEffect(() => subscribeOnline(setOnlineIds), []);
+
+  // Deleted-account history (soft-deleted PWD + guardian accounts).
+  const [deleted, setDeleted] = useState([]);
+  const [loadingDeleted, setLoadingDeleted] = useState(true);
+  const [busyDeletedId, setBusyDeletedId] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      const { records, error } = await getDeletedAccounts();
+      if (!error) setDeleted(records);
+      setLoadingDeleted(false);
+    })();
+  }, []);
+
+  const handleRestore = async (rec) => {
+    setBusyDeletedId(rec.id);
+    const { ok, error } = await restoreAccount({
+      targetId: rec.target_id,
+      type: rec.account_type,
+    });
+    if (!ok) {
+      toast.error(error?.message || "Unable to restore account.");
+    } else {
+      setDeleted((prev) => prev.filter((r) => r.id !== rec.id));
+      toast.success("Account restored.");
+    }
+    setBusyDeletedId(null);
+  };
+
+  const doPurge = async (rec) => {
+    setBusyDeletedId(rec.id);
+    const { ok, error } = await purgeAccount({
+      targetId: rec.target_id,
+      type: rec.account_type,
+    });
+    if (!ok) {
+      toast.error(error?.message || "Unable to permanently delete account.");
+    } else {
+      setDeleted((prev) => prev.filter((r) => r.id !== rec.id));
+      toast.success("Account permanently deleted.");
+    }
+    setBusyDeletedId(null);
+  };
+
+  const confirmPurge = (rec) => {
+    const name = rec.snapshot?.full_name || "this account";
+    toast(
+      ({ closeToast }) => (
+        <div className="space-y-3 text-sm text-[color:var(--gov-text)]">
+          <p className="font-semibold">Permanently delete?</p>
+          <p className="text-xs text-[color:var(--gov-muted)]">
+            {`${name} and all their data will be erased for good. This cannot be undone.`}
+          </p>
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={closeToast}
+              className="btn btn-secondary h-9 px-3 text-xs"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                doPurge(rec);
+                closeToast();
+              }}
+              className="btn btn-danger h-9 px-3 text-xs"
+            >
+              Delete forever
+            </button>
+          </div>
+        </div>
+      ),
+      {
+        toastId: `purge-${rec.id}`,
+        closeButton: false,
+        autoClose: false,
+        closeOnClick: false,
+        className: "gov-card",
+      }
+    );
+  };
 
   const handleAvatar = async (e) => {
     const file = e.target.files?.[0];
@@ -537,6 +625,82 @@ export default function Settings() {
               })
             )}
           </div>
+        </div>
+      </section>
+
+      {/* Deleted history */}
+      <section className="gov-card p-6">
+        <div className="flex items-center gap-3">
+          <span
+            className="grid h-10 w-10 place-items-center rounded-[var(--radius-md)] bg-[color:var(--gov-primary-soft)] text-[color:var(--gov-primary)]"
+            aria-hidden="true"
+          >
+            <History className="h-5 w-5" />
+          </span>
+          <div>
+            <h3 className="font-semibold">Deleted history</h3>
+            <p className="text-sm text-[color:var(--gov-muted)]">
+              Deleted PWD and guardian accounts. Restore one to bring it back, or
+              permanently delete it to erase it for good.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 space-y-3">
+          {loadingDeleted ? (
+            [0, 1].map((i) => <div key={i} className="gov-skeleton h-16 w-full" />)
+          ) : deleted.length === 0 ? (
+            <p className="rounded-[var(--radius-md)] bg-[color:var(--gov-surface)] px-4 py-8 text-center text-sm text-[color:var(--gov-muted)]">
+              No deleted accounts.
+            </p>
+          ) : (
+            deleted.map((rec) => (
+              <div
+                key={rec.id}
+                className="flex flex-wrap items-center gap-3 rounded-[var(--radius-md)] border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] p-4"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-2 font-medium text-[color:var(--gov-text)]">
+                    <span className="truncate">
+                      {rec.snapshot?.full_name || rec.snapshot?.email || "Account"}
+                    </span>
+                    <span
+                      className={`gov-badge shrink-0 ${
+                        rec.account_type === "guardian"
+                          ? "gov-badge--warning"
+                          : "gov-badge--info"
+                      }`}
+                    >
+                      {rec.account_type === "guardian" ? "Guardian" : "PWD"}
+                    </span>
+                  </p>
+                  <p className="truncate text-sm text-[color:var(--gov-muted)]">
+                    {rec.snapshot?.email || rec.snapshot?.pwd_id_number || "—"} ·
+                    Deleted {fmtDate(rec.deleted_at)}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleRestore(rec)}
+                    disabled={busyDeletedId === rec.id}
+                    className="btn btn-secondary h-9 px-3 text-xs"
+                  >
+                    <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                    Restore
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => confirmPurge(rec)}
+                    disabled={busyDeletedId === rec.id}
+                    className="btn btn-danger h-9 px-3 text-xs"
+                  >
+                    {busyDeletedId === rec.id ? "…" : "Delete forever"}
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </section>
     </div>

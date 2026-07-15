@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { disabilityLabel } from "../../constants/disability.js";
+import { getGuardiansForPwd } from "../../services/supabase/guardians.js";
 import DigitalIdCard from "./DigitalIdCard.jsx";
 
 const Row = ({ label, value }) => (
@@ -22,6 +23,8 @@ const VerifyTag = ({ verified }) =>
   );
 
 export default function PwdDetailModal({ profile, onClose }) {
+  const [guardians, setGuardians] = useState([]);
+
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.key === "Escape") onClose();
@@ -34,6 +37,18 @@ export default function PwdDetailModal({ profile, onClose }) {
       document.body.style.overflow = previousOverflow;
     };
   }, [onClose]);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    let active = true;
+    (async () => {
+      const { guardians: rows } = await getGuardiansForPwd(profile.id);
+      if (active) setGuardians(rows);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [profile?.id]);
 
   if (!profile) return null;
   const data = profile.data ?? {};
@@ -114,6 +129,48 @@ export default function PwdDetailModal({ profile, onClose }) {
           <Row label="Civil status" value={profile.civil_status} />
           <Row label="Disability" value={disabilityLabel(data.disabilityTypes)} />
           <Row label="Application status" value={profile.application?.status} />
+        </div>
+
+        <div className="mt-8">
+          <h3 className="font-semibold text-[color:var(--gov-text)]">
+            Guardian{guardians.length === 1 ? "" : "s"}
+          </h3>
+          {guardians.length === 0 ? (
+            <p className="mt-2 text-sm text-[color:var(--gov-muted)]">
+              No guardian is linked to this PWD.
+            </p>
+          ) : (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {guardians.map((g) => (
+                <div
+                  key={g.id}
+                  className="rounded-[var(--radius-md)] border border-[color:var(--gov-border)] p-4"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium text-[color:var(--gov-text)]">
+                      {g.guardian_name || "—"}
+                    </p>
+                    {g.guardian_active === false ? (
+                      <span className="gov-badge gov-badge--danger">Deactivated</span>
+                    ) : (
+                      <span className="gov-badge gov-badge--success">Active</span>
+                    )}
+                  </div>
+                  {g.relationship ? (
+                    <p className="mt-0.5 text-xs text-[color:var(--gov-muted)]">
+                      {g.relationship}
+                    </p>
+                  ) : null}
+                  <p className="mt-2 text-sm text-[color:var(--gov-text)]">
+                    {g.guardian_phone || "—"}
+                  </p>
+                  <p className="text-xs text-[color:var(--gov-muted)]">
+                    {g.guardian_email || "—"}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="mt-8">
