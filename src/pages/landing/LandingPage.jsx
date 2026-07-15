@@ -94,6 +94,12 @@ const faqs = [
     answer:
       "Accessibility is a core requirement: strong contrast, large touch targets, full keyboard support, reduced-motion options, and voice navigation in the beneficiary portal.",
   },
+  {
+    question:
+      "Why do I need a medical certificate, certificate of indigency, and birth certificate?",
+    answer:
+      "The medical certificate or disability assessment, issued by a licensed physician, confirms the type and cause of the disability. The birth certificate verifies identity, age, and Loreto residency for the applicant. The certificate of indigency, issued by your barangay, supports fee-waived transactions and priority assistance for qualified beneficiaries. Bring these along with a valid government-issued ID and a recent 2x2 photo when applying.",
+  },
 ];
 
 export default function LandingPage() {
