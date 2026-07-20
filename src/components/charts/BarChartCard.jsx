@@ -17,11 +17,19 @@ export default function BarChartCard({ title, data, subtitle = "Last 6 months" }
         </h3>
         <span className="text-xs text-[color:var(--gov-muted)]">{subtitle}</span>
       </div>
-      <div className="mt-4 h-56">
+      <div className="mt-4 h-72">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} barSize={24}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--gov-border)" />
-            <XAxis dataKey="name" stroke="var(--gov-muted)" fontSize={12} />
+            <XAxis
+              dataKey="name"
+              stroke="var(--gov-muted)"
+              fontSize={12}
+              interval={0}
+              angle={data?.length > 5 ? -25 : 0}
+              textAnchor={data?.length > 5 ? "end" : "middle"}
+              height={data?.length > 5 ? 60 : 30}
+            />
             <YAxis
               stroke="var(--gov-muted)"
               fontSize={12}
