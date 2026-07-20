@@ -79,13 +79,20 @@ export default function PdaoDashboard() {
   const stats = useMemo(() => {
     const by = (status) =>
       applications.filter((row) => (row.status || "pending") === status).length;
+    // "Approved" mirrors Registered PWDs: only approved apps whose beneficiary
+    // still has a live profile, so deactivating/deleting a PWD drops both counts
+    // together and the two cards never disagree.
+    const liveProfileIds = new Set(profiles.map((p) => p.id));
+    const approved = applications.filter(
+      (row) => row.status === "approved" && liveProfileIds.has(row.pwd_id)
+    ).length;
     return {
       total: applications.length,
       pending: by("pending"),
-      approved: by("approved"),
+      approved,
       rejected: by("rejected"),
     };
-  }, [applications]);
+  }, [applications, profiles]);
 
   const monthly = useMemo(() => buildMonthlySeries(applications), [applications]);
   const recent = useMemo(() => applications.slice(0, 5), [applications]);
