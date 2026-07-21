@@ -538,6 +538,117 @@
 	}
 }
 
+/* ============================================================================
+   Landing page enhancements — scroll reveals, hero ID card, hover lift.
+   All motion gated on prefers-reduced-motion; hidden states are only applied
+   when motion is allowed, so content is always visible otherwise.
+   ========================================================================== */
+@layer components {
+	/* Scroll-reveal: fade + rise as the element enters the viewport. */
+	@media (prefers-reduced-motion: no-preference) {
+		.reveal {
+			opacity: 0;
+			transform: translateY(18px);
+			transition: opacity 640ms var(--ease-out),
+				transform 640ms var(--ease-out);
+			transition-delay: var(--reveal-delay, 0ms);
+			will-change: opacity, transform;
+		}
+		.reveal.is-visible {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	/* Landing surfaces lift slightly on hover for a sense of depth. */
+	.landing-card {
+		transition: transform var(--dur) var(--ease-out),
+			border-color var(--dur) var(--ease-out),
+			box-shadow var(--dur) var(--ease-out);
+	}
+	@media (prefers-reduced-motion: no-preference) {
+		.landing-card:hover {
+			transform: translateY(-4px);
+			border-color: color-mix(in oklch, var(--gov-primary) 45%, var(--gov-border));
+			box-shadow: var(--elev-1);
+		}
+	}
+
+	/* Ambient hero glows behind the ID card. */
+	.hero-glow {
+		position: absolute;
+		inset: -25% -12% auto -12%;
+		height: 520px;
+		pointer-events: none;
+		z-index: 0;
+		background: radial-gradient(
+				42% 55% at 76% 32%,
+				color-mix(in oklch, var(--gov-accent) 26%, transparent),
+				transparent 70%
+			),
+			radial-gradient(
+				46% 60% at 20% 18%,
+				color-mix(in oklch, var(--gov-primary) 22%, transparent),
+				transparent 72%
+			);
+	}
+
+	/* Digital ID hero visual: gentle idle float + pointer tilt + shine sweep. */
+	.idcard-tilt {
+		transform: rotateX(0) rotateY(0);
+		transition: transform 400ms var(--ease-out);
+		will-change: transform;
+	}
+	@media (prefers-reduced-motion: no-preference) {
+		.idcard-float {
+			animation: idcard-float 7s var(--ease-in-out) infinite;
+		}
+	}
+	@keyframes idcard-float {
+		0%,
+		100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-10px);
+		}
+	}
+	.idcard-shine {
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		overflow: hidden;
+		pointer-events: none;
+	}
+	@media (prefers-reduced-motion: no-preference) {
+		.idcard-shine::before {
+			content: "";
+			position: absolute;
+			top: -60%;
+			left: 0;
+			width: 42%;
+			height: 220%;
+			background: linear-gradient(
+				100deg,
+				transparent,
+				color-mix(in oklch, white 55%, transparent),
+				transparent
+			);
+			transform: rotate(8deg) translateX(-160%);
+			animation: idcard-sweep 6s var(--ease-in-out) 1.4s infinite;
+		}
+	}
+	@keyframes idcard-sweep {
+		0% {
+			transform: rotate(8deg) translateX(-160%);
+		}
+		24%,
+		100% {
+			transform: rotate(8deg) translateX(560%);
+		}
+	}
+}
+
 /* Print: digital ID — hide chrome, force white, keep card colors. */
 @media print {
 	header,
