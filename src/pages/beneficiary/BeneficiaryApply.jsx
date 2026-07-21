@@ -2,14 +2,16 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { ArrowLeft, CheckCircle2, Mic } from "lucide-react";
 import { submitApplication } from "../../services/supabase/applications.js";
-import { getLoretoBarangays } from "../../services/psgc.js";
+import {
+  getAgusanMunicipalities,
+  getBarangays,
+} from "../../services/psgc.js";
 import { useSpeechRecognition } from "../../hooks/useSpeechRecognition.js";
 import { PWD_REQUIREMENTS as requirements } from "../../constants/requirements.js";
 
-// The system serves Loreto, Agusan del Sur only; these are fixed.
-const FIXED_MUNICIPALITY = "Loreto";
+// The system serves the whole province of Agusan del Sur; province is fixed,
+// municipality/barangay are chosen from PSGC and postal is auto-filled.
 const FIXED_PROVINCE = "Agusan del Sur";
-const FIXED_POSTAL = "8507";
 
 // Visual markers for form labels.
 const Req = () => <span className="text-[color:var(--gov-danger-fg)]"> *</span>;
@@ -81,12 +83,13 @@ export default function BeneficiaryApply() {
     causeInbornOther: "",
     causeAcquired: [],
     causeAcquiredOther: "",
-    // Step 3: Address & Contact (municipality/province/postal are fixed)
+    // Step 3: Address & Contact (province fixed; municipality/barangay picked,
+    // postal auto-filled from the chosen municipality)
     street: "",
     barangay: "",
-    municipality: FIXED_MUNICIPALITY,
+    municipality: "",
     province: FIXED_PROVINCE,
-    postal: FIXED_POSTAL,
+    postal: "",
     contactNumber: "",
     emailAddress: "",
     // Step 4: Education & Employment
@@ -144,9 +147,13 @@ export default function BeneficiaryApply() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [applicationNumber, setApplicationNumber] = useState("");
   const [stepError, setStepError] = useState("");
+  const [municipalities, setMunicipalities] = useState([]);
+  const [municipalitiesError, setMunicipalitiesError] = useState("");
+  const [isLoadingMunicipalities, setIsLoadingMunicipalities] = useState(true);
+  const [municipalityCode, setMunicipalityCode] = useState("");
   const [barangays, setBarangays] = useState([]);
   const [barangaysError, setBarangaysError] = useState("");
-  const [isLoadingBarangays, setIsLoadingBarangays] = useState(true);
+  const [isLoadingBarangays, setIsLoadingBarangays] = useState(false);
 
   // Voice dictation (Web Speech API). Types into the last-focused text field.
   const {
@@ -188,11 +195,37 @@ export default function BeneficiaryApply() {
     });
   };
 
+  // Load the province's municipalities once.
   useEffect(() => {
     let isMounted = true;
     (async () => {
       try {
-        const names = await getLoretoBarangays();
+        const list = await getAgusanMunicipalities();
+        if (isMounted) setMunicipalities(list);
+      } catch (error) {
+        if (isMounted) {
+          setMunicipalitiesError(
+            error?.message || "Unable to load municipalities. Please try again."
+          );
+        }
+      } finally {
+        if (isMounted) setIsLoadingMunicipalities(false);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Load barangays whenever the chosen municipality changes.
+  useEffect(() => {
+    if (!municipalityCode) return;
+    let isMounted = true;
+    (async () => {
+      setIsLoadingBarangays(true);
+      setBarangaysError("");
+      try {
+        const names = await getBarangays(municipalityCode);
         if (isMounted) setBarangays(names);
       } catch (error) {
         if (isMounted) {
@@ -207,7 +240,21 @@ export default function BeneficiaryApply() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [municipalityCode]);
+
+  // Selecting a municipality sets its name + auto ZIP and resets the barangay.
+  const handleMunicipalityChange = (e) => {
+    const code = e.target.value;
+    const picked = municipalities.find((m) => m.code === code);
+    setMunicipalityCode(code);
+    if (!code) setBarangays([]);
+    setFormData((prev) => ({
+      ...prev,
+      municipality: picked?.name || "",
+      postal: picked?.postal || "",
+      barangay: "",
+    }));
+  };
 
   // Returns human-readable validation errors for a given step (missing required
   // fields plus format problems on phone/email).
@@ -857,6 +904,36 @@ export default function BeneficiaryApply() {
                     />
                   </div>
                   <div>
+                    <label className="text-sm font-medium" htmlFor="municipality">
+                      Municipality / City
+                      <Req />
+                    </label>
+                    <select
+                      id="municipality"
+                      name="municipalityCode"
+                      value={municipalityCode}
+                      onChange={handleMunicipalityChange}
+                      disabled={
+                        isLoadingMunicipalities || Boolean(municipalitiesError)
+                      }
+                      className="gov-input mt-2 disabled:opacity-60"
+                    >
+                      <option value="">
+                        {isLoadingMunicipalities
+                          ? "Loading municipalities…"
+                          : "Select municipality / city"}
+                      </option>
+                      {municipalities.map((m) => (
+                        <option key={m.code} value={m.code}>
+                          {m.name}
+                        </option>
+                      ))}
+                    </select>
+                    {municipalitiesError ? (
+                      <p className="mt-2 text-xs text-[color:var(--gov-danger-fg)]">{municipalitiesError}</p>
+                    ) : null}
+                  </div>
+                  <div>
                     <label className="text-sm font-medium" htmlFor="barangay">
                       Barangay
                       <Req />
@@ -866,11 +943,17 @@ export default function BeneficiaryApply() {
                       name="barangay"
                       value={formData.barangay}
                       onChange={handleInputChange}
-                      disabled={isLoadingBarangays || Boolean(barangaysError)}
+                      disabled={
+                        !municipalityCode ||
+                        isLoadingBarangays ||
+                        Boolean(barangaysError)
+                      }
                       className="gov-input mt-2 disabled:opacity-60"
                     >
                       <option value="">
-                        {isLoadingBarangays
+                        {!municipalityCode
+                          ? "Select a municipality first"
+                          : isLoadingBarangays
                           ? "Loading barangays…"
                           : "Select barangay"}
                       </option>
@@ -883,21 +966,6 @@ export default function BeneficiaryApply() {
                     {barangaysError ? (
                       <p className="mt-2 text-xs text-[color:var(--gov-danger-fg)]">{barangaysError}</p>
                     ) : null}
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium" htmlFor="municipality">
-                      Municipality
-                    </label>
-                    <input
-                      id="municipality"
-                      type="text"
-                      name="municipality"
-                      value={formData.municipality}
-                      readOnly
-                      aria-readonly="true"
-                      tabIndex={-1}
-                      className="gov-input mt-2 cursor-not-allowed bg-[color:var(--gov-card)] text-[color:var(--gov-muted)]"
-                    />
                   </div>
                   <div>
                     <label className="text-sm font-medium" htmlFor="province">
@@ -926,6 +994,7 @@ export default function BeneficiaryApply() {
                       readOnly
                       aria-readonly="true"
                       tabIndex={-1}
+                      placeholder="Auto-filled"
                       className="gov-input mt-2 cursor-not-allowed bg-[color:var(--gov-card)] text-[color:var(--gov-muted)]"
                     />
                   </div>
