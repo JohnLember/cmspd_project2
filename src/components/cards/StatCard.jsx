@@ -5,9 +5,18 @@ const toneStyles = {
   danger: "bg-[color:var(--gov-danger-soft)] text-[color:var(--gov-danger-fg)]",
 };
 
-export default function StatCard({ label, value, hint, icon: Icon, tone = "primary" }) {
+export default function StatCard({ label, value, hint, icon: Icon, tone = "primary", onClick }) {
+  const Tag = onClick ? "button" : "div";
   return (
-    <div className="gov-card p-5">
+    <Tag
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      className={`gov-card w-full p-5 text-left ${
+        onClick
+          ? "cursor-pointer transition-colors hover:border-[color:var(--gov-primary)]"
+          : ""
+      }`}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-medium text-[color:var(--gov-muted)]">{label}</p>
@@ -29,6 +38,6 @@ export default function StatCard({ label, value, hint, icon: Icon, tone = "prima
       {hint ? (
         <p className="mt-3 text-sm text-[color:var(--gov-muted)]">{hint}</p>
       ) : null}
-    </div>
+    </Tag>
   );
 }

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ClipboardList, Clock, CheckCircle2, XCircle, Users } from "lucide-react";
+import { ClipboardList, Clock, CheckCircle2, Users } from "lucide-react";
 import BarChartCard from "../../components/charts/BarChartCard.jsx";
 import StackedBarChartCard from "../../components/charts/StackedBarChartCard.jsx";
 import StatCard from "../../components/cards/StatCard.jsx";
 import StatusBadge from "../../components/ui/StatusBadge.jsx";
+import PendingApplicantsModal from "../../components/dashboard/PendingApplicantsModal.jsx";
 import { getApplications } from "../../services/supabase/applications.js";
 import { getProfiles } from "../../services/supabase/profile.js";
 import {
@@ -60,6 +61,7 @@ export default function PdaoDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [year, setYear] = useState("all");
+  const [showPending, setShowPending] = useState(false);
 
   const load = useCallback(async () => {
     const [appsRes, profilesRes] = await Promise.all([
@@ -134,7 +136,6 @@ export default function PdaoDashboard() {
       total: apps.length,
       pending: by("pending"),
       approved,
-      rejected: by("rejected"),
     };
   }, [apps, profs]);
 
@@ -143,6 +144,12 @@ export default function PdaoDashboard() {
     [apps, year]
   );
   const recent = useMemo(() => apps.slice(0, 5), [apps]);
+
+  // All pending applications across every year; the modal has its own filters.
+  const pendingApps = useMemo(
+    () => applications.filter((r) => (r.status || "pending") === "pending"),
+    [applications]
+  );
 
   // Registered PWDs per barangay, split by disability type (stacked bar chart).
   const disabilityByBarangay = useMemo(() => {
@@ -214,7 +221,7 @@ export default function PdaoDashboard() {
         </div>
       ) : null}
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Registered PWDs"
           value={isLoading ? "…" : profs.length}
@@ -232,9 +239,10 @@ export default function PdaoDashboard() {
         <StatCard
           label="Pending review"
           value={isLoading ? "…" : stats.pending}
-          hint="Needs verification"
+          hint="Needs verification — view list"
           icon={Clock}
           tone="warning"
+          onClick={() => setShowPending(true)}
         />
         <StatCard
           label="Approved"
@@ -242,13 +250,6 @@ export default function PdaoDashboard() {
           hint="Validated beneficiaries"
           icon={CheckCircle2}
           tone="success"
-        />
-        <StatCard
-          label="Rejected"
-          value={isLoading ? "…" : stats.rejected}
-          hint="Declined applications"
-          icon={XCircle}
-          tone="danger"
         />
       </section>
 
@@ -350,6 +351,13 @@ export default function PdaoDashboard() {
           </table>
         </div>
       </section>
+
+      {showPending ? (
+        <PendingApplicantsModal
+          applications={pendingApps}
+          onClose={() => setShowPending(false)}
+        />
+      ) : null}
     </div>
   );
 }

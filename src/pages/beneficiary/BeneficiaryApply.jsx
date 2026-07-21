@@ -4,18 +4,12 @@ import { ArrowLeft, CheckCircle2, Mic } from "lucide-react";
 import { submitApplication } from "../../services/supabase/applications.js";
 import { getLoretoBarangays } from "../../services/psgc.js";
 import { useSpeechRecognition } from "../../hooks/useSpeechRecognition.js";
+import { PWD_REQUIREMENTS as requirements } from "../../constants/requirements.js";
 
 // The system serves Loreto, Agusan del Sur only; these are fixed.
 const FIXED_MUNICIPALITY = "Loreto";
 const FIXED_PROVINCE = "Agusan del Sur";
 const FIXED_POSTAL = "8507";
-
-const requirements = [
-  "Barangay certificate or endorsement",
-  "Valid government-issued ID",
-  "Medical certificate or disability assessment",
-  "Recent 2x2 photo",
-];
 
 // Visual markers for form labels.
 const Req = () => <span className="text-[color:var(--gov-danger-fg)]"> *</span>;

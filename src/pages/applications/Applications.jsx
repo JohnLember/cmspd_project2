@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "react-toastify";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   approveApplication,
   getApplications,
+  saveRequirements,
   updateApplicationStatus,
 } from "../../services/supabase/applications.js";
 import ApproveApplicationModal from "../../components/applications/ApproveApplicationModal.jsx";
@@ -211,47 +211,26 @@ export default function Applications() {
     setGuardianMatches([]);
   };
 
-  const confirmReject = (row) => {
-    toast(
-      ({ closeToast }) => (
-        <div className="space-y-3 text-sm text-[color:var(--gov-text)]">
-          <p className="font-semibold">Reject application?</p>
-          <p className="text-xs text-[color:var(--gov-muted)]">
-            Reject {row.applicant_name || "this applicant"}’s application? You can
-            reconsider it later.
-          </p>
-          <div className="flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={closeToast}
-              className="btn btn-secondary h-9 px-3 text-xs"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                handleStatusChange(row, "rejected");
-                closeToast();
-              }}
-              className="btn btn-danger h-9 px-3 text-xs"
-            >
-              Reject
-            </button>
-          </div>
-        </div>
-      ),
-      {
-        toastId: `reject-${row.id}`,
-        closeButton: false,
-        autoClose: false,
-        closeOnClick: false,
-        className: "gov-card",
-      }
+  // Officer saved a partial requirements checklist from the approve modal; the
+  // application stays pending until every requirement is met.
+  const handleSavePending = async (requirements) => {
+    if (!approveTarget) return;
+    const id = approveTarget.id;
+    const { error: saveErr } = await saveRequirements(id, requirements);
+    if (saveErr) {
+      setApproveError(saveErr.message || "Unable to save requirements.");
+      return;
+    }
+    setApplications((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, requirements } : item))
     );
+    setNotice("Requirements saved. Application kept pending.");
+    setApproveTarget(null);
+    setGuardianInfo(null);
+    setGuardianMatches([]);
   };
 
-  // Status is a lifecycle, not a free toggle: pending → Approve/Reject;
+  // Status is a lifecycle, not a free toggle: pending → Approve;
   // approved is locked (it provisioned accounts); rejected can be reconsidered.
   const renderStatus = (row) => {
     const status = row.status || "pending";
@@ -276,24 +255,14 @@ export default function Applications() {
       );
     }
     return (
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => handleStatusChange(row, "approved")}
-          className="btn btn-primary h-9 px-3 text-xs"
-        >
-          Approve
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => confirmReject(row)}
-          className="btn btn-secondary h-9 px-3 text-xs"
-        >
-          Reject
-        </button>
-      </div>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => handleStatusChange(row, "approved")}
+        className="btn btn-primary h-9 px-3 text-xs"
+      >
+        Approve
+      </button>
     );
   };
 
@@ -511,6 +480,8 @@ export default function Applications() {
           guardianInfo={guardianInfo}
           guardianMatches={guardianMatches}
           guardianMatchesLoading={guardianMatchesLoading}
+          initialRequirements={approveTarget.requirements}
+          onSavePending={handleSavePending}
           isSubmitting={isApproving}
           error={approveError}
           onCancel={() => {

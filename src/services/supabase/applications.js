@@ -56,6 +56,18 @@ export async function getApplications() {
   return { applications: data ?? [], error };
 }
 
+// PDAO staff: save which office requirements the applicant has presented so far.
+// `requirements` is a map like { "Valid government-issued ID": true, ... }.
+// Leaves status untouched (used when the checklist is incomplete → stay pending).
+export async function saveRequirements(id, requirements) {
+  const { error } = await supabase
+    .from("applications")
+    .update({ requirements })
+    .eq("id", id);
+
+  return { error };
+}
+
 // PDAO staff: change an application's review status.
 export async function updateApplicationStatus(id, status) {
   const { error } = await supabase

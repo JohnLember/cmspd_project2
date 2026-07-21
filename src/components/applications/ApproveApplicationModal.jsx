@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { PWD_REQUIREMENTS } from "../../constants/requirements.js";
 
 const officerFields = [
   ["lastName", "Last name"],
@@ -239,19 +240,28 @@ export default function ApproveApplicationModal({
   guardianInfo,
   guardianMatches = [],
   guardianMatchesLoading = false,
+  initialRequirements = {},
+  onSavePending,
   onCancel,
   onConfirm,
   isSubmitting,
   error,
 }) {
   const hasGuardian = Boolean(guardianInfo);
-  // Insert a guardian-resolution step only when the application names a guardian.
+  // Requirements gate the whole flow; the guardian-resolution step only appears
+  // when the application names a guardian.
   const steps = hasGuardian
-    ? ["PWD signature", "Officers", "Guardian", "Approving signature"]
-    : ["PWD signature", "Officers", "Approving signature"];
+    ? ["Requirements", "PWD signature", "Officers", "Guardian", "Approving signature"]
+    : ["Requirements", "PWD signature", "Officers", "Approving signature"];
   const totalSteps = steps.length;
 
   const [step, setStep] = useState(1);
+  const [requirements, setRequirements] = useState(() =>
+    Object.fromEntries(
+      PWD_REQUIREMENTS.map((r) => [r, Boolean(initialRequirements?.[r])])
+    )
+  );
+  const allRequirementsMet = PWD_REQUIREMENTS.every((r) => requirements[r]);
   const [pwdSignature, setPwdSignature] = useState(null);
   const [approvingSignature, setApprovingSignature] = useState(null);
   const [processingOfficer, setProcessingOfficer] = useState(emptyOfficer);
@@ -280,7 +290,14 @@ export default function ApproveApplicationModal({
 
   const goNext = () => {
     setLocalError("");
-    if (stepName === "PWD signature") {
+    if (stepName === "Requirements") {
+      if (!allRequirementsMet) {
+        setLocalError(
+          "All requirements must be presented before approving. Save & keep pending if some are still missing."
+        );
+        return;
+      }
+    } else if (stepName === "PWD signature") {
       if (!pwdSignature) {
         setLocalError("The PWD must sign before continuing.");
         return;
@@ -352,6 +369,36 @@ export default function ApproveApplicationModal({
         </p>
 
         <div className="mt-5">
+          {stepName === "Requirements" ? (
+            <div>
+              <p className="text-sm text-[color:var(--gov-muted)]">
+                Tick each document the applicant has presented at the office. All
+                must be checked to approve; otherwise save the progress and the
+                application stays pending.
+              </p>
+              <ul className="mt-4 space-y-2">
+                {PWD_REQUIREMENTS.map((req) => (
+                  <li key={req}>
+                    <label className="flex cursor-pointer items-center gap-3 rounded-[var(--radius-md)] border border-[color:var(--gov-border)] p-3 has-[:checked]:border-[color:var(--gov-primary)]">
+                      <input
+                        type="checkbox"
+                        checked={requirements[req]}
+                        onChange={(e) =>
+                          setRequirements((prev) => ({
+                            ...prev,
+                            [req]: e.target.checked,
+                          }))
+                        }
+                        className="h-[1.15rem] w-[1.15rem] accent-[color:var(--gov-primary)]"
+                      />
+                      <span className="text-sm">{req}</span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           {stepName === "PWD signature" ? (
             <div>
               <label className="text-sm font-semibold">
@@ -426,20 +473,32 @@ export default function ApproveApplicationModal({
           >
             {step === 1 ? "Cancel" : "Back"}
           </button>
-          {step < totalSteps ? (
-            <button type="button" onClick={goNext} className="btn btn-primary">
-              Next
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleConfirm}
-              disabled={isSubmitting || !approvingSignature}
-              className="btn btn-primary"
-            >
-              {isSubmitting ? "Approving…" : "Approve & create account"}
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {stepName === "Requirements" ? (
+              <button
+                type="button"
+                onClick={() => onSavePending(requirements)}
+                disabled={isSubmitting}
+                className="btn btn-secondary"
+              >
+                Save &amp; keep pending
+              </button>
+            ) : null}
+            {step < totalSteps ? (
+              <button type="button" onClick={goNext} className="btn btn-primary">
+                Next
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleConfirm}
+                disabled={isSubmitting || !approvingSignature}
+                className="btn btn-primary"
+              >
+                {isSubmitting ? "Approving…" : "Approve & create account"}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
