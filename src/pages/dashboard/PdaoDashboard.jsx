@@ -23,16 +23,27 @@ const timeAgo = (iso) => {
   return `${Math.floor(hrs / 24)}d ago`;
 };
 
-const buildMonthlySeries = (rows) => {
-  const now = new Date();
+// year=null → rolling last 6 months; year=YYYY → that year's Jan–Dec.
+const buildMonthlySeries = (rows, year) => {
   const series = [];
   const index = new Map();
-  for (let i = 5; i >= 0; i -= 1) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const key = `${d.getFullYear()}-${d.getMonth()}`;
-    const bucket = { name: d.toLocaleString("en-US", { month: "short" }), value: 0 };
-    series.push(bucket);
-    index.set(key, bucket);
+  if (year) {
+    for (let m = 0; m < 12; m += 1) {
+      const bucket = {
+        name: new Date(year, m, 1).toLocaleString("en-US", { month: "short" }),
+        value: 0,
+      };
+      series.push(bucket);
+      index.set(`${year}-${m}`, bucket);
+    }
+  } else {
+    const now = new Date();
+    for (let i = 5; i >= 0; i -= 1) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const bucket = { name: d.toLocaleString("en-US", { month: "short" }), value: 0 };
+      series.push(bucket);
+      index.set(`${d.getFullYear()}-${d.getMonth()}`, bucket);
+    }
   }
   rows.forEach((row) => {
     if (!row.submitted_at) return;
@@ -48,6 +59,7 @@ export default function PdaoDashboard() {
   const [profiles, setProfiles] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [year, setYear] = useState("all");
 
   const load = useCallback(async () => {
     const [appsRes, profilesRes] = await Promise.all([
@@ -76,32 +88,67 @@ export default function PdaoDashboard() {
   // Live disability distribution as profiles are created/updated.
   useRealtime("profiles", load);
 
+  // Year filter: everything on the dashboard derives from these two arrays, so
+  // filtering them once here flows through stats, charts, and tables.
+  const years = useMemo(() => {
+    const set = new Set();
+    applications.forEach((r) => {
+      if (r.submitted_at) set.add(new Date(r.submitted_at).getFullYear());
+    });
+    profiles.forEach((p) => {
+      if (p.created_at) set.add(new Date(p.created_at).getFullYear());
+    });
+    return Array.from(set).sort((a, b) => b - a);
+  }, [applications, profiles]);
+
+  const apps = useMemo(
+    () =>
+      year === "all"
+        ? applications
+        : applications.filter(
+            (r) => r.submitted_at && new Date(r.submitted_at).getFullYear() === Number(year)
+          ),
+    [applications, year]
+  );
+  const profs = useMemo(
+    () =>
+      year === "all"
+        ? profiles
+        : profiles.filter(
+            (p) => p.created_at && new Date(p.created_at).getFullYear() === Number(year)
+          ),
+    [profiles, year]
+  );
+
   const stats = useMemo(() => {
     const by = (status) =>
-      applications.filter((row) => (row.status || "pending") === status).length;
+      apps.filter((row) => (row.status || "pending") === status).length;
     // "Approved" mirrors Registered PWDs: only approved apps whose beneficiary
     // still has a live profile, so deactivating/deleting a PWD drops both counts
     // together and the two cards never disagree.
-    const liveProfileIds = new Set(profiles.map((p) => p.id));
-    const approved = applications.filter(
+    const liveProfileIds = new Set(profs.map((p) => p.id));
+    const approved = apps.filter(
       (row) => row.status === "approved" && liveProfileIds.has(row.pwd_id)
     ).length;
     return {
-      total: applications.length,
+      total: apps.length,
       pending: by("pending"),
       approved,
       rejected: by("rejected"),
     };
-  }, [applications, profiles]);
+  }, [apps, profs]);
 
-  const monthly = useMemo(() => buildMonthlySeries(applications), [applications]);
-  const recent = useMemo(() => applications.slice(0, 5), [applications]);
+  const monthly = useMemo(
+    () => buildMonthlySeries(apps, year === "all" ? null : Number(year)),
+    [apps, year]
+  );
+  const recent = useMemo(() => apps.slice(0, 5), [apps]);
 
   // Registered PWDs per barangay, split by disability type (stacked bar chart).
   const disabilityByBarangay = useMemo(() => {
     const byBarangay = {}; // barangay -> { name, [type]: count }
     const typeSet = new Set();
-    profiles.forEach((p) => {
+    profs.forEach((p) => {
       const barangay = (p.barangay || "").trim() || "Unspecified";
       byBarangay[barangay] ??= { name: barangay };
       const types = Array.isArray(p.data?.disabilityTypes)
@@ -128,17 +175,34 @@ export default function PdaoDashboard() {
       a.name.localeCompare(b.name)
     );
     return { data, series };
-  }, [profiles]);
+  }, [profs]);
 
   return (
     <div className="space-y-6">
-      <header>
-        <h2 className="text-2xl font-semibold tracking-[-0.01em]">
-          Operations overview
-        </h2>
-        <p className="mt-1 text-[color:var(--gov-muted)]">
-          Live application activity from the beneficiary intake form.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-[-0.01em]">
+            Operations overview
+          </h2>
+          <p className="mt-1 text-[color:var(--gov-muted)]">
+            Live application activity from the beneficiary intake form.
+          </p>
+        </div>
+        <label className="flex items-center gap-2 text-sm text-[color:var(--gov-muted)]">
+          Year
+          <select
+            value={year}
+            onChange={(e) => setYear(e.target.value)}
+            className="gov-card rounded-[var(--radius-md)] border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-3 py-2 text-sm text-[color:var(--gov-text)]"
+          >
+            <option value="all">All years</option>
+            {years.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+        </label>
       </header>
 
       {error ? (
@@ -153,7 +217,7 @@ export default function PdaoDashboard() {
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard
           label="Registered PWDs"
-          value={isLoading ? "…" : profiles.length}
+          value={isLoading ? "…" : profs.length}
           hint="Approved beneficiaries"
           icon={Users}
           tone="primary"
@@ -226,7 +290,7 @@ export default function PdaoDashboard() {
           subtitle={
             isLoading
               ? "Loading…"
-              : `${profiles.length} registered`
+              : `${profs.length} registered`
           }
           data={disabilityByBarangay.data}
           series={disabilityByBarangay.series}
