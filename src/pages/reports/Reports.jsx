@@ -7,8 +7,7 @@ import ExportReportModal from "../../components/reports/ExportReportModal.jsx";
 import { getProfiles } from "../../services/supabase/profile.js";
 import { DISABILITY_LABELS } from "../../constants/disability.js";
 import { exportAgeProfilePdf } from "../../utils/ReportsPDF.js";
-
-const UNSPECIFIED = "Unspecified";
+import { profileMunicipality, UNSPECIFIED } from "../../utils/locality.js";
 
 export default function Reports() {
   const [profiles, setProfiles] = useState([]);
@@ -16,6 +15,10 @@ export default function Reports() {
   const [error, setError] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  // "all" = province summary grouped by municipality; a name = drill into that
+  // municipality's barangays.
+  const [viewMunicipality, setViewMunicipality] = useState("all");
+  const [exportMunicipality, setExportMunicipality] = useState("all");
   const [exportBarangay, setExportBarangay] = useState("all");
   const [exportType, setExportType] = useState("all");
 
@@ -33,16 +36,33 @@ export default function Reports() {
     };
   }, []);
 
-  const report = useMemo(() => {
-    const barangaySet = new Set();
-    const typeCounts = {};
-    const byBarangay = {}; // barangay -> { total, types: {type: n} }
+  const municipalities = useMemo(() => {
+    const set = new Set(profiles.map((p) => profileMunicipality(p)));
+    set.delete(UNSPECIFIED);
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [profiles]);
 
-    profiles.forEach((p) => {
-      const barangay = (p.barangay || "").trim() || UNSPECIFIED;
-      barangaySet.add(barangay);
-      byBarangay[barangay] ??= { total: 0, types: {} };
-      byBarangay[barangay].total += 1;
+  const report = useMemo(() => {
+    // Province view groups by municipality; a drilled view groups that
+    // municipality's rows by barangay.
+    const scoped =
+      viewMunicipality === "all"
+        ? profiles
+        : profiles.filter((p) => profileMunicipality(p) === viewMunicipality);
+    const groupOf = (p) =>
+      viewMunicipality === "all"
+        ? profileMunicipality(p)
+        : (p.barangay || "").trim() || UNSPECIFIED;
+
+    const groupSet = new Set();
+    const typeCounts = {};
+    const byGroup = {}; // group -> { total, types: {type: n} }
+
+    scoped.forEach((p) => {
+      const group = groupOf(p);
+      groupSet.add(group);
+      byGroup[group] ??= { total: 0, types: {} };
+      byGroup[group].total += 1;
 
       const types = Array.isArray(p.data?.disabilityTypes)
         ? p.data.disabilityTypes
@@ -50,8 +70,7 @@ export default function Reports() {
       const effective = types.length ? types : ["unspecified"];
       effective.forEach((t) => {
         typeCounts[t] = (typeCounts[t] || 0) + 1;
-        byBarangay[barangay].types[t] =
-          (byBarangay[barangay].types[t] || 0) + 1;
+        byGroup[group].types[t] = (byGroup[group].types[t] || 0) + 1;
       });
     });
 
@@ -62,52 +81,75 @@ export default function Reports() {
     );
     const typeColumns = [...known, ...extras];
 
-    const barangays = Array.from(barangaySet).sort((a, b) =>
-      a.localeCompare(b)
-    );
+    const groups = Array.from(groupSet).sort((a, b) => a.localeCompare(b));
 
     return {
-      total: profiles.length,
-      barangayCount: barangays.filter((b) => b !== UNSPECIFIED).length,
+      total: scoped.length,
+      groupLabel: viewMunicipality === "all" ? "Municipality" : "Barangay",
+      municipalityCount: municipalities.length,
+      groupCount: groups.filter((g) => g !== UNSPECIFIED).length,
       typeCounts,
       typeColumns,
-      barangays,
-      byBarangay,
-      perBarangayChart: barangays.map((b) => ({
-        name: b,
-        value: byBarangay[b].total,
+      groups,
+      byGroup,
+      perGroupChart: groups.map((g) => ({
+        name: g,
+        value: byGroup[g].total,
       })),
       perTypeChart: typeColumns.map((t) => ({
         name: DISABILITY_LABELS[t] || "Unspecified",
         value: typeCounts[t],
       })),
     };
-  }, [profiles]);
+  }, [profiles, viewMunicipality, municipalities]);
 
   const label = (t) => DISABILITY_LABELS[t] || "Unspecified";
 
-  // Profiles matching the chosen barangay + disability type in the export modal.
+  // Barangays available in the export modal, scoped to the chosen municipality.
+  const exportBarangays = useMemo(() => {
+    const set = new Set();
+    profiles.forEach((p) => {
+      if (
+        exportMunicipality !== "all" &&
+        profileMunicipality(p) !== exportMunicipality
+      )
+        return;
+      const b = (p.barangay || "").trim();
+      if (b) set.add(b);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [profiles, exportMunicipality]);
+
+  // Profiles matching the chosen municipality + barangay + disability type.
   const exportMatches = useMemo(() => {
     return profiles.filter((p) => {
+      const m = profileMunicipality(p);
       const b = (p.barangay || "").trim() || UNSPECIFIED;
       const types = Array.isArray(p.data?.disabilityTypes)
         ? p.data.disabilityTypes
         : [];
       const effectiveTypes = types.length ? types : ["unspecified"];
+      const matchMunicipality =
+        exportMunicipality === "all" || m === exportMunicipality;
       const matchBarangay = exportBarangay === "all" || b === exportBarangay;
       const matchType = exportType === "all" || effectiveTypes.includes(exportType);
-      return matchBarangay && matchType;
+      return matchMunicipality && matchBarangay && matchType;
     });
-  }, [profiles, exportBarangay, exportType]);
+  }, [profiles, exportMunicipality, exportBarangay, exportType]);
 
   const handleExportPdf = async () => {
     setIsExporting(true);
     try {
       const parts = [];
+      if (exportMunicipality !== "all")
+        parts.push(`Municipality: ${exportMunicipality}`);
       if (exportBarangay !== "all") parts.push(`Barangay: ${exportBarangay}`);
       if (exportType !== "all") parts.push(`Disability: ${label(exportType)}`);
       const scopeText = parts.join("   •   ");
-      await exportAgeProfilePdf(exportMatches, scopeText);
+      // Single-municipality export names it in the PDF header; else province-wide.
+      const municipalityScope =
+        exportMunicipality === "all" ? null : exportMunicipality;
+      await exportAgeProfilePdf(exportMatches, scopeText, municipalityScope);
       setShowExport(false);
     } catch (err) {
       toast.error(err?.message || "Unable to generate the PDF report.");
@@ -121,13 +163,28 @@ export default function Reports() {
       <header className="flex flex-wrap items-center justify-between gap-4 print:hidden">
         <div>
           <h2 className="text-2xl font-semibold tracking-[-0.01em]">
-            Registered PWDs per barangay
+            {viewMunicipality === "all"
+              ? "Registered PWDs per municipality"
+              : `Registered PWDs in ${viewMunicipality} per barangay`}
           </h2>
           <p className="mt-1 text-[color:var(--gov-muted)]">
             Monitoring report classified by disability type.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={viewMunicipality}
+            onChange={(e) => setViewMunicipality(e.target.value)}
+            className="gov-input h-10 w-full text-xs sm:w-auto"
+            aria-label="Filter by municipality"
+          >
+            <option value="all">All municipalities</option>
+            {municipalities.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
           <button
             type="button"
             onClick={() => setShowExport(true)}
@@ -161,7 +218,20 @@ export default function Reports() {
         <>
           <section className="grid gap-4 sm:grid-cols-3">
             <StatCard label="Registered PWDs" value={report.total} icon={Users} tone="primary" />
-            <StatCard label="Barangays covered" value={report.barangayCount} icon={MapPin} tone="success" />
+            <StatCard
+              label={
+                viewMunicipality === "all"
+                  ? "Municipalities covered"
+                  : "Barangays covered"
+              }
+              value={
+                viewMunicipality === "all"
+                  ? report.municipalityCount
+                  : report.groupCount
+              }
+              icon={MapPin}
+              tone="success"
+            />
             <StatCard
               label="Disability types"
               value={report.typeColumns.filter((t) => t !== "unspecified").length}
@@ -172,9 +242,13 @@ export default function Reports() {
 
           <section className="grid gap-6 lg:grid-cols-2">
             <BarChartCard
-              title="Registered PWDs per barangay"
+              title={
+                viewMunicipality === "all"
+                  ? "Registered PWDs per municipality"
+                  : "Registered PWDs per barangay"
+              }
               subtitle="All registered"
-              data={report.perBarangayChart}
+              data={report.perGroupChart}
             />
             <BarChartCard
               title="By disability type"
@@ -185,13 +259,13 @@ export default function Reports() {
 
           <section className="gov-card p-5">
             <h3 className="font-semibold text-[color:var(--gov-text)]">
-              Barangay × disability type
+              {report.groupLabel} × disability type
             </h3>
             <div className="mt-4 overflow-x-auto">
               <table className="tnum w-full border-collapse text-left text-sm">
                 <thead>
                   <tr className="border-b border-[color:var(--gov-border)] text-xs font-semibold text-[color:var(--gov-muted)]">
-                    <th className="pb-3 pr-4 font-semibold">Barangay</th>
+                    <th className="pb-3 pr-4 font-semibold">{report.groupLabel}</th>
                     {report.typeColumns.map((t) => (
                       <th key={t} className="pb-3 pr-4 text-center font-semibold">
                         {label(t)}
@@ -203,24 +277,28 @@ export default function Reports() {
                   </tr>
                 </thead>
                 <tbody className="text-[color:var(--gov-text)]">
-                  {report.barangays.map((b) => (
+                  {report.groups.map((g) => (
                     <tr
-                      key={b}
+                      key={g}
                       className="border-b border-[color:var(--gov-border)]"
                     >
-                      <td className="py-3 pr-4 font-medium">{b}</td>
+                      <td className="py-3 pr-4 font-medium">{g}</td>
                       {report.typeColumns.map((t) => (
                         <td key={t} className="py-3 pr-4 text-center text-[color:var(--gov-muted)]">
-                          {report.byBarangay[b].types[t] || 0}
+                          {report.byGroup[g].types[t] || 0}
                         </td>
                       ))}
                       <td className="py-3 text-center font-semibold">
-                        {report.byBarangay[b].total}
+                        {report.byGroup[g].total}
                       </td>
                     </tr>
                   ))}
                   <tr className="border-t-2 border-[color:var(--gov-border-strong)] font-semibold">
-                    <td className="py-3 pr-4">All barangays</td>
+                    <td className="py-3 pr-4">
+                      {viewMunicipality === "all"
+                        ? "All municipalities"
+                        : "All barangays"}
+                    </td>
                     {report.typeColumns.map((t) => (
                       <td key={t} className="py-3 pr-4 text-center">
                         {report.typeCounts[t] || 0}
@@ -239,12 +317,18 @@ export default function Reports() {
 
       {showExport ? (
         <ExportReportModal
-          barangays={report.barangays}
+          municipalities={municipalities}
+          barangays={exportBarangays}
           typeColumns={report.typeColumns}
+          municipality={exportMunicipality}
           barangay={exportBarangay}
           type={exportType}
           matchCount={exportMatches.length}
           exporting={isExporting}
+          onMunicipalityChange={(m) => {
+            setExportMunicipality(m);
+            setExportBarangay("all");
+          }}
           onBarangayChange={setExportBarangay}
           onTypeChange={setExportType}
           onExport={handleExportPdf}

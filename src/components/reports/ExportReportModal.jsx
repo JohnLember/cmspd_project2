@@ -6,11 +6,14 @@ import { DISABILITY_LABELS } from "../../constants/disability.js";
 // generating the age-profile PDF. `typeColumns` are the disability keys present
 // in the data; `matchCount` is how many PWDs the current selection covers.
 export default function ExportReportModal({
+  municipalities = [],
   barangays,
   typeColumns,
+  municipality = "all",
   barangay,
   type,
   matchCount,
+  onMunicipalityChange,
   onBarangayChange,
   onTypeChange,
   onExport,
@@ -58,6 +61,24 @@ export default function ExportReportModal({
         </div>
 
         <div className="mt-5 space-y-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium" htmlFor="export-municipality">
+              Municipality
+            </label>
+            <select
+              id="export-municipality"
+              value={municipality}
+              onChange={(e) => onMunicipalityChange(e.target.value)}
+              className="gov-input"
+            >
+              <option value="all">All municipalities</option>
+              {municipalities.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </div>
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor="export-barangay">
               Barangay

@@ -74,7 +74,15 @@ const rowCells = (row) => {
   return { cells, wwd, overall };
 };
 
-export async function exportAgeProfilePdf(profiles, scopeText = "") {
+export async function exportAgeProfilePdf(
+  profiles,
+  scopeText = "",
+  municipalityScope = null
+) {
+  // Single-municipality export names it; a province-wide export says so.
+  const headerLocality = municipalityScope
+    ? `Municipality of ${municipalityScope}`
+    : "Province of Agusan del Sur";
   const { jsPDF } = await import("jspdf");
   const autoTable = (await import("jspdf-autotable")).default;
 
@@ -96,7 +104,7 @@ export async function exportAgeProfilePdf(profiles, scopeText = "") {
   const repLines = [
     { text: "Republic of the Philippines", font: "normal" },
     { text: "PROVINCE OF AGUSAN DEL SUR", font: "bold" },
-    { text: "Municipality of Loreto", font: "bold" },
+    { text: headerLocality, font: "bold" },
   ];
   let maxTextW = 0;
   repLines.forEach((l) => {
@@ -117,7 +125,7 @@ export async function exportAgeProfilePdf(profiles, scopeText = "") {
   doc.text("Republic of the Philippines", centerX, 40, { align: "center" });
   doc.setFont("helvetica", "bold");
   doc.text("PROVINCE OF AGUSAN DEL SUR", centerX, 55, { align: "center" });
-  doc.text("Municipality of Loreto", centerX, 70, { align: "center" });
+  doc.text(headerLocality, centerX, 70, { align: "center" });
 
   doc.setFontSize(12);
   doc.text("Persons with Disability Affairs Office (PDAO)", centerX, 95, {
@@ -179,7 +187,9 @@ export async function exportAgeProfilePdf(profiles, scopeText = "") {
   ];
 
   const remarksText =
-    "The registered PWD who were already deceased and transferred in another municipality are no longer included in the total population of PWD of Loreto, Agusan del Sur.";
+    `The registered PWD who were already deceased and transferred in another municipality are no longer included in the total population of PWD of ${
+      municipalityScope ? `${municipalityScope}, ` : ""
+    }Agusan del Sur.`;
 
   const totals = { ...emptyBrackets() };
   const body = [];

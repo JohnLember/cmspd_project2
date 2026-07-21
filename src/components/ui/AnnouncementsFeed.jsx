@@ -72,6 +72,7 @@ export default function AnnouncementsFeed({ emptyText, limit, paginate = false }
         if (mounted) {
           setTargets([
             {
+              municipality: profile?.data?.municipality,
               barangay: profile?.barangay,
               types: profile?.data?.disabilityTypes,
             },
@@ -85,6 +86,7 @@ export default function AnnouncementsFeed({ emptyText, limit, paginate = false }
               .map((w) => w.ward)
               .filter(Boolean)
               .map((ward) => ({
+                municipality: ward.data?.municipality,
                 barangay: ward.barangay,
                 types: ward.data?.disabilityTypes,
               }))
@@ -167,6 +169,7 @@ export default function AnnouncementsFeed({ emptyText, limit, paginate = false }
             </span>
           </div>
           {item.item_type ||
+          item.municipalities?.length ||
           item.barangays?.length ||
           targetLabel(item.disability_types) ||
           fmtEventWhen(item.event_date, item.start_time, item.end_time) ? (
@@ -175,6 +178,11 @@ export default function AnnouncementsFeed({ emptyText, limit, paginate = false }
                 <span className="gov-badge gov-badge--success">
                   <Package className="h-3 w-3" aria-hidden="true" />
                   {item.item_type}
+                </span>
+              ) : null}
+              {item.municipalities?.length ? (
+                <span className="gov-badge gov-badge--warning">
+                  Municipality: {item.municipalities.join(", ")}
                 </span>
               ) : null}
               {item.barangays?.length ? (

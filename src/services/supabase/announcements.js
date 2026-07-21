@@ -30,13 +30,16 @@ export async function createAnnouncement({
   endTime,
   itemType,
   disabilityTypes,
+  municipalities,
   barangays,
 }) {
-  // null / empty = target everyone (All Types / All Barangay).
+  // null / empty = target everyone (All Types / All Municipalities / All Barangay).
   const targets =
     Array.isArray(disabilityTypes) && disabilityTypes.length
       ? disabilityTypes
       : null;
+  const targetMunicipalities =
+    Array.isArray(municipalities) && municipalities.length ? municipalities : null;
   const targetBarangays =
     Array.isArray(barangays) && barangays.length ? barangays : null;
   const { data, error } = await supabase.functions.invoke("notify-announcement", {
@@ -48,6 +51,7 @@ export async function createAnnouncement({
       endTime: endTime || null,
       itemType: itemType || null,
       disabilityTypes: targets,
+      municipalities: targetMunicipalities,
       barangays: targetBarangays,
     },
   });
@@ -78,6 +82,7 @@ export async function createAnnouncement({
   const followUp = {};
   if (itemType) followUp.item_type = itemType;
   if (targets) followUp.disability_types = targets;
+  if (targetMunicipalities) followUp.municipalities = targetMunicipalities;
   if (targetBarangays) followUp.barangays = targetBarangays;
   if (announcement && Object.keys(followUp).length) {
     const { data: updated } = await supabase
@@ -101,7 +106,7 @@ export async function createAnnouncement({
   };
 }
 
-export async function updateAnnouncement(id, { title, body, eventDate, startTime, endTime, itemType, disabilityTypes, barangays }) {
+export async function updateAnnouncement(id, { title, body, eventDate, startTime, endTime, itemType, disabilityTypes, municipalities, barangays }) {
   const updates = {};
   if (title !== undefined) updates.title = title;
   if (body !== undefined) updates.body = body;
@@ -114,6 +119,12 @@ export async function updateAnnouncement(id, { title, body, eventDate, startTime
     updates.disability_types =
       Array.isArray(disabilityTypes) && disabilityTypes.length
         ? disabilityTypes
+        : null;
+  }
+  if (municipalities !== undefined) {
+    updates.municipalities =
+      Array.isArray(municipalities) && municipalities.length
+        ? municipalities
         : null;
   }
   if (barangays !== undefined) {

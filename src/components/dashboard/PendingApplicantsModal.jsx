@@ -47,6 +47,7 @@ function RequirementList({ requirements }) {
 export default function PendingApplicantsModal({ applications, onClose }) {
   const [search, setSearch] = useState("");
   const [yearFilter, setYearFilter] = useState("all");
+  const [municipalityFilter, setMunicipalityFilter] = useState("all");
   const [barangayFilter, setBarangayFilter] = useState("all");
   const [page, setPage] = useState(1);
 
@@ -71,14 +72,29 @@ export default function PendingApplicantsModal({ applications, onClose }) {
     return Array.from(set).sort((a, b) => b - a);
   }, [applications]);
 
+  const municipalities = useMemo(() => {
+    const set = new Set();
+    applications.forEach((r) => {
+      const m = (r.municipality || "").trim();
+      if (m) set.add(m);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [applications]);
+
+  // Barangays scoped to the chosen municipality (names repeat across the province).
   const barangays = useMemo(() => {
     const set = new Set();
     applications.forEach((r) => {
+      if (
+        municipalityFilter !== "all" &&
+        (r.municipality || "").trim() !== municipalityFilter
+      )
+        return;
       const b = (r.barangay || "").trim();
       if (b) set.add(b);
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [applications]);
+  }, [applications, municipalityFilter]);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -91,11 +107,14 @@ export default function PendingApplicantsModal({ applications, onClose }) {
         yearFilter === "all" ||
         (row.submitted_at &&
           new Date(row.submitted_at).getFullYear() === Number(yearFilter));
+      const matchesMunicipality =
+        municipalityFilter === "all" ||
+        (row.municipality || "").trim() === municipalityFilter;
       const matchesBarangay =
         barangayFilter === "all" || (row.barangay || "").trim() === barangayFilter;
-      return matchesSearch && matchesYear && matchesBarangay;
+      return matchesSearch && matchesYear && matchesMunicipality && matchesBarangay;
     });
-  }, [applications, search, yearFilter, barangayFilter]);
+  }, [applications, search, yearFilter, municipalityFilter, barangayFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   // Clamp so shrinking results never strand us on an empty page.
@@ -160,6 +179,22 @@ export default function PendingApplicantsModal({ applications, onClose }) {
             ))}
           </select>
           <select
+            value={municipalityFilter}
+            onChange={(e) => {
+              setMunicipalityFilter(e.target.value);
+              setBarangayFilter("all");
+              setPage(1);
+            }}
+            className="gov-input w-full sm:w-auto"
+          >
+            <option value="all">All municipalities</option>
+            {municipalities.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+          <select
             value={barangayFilter}
             onChange={(e) => {
               setBarangayFilter(e.target.value);
@@ -198,8 +233,9 @@ export default function PendingApplicantsModal({ applications, onClose }) {
                   </span>
                 </div>
                 <p className="mt-0.5 text-xs text-[color:var(--gov-muted)]">
-                  {row.barangay || "No barangay"} · Submitted{" "}
-                  {fmtDate(row.submitted_at)}
+                  {[row.barangay, row.municipality].filter(Boolean).join(", ") ||
+                    "No address"}{" "}
+                  · Submitted {fmtDate(row.submitted_at)}
                 </p>
                 <RequirementList requirements={row.requirements} />
               </div>

@@ -12,10 +12,26 @@ import { useRealtime } from "../../hooks/useRealtime.js";
 import { fmtEventDate, fmtTimeRange } from "../../utils/eventFormat.js";
 import TargetToggle from "../../components/ui/TargetToggle.jsx";
 import { DISABILITY_OPTIONS, targetLabel } from "../../constants/disability.js";
-import { getLoretoBarangays } from "../../services/psgc.js";
+import { getAgusanMunicipalities, getBarangays } from "../../services/psgc.js";
 
-const barangayLabel = (list) =>
+const areaLabel = (list) =>
   Array.isArray(list) && list.length ? list.join(", ") : null;
+
+// Union of barangays across the selected municipalities (by name), as
+// TargetToggle options. Empty selection returns [] (targeting is "all").
+async function loadBarangayOptions(selectedNames, municipalityList) {
+  if (!Array.isArray(selectedNames) || selectedNames.length === 0) return [];
+  const codes = selectedNames
+    .map((name) => municipalityList.find((m) => m.name === name)?.code)
+    .filter(Boolean);
+  const lists = await Promise.all(
+    codes.map((code) => getBarangays(code).catch(() => []))
+  );
+  const set = new Set(lists.flat());
+  return Array.from(set)
+    .sort((a, b) => a.localeCompare(b))
+    .map((b) => ({ key: b, label: b }));
+}
 
 const fmt = (iso) =>
   iso
@@ -57,6 +73,7 @@ export default function Notifications() {
   const [endTime, setEndTime] = useState("");
   const [itemType, setItemType] = useState("");
   const [targetTypes, setTargetTypes] = useState(null); // null = All Types
+  const [targetMunicipalities, setTargetMunicipalities] = useState(null); // null = All
   const [targetBarangays, setTargetBarangays] = useState(null); // null = All Barangay
   const [posting, setPosting] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -66,26 +83,62 @@ export default function Notifications() {
   const [editStartTime, setEditStartTime] = useState("");
   const [editEndTime, setEditEndTime] = useState("");
   const [editTargetTypes, setEditTargetTypes] = useState(null);
+  const [editTargetMunicipalities, setEditTargetMunicipalities] = useState(null);
   const [editTargetBarangays, setEditTargetBarangays] = useState(null);
   const [savingEdit, setSavingEdit] = useState(false);
 
-  // Loreto barangays (same PSGC source as the apply form, so names match
-  // exactly what is stored on profiles for filtering).
+  // Province municipalities (PSGC), and barangay options scoped to whichever
+  // municipalities are currently targeted in each form.
+  const [municipalityList, setMunicipalityList] = useState([]);
   const [barangayOptions, setBarangayOptions] = useState([]);
+  const [editBarangayOptions, setEditBarangayOptions] = useState([]);
+
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
-        const names = await getLoretoBarangays();
-        if (mounted) setBarangayOptions(names.map((b) => ({ key: b, label: b })));
+        const list = await getAgusanMunicipalities();
+        if (mounted) setMunicipalityList(list);
       } catch {
-        // Barangay targeting simply falls back to "All Barangay" if the list fails.
+        // Targeting falls back to "All" if the municipality list fails to load.
       }
     })();
     return () => {
       mounted = false;
     };
   }, []);
+
+  const municipalityOptions = municipalityList.map((m) => ({
+    key: m.name,
+    label: m.name,
+  }));
+
+  // Reload the post-form barangay options when its municipality target changes.
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const opts = await loadBarangayOptions(targetMunicipalities, municipalityList);
+      if (mounted) setBarangayOptions(opts);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [targetMunicipalities, municipalityList]);
+
+  // Same for the edit form.
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const opts = await loadBarangayOptions(
+        editTargetMunicipalities,
+        municipalityList
+      );
+      if (mounted) setEditBarangayOptions(opts);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [editTargetMunicipalities, municipalityList]);
 
   const load = useCallback(async () => {
     const { announcements: rows, error: loadError } = await getAnnouncements();
@@ -135,6 +188,7 @@ export default function Notifications() {
       endTime,
       itemType,
       disabilityTypes: targetTypes,
+      municipalities: targetMunicipalities,
       barangays: targetBarangays,
     });
     if (postError) {
@@ -155,6 +209,7 @@ export default function Notifications() {
       setEndTime("");
       setItemType("");
       setTargetTypes(null);
+      setTargetMunicipalities(null);
       setTargetBarangays(null);
       toast.success("Announcement posted to PWDs and guardians.");
 
@@ -196,6 +251,11 @@ export default function Notifications() {
         ? item.disability_types
         : null
     );
+    setEditTargetMunicipalities(
+      Array.isArray(item.municipalities) && item.municipalities.length
+        ? item.municipalities
+        : null
+    );
     setEditTargetBarangays(
       Array.isArray(item.barangays) && item.barangays.length
         ? item.barangays
@@ -211,6 +271,7 @@ export default function Notifications() {
     setEditStartTime("");
     setEditEndTime("");
     setEditTargetTypes(null);
+    setEditTargetMunicipalities(null);
     setEditTargetBarangays(null);
   };
 
@@ -227,6 +288,7 @@ export default function Notifications() {
       startTime: editStartTime,
       endTime: editEndTime,
       disabilityTypes: editTargetTypes,
+      municipalities: editTargetMunicipalities,
       barangays: editTargetBarangays,
     });
     if (editError) {
@@ -383,14 +445,35 @@ export default function Notifications() {
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium">
-              Barangay
+              Municipality
             </label>
             <TargetToggle
-              allLabel="All Barangay"
-              options={barangayOptions}
-              value={targetBarangays}
-              onChange={setTargetBarangays}
+              allLabel="All Municipalities"
+              options={municipalityOptions}
+              value={targetMunicipalities}
+              onChange={(v) => {
+                setTargetMunicipalities(v);
+                setTargetBarangays(null); // barangay set depends on municipality
+              }}
             />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">
+              Barangay
+            </label>
+            {targetMunicipalities && targetMunicipalities.length ? (
+              <TargetToggle
+                allLabel="All Barangay"
+                options={barangayOptions}
+                value={targetBarangays}
+                onChange={setTargetBarangays}
+              />
+            ) : (
+              <p className="text-xs text-[color:var(--gov-muted)]">
+                Select one or more municipalities above to target specific
+                barangays.
+              </p>
+            )}
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium">
@@ -403,9 +486,10 @@ export default function Notifications() {
               onChange={setTargetTypes}
             />
             <p className="mt-2 text-xs text-[color:var(--gov-muted)]">
-              Only PWDs (and their guardians) matching the selected barangay
-              <em> and</em> disability type receive this announcement’s email and
-              SMS. “All Barangay” / “All Types” mean everyone.
+              Only PWDs (and their guardians) matching the selected municipality,
+              barangay <em>and</em> disability type receive this announcement’s
+              email and SMS. “All Municipalities” / “All Barangay” / “All Types”
+              mean everyone.
             </p>
           </div>
           {error ? (
@@ -500,14 +584,35 @@ export default function Notifications() {
                     </div>
                     <div>
                       <label className="mb-1 block text-xs font-medium text-[color:var(--gov-muted)]">
-                        Barangay
+                        Municipality
                       </label>
                       <TargetToggle
-                        allLabel="All Barangay"
-                        options={barangayOptions}
-                        value={editTargetBarangays}
-                        onChange={setEditTargetBarangays}
+                        allLabel="All Municipalities"
+                        options={municipalityOptions}
+                        value={editTargetMunicipalities}
+                        onChange={(v) => {
+                          setEditTargetMunicipalities(v);
+                          setEditTargetBarangays(null);
+                        }}
                       />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-[color:var(--gov-muted)]">
+                        Barangay
+                      </label>
+                      {editTargetMunicipalities &&
+                      editTargetMunicipalities.length ? (
+                        <TargetToggle
+                          allLabel="All Barangay"
+                          options={editBarangayOptions}
+                          value={editTargetBarangays}
+                          onChange={setEditTargetBarangays}
+                        />
+                      ) : (
+                        <p className="text-xs text-[color:var(--gov-muted)]">
+                          Select municipalities to target specific barangays.
+                        </p>
+                      )}
                     </div>
                     <div>
                       <label className="mb-1 block text-xs font-medium text-[color:var(--gov-muted)]">
@@ -581,9 +686,14 @@ export default function Notifications() {
                           {item.item_type}
                         </span>
                       ) : null}
-                      {barangayLabel(item.barangays) ? (
+                      {areaLabel(item.municipalities) ? (
                         <span className="gov-badge gov-badge--warning">
-                          Barangay: {barangayLabel(item.barangays)}
+                          Municipality: {areaLabel(item.municipalities)}
+                        </span>
+                      ) : null}
+                      {areaLabel(item.barangays) ? (
+                        <span className="gov-badge gov-badge--warning">
+                          Barangay: {areaLabel(item.barangays)}
                         </span>
                       ) : null}
                       {targetLabel(item.disability_types) ? (

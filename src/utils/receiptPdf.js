@@ -24,8 +24,9 @@ const fmtDateTime = (iso) =>
     : "";
 
 // Generate + download an official acknowledgement receipt for one recipient.
-// data: { receiptNumber, receivedAt, fullName, pwdId, barangay, item, quantity }
+// data: { receiptNumber, receivedAt, fullName, pwdId, barangay, municipality, item, quantity }
 export async function exportReceiptPdf(data) {
+  const municipality = (data.municipality || "").trim() || "Loreto";
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -45,7 +46,7 @@ export async function exportReceiptPdf(data) {
   const repLines = [
     { text: "Republic of the Philippines", font: "normal" },
     { text: "Province of Agusan del Sur", font: "normal" },
-    { text: "Municipality of Loreto", font: "bold" },
+    { text: `Municipality of ${municipality}`, font: "bold" },
   ];
   let maxTextW = 0;
   repLines.forEach((l) => {
@@ -61,7 +62,7 @@ export async function exportReceiptPdf(data) {
   doc.text("Republic of the Philippines", centerX, 56, { align: "center" });
   doc.text("Province of Agusan del Sur", centerX, 71, { align: "center" });
   doc.setFont("helvetica", "bold");
-  doc.text("Municipality of Loreto", centerX, 86, { align: "center" });
+  doc.text(`Municipality of ${municipality}`, centerX, 86, { align: "center" });
 
   doc.setFontSize(12);
   doc.text("PERSONS WITH DISABILITY AFFAIRS OFFICE (PDAO)", centerX, 108, {
@@ -86,6 +87,7 @@ export async function exportReceiptPdf(data) {
     ["Beneficiary (PWD)", data.fullName || "—"],
     ["PWD ID No.", data.pwdId || "—"],
     ["Barangay", data.barangay || "—"],
+    ["Municipality", municipality],
     ["Item / Assistance", data.item || "—"],
     ["Quantity", String(data.quantity ?? 1)],
   ];
@@ -113,7 +115,7 @@ export async function exportReceiptPdf(data) {
   doc.setFontSize(10.5);
   const statement =
     "This certifies that the above-named person with disability has received the assistance/item " +
-    "indicated above from the Persons with Disability Affairs Office (PDAO), Municipality of Loreto, " +
+    `indicated above from the Persons with Disability Affairs Office (PDAO), Municipality of ${municipality}, ` +
     "Agusan del Sur.";
   doc.text(doc.splitTextToSize(statement, right - left), left, stmtY);
 
@@ -158,6 +160,7 @@ export async function exportRecipientReceipt(recipient, { item } = {}) {
     fullName: profile.full_name,
     pwdId: profile.pwd_id_number,
     barangay: profile.barangay,
+    municipality: profile.data?.municipality,
     item: item || "Assistance",
     quantity: recipient.quantity,
   });

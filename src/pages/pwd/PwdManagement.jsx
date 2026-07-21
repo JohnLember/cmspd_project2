@@ -7,6 +7,7 @@ import { DISABILITY_LABELS, disabilityLabel } from "../../constants/disability.j
 import PwdDetailModal from "../../components/pwd/PwdDetailModal.jsx";
 import { useRealtime } from "../../hooks/useRealtime.js";
 import { PAGE_SIZE, getPageNumbers } from "../../utils/pagination.js";
+import { profileMunicipality } from "../../utils/locality.js";
 
 const displayId = (row) =>
   row.pwd_id_number ||
@@ -18,6 +19,7 @@ export default function PwdManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [municipalityFilter, setMunicipalityFilter] = useState("all");
   const [barangayFilter, setBarangayFilter] = useState("all");
   const [disabilityFilter, setDisabilityFilter] = useState("all");
   const [selected, setSelected] = useState(null);
@@ -44,12 +46,28 @@ export default function PwdManagement() {
   // Live: profiles appear/update as applications are approved or records change.
   useRealtime("profiles", load);
 
-  const barangays = useMemo(() => {
+  const municipalities = useMemo(() => {
     const set = new Set(
-      profiles.map((p) => p.barangay).filter((b) => b && b.trim())
+      profiles.map((p) => p.data?.municipality).filter((m) => m && m.trim())
     );
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [profiles]);
+
+  // Barangays present, scoped to the chosen municipality so the two dropdowns
+  // stay consistent (barangay names repeat across municipalities).
+  const barangays = useMemo(() => {
+    const set = new Set(
+      profiles
+        .filter(
+          (p) =>
+            municipalityFilter === "all" ||
+            profileMunicipality(p) === municipalityFilter
+        )
+        .map((p) => p.barangay)
+        .filter((b) => b && b.trim())
+    );
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [profiles, municipalityFilter]);
 
   // Disability types actually present across profiles, ordered by the known list.
   const disabilityTypes = useMemo(() => {
@@ -191,6 +209,9 @@ export default function PwdManagement() {
         !term ||
         (row.full_name || "").toLowerCase().includes(term) ||
         displayId(row).toLowerCase().includes(term);
+      const matchesMunicipality =
+        municipalityFilter === "all" ||
+        profileMunicipality(row) === municipalityFilter;
       const matchesBarangay =
         barangayFilter === "all" || row.barangay === barangayFilter;
       const types = Array.isArray(row.data?.disabilityTypes)
@@ -198,9 +219,14 @@ export default function PwdManagement() {
         : [];
       const matchesDisability =
         disabilityFilter === "all" || types.includes(disabilityFilter);
-      return matchesSearch && matchesBarangay && matchesDisability;
+      return (
+        matchesSearch &&
+        matchesMunicipality &&
+        matchesBarangay &&
+        matchesDisability
+      );
     });
-  }, [profiles, search, barangayFilter, disabilityFilter]);
+  }, [profiles, search, municipalityFilter, barangayFilter, disabilityFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   // Clamp to a valid page so filtering/realtime shrinking never strands us on
@@ -237,6 +263,22 @@ export default function PwdManagement() {
             placeholder="Search by name or ID"
             className="gov-input w-full sm:max-w-xs"
           />
+          <select
+            value={municipalityFilter}
+            onChange={(e) => {
+              setMunicipalityFilter(e.target.value);
+              setBarangayFilter("all");
+              setPage(1);
+            }}
+            className="gov-input w-full sm:w-auto"
+          >
+            <option value="all">All municipalities</option>
+            {municipalities.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
           <select
             value={barangayFilter}
             onChange={(e) => {
@@ -289,6 +331,7 @@ export default function PwdManagement() {
               <tr className="border-b border-[color:var(--gov-border)] text-xs font-semibold text-[color:var(--gov-muted)]">
                 <th className="pb-3 pr-4 font-semibold">PWD ID</th>
                 <th className="pb-3 pr-4 font-semibold">Full name</th>
+                <th className="pb-3 pr-4 font-semibold">Municipality</th>
                 <th className="pb-3 pr-4 font-semibold">Barangay</th>
                 <th className="pb-3 pr-4 font-semibold">Disability</th>
                 <th className="pb-3 pr-4 font-semibold">Status</th>
@@ -299,14 +342,14 @@ export default function PwdManagement() {
               {isLoading ? (
                 [0, 1, 2].map((i) => (
                   <tr key={i} className="border-b border-[color:var(--gov-border)]">
-                    <td colSpan={6} className="py-3">
+                    <td colSpan={7} className="py-3">
                       <span className="gov-skeleton block h-6 w-full" />
                     </td>
                   </tr>
                 ))
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-[color:var(--gov-muted)]">
+                  <td colSpan={7} className="py-10 text-center text-[color:var(--gov-muted)]">
                     {profiles.length === 0
                       ? "No registered PWD profiles yet. Approve an application to create one."
                       : "No profiles match your filters."}
@@ -320,6 +363,9 @@ export default function PwdManagement() {
                   >
                     <td className="py-3 pr-4 font-mono text-xs">{displayId(row)}</td>
                     <td className="py-3 pr-4 font-medium">{row.full_name || "—"}</td>
+                    <td className="py-3 pr-4 text-[color:var(--gov-muted)]">
+                      {row.data?.municipality || "—"}
+                    </td>
                     <td className="py-3 pr-4 text-[color:var(--gov-muted)]">
                       {row.barangay || "—"}
                     </td>

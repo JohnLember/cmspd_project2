@@ -12,6 +12,7 @@ import {
   DISABILITY_LABELS,
 } from "../../constants/disability.js";
 import { useRealtime } from "../../hooks/useRealtime.js";
+import { profileMunicipality } from "../../utils/locality.js";
 
 const timeAgo = (iso) => {
   if (!iso) return "";
@@ -62,6 +63,7 @@ export default function PdaoDashboard() {
   const [error, setError] = useState("");
   const [year, setYear] = useState("all");
   const [showPending, setShowPending] = useState(false);
+  const [chartMunicipality, setChartMunicipality] = useState("all");
 
   const load = useCallback(async () => {
     const [appsRes, profilesRes] = await Promise.all([
@@ -151,20 +153,38 @@ export default function PdaoDashboard() {
     [applications]
   );
 
-  // Registered PWDs per barangay, split by disability type (stacked bar chart).
-  const disabilityByBarangay = useMemo(() => {
-    const byBarangay = {}; // barangay -> { name, [type]: count }
+  // Municipalities present, for the chart drill-down selector.
+  const chartMunicipalities = useMemo(() => {
+    const set = new Set(
+      profs.map((p) => p.data?.municipality).filter((m) => m && m.trim())
+    );
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [profs]);
+
+  // Registered PWDs split by disability type. Grouped by MUNICIPALITY across the
+  // province; when one municipality is selected, drill down to its barangays.
+  const disabilityByLocality = useMemo(() => {
+    const scoped =
+      chartMunicipality === "all"
+        ? profs
+        : profs.filter((p) => profileMunicipality(p) === chartMunicipality);
+    const groupKey = (p) =>
+      chartMunicipality === "all"
+        ? profileMunicipality(p)
+        : (p.barangay || "").trim() || "Unspecified";
+
+    const byGroup = {}; // group -> { name, [type]: count }
     const typeSet = new Set();
-    profs.forEach((p) => {
-      const barangay = (p.barangay || "").trim() || "Unspecified";
-      byBarangay[barangay] ??= { name: barangay };
+    scoped.forEach((p) => {
+      const key = groupKey(p);
+      byGroup[key] ??= { name: key };
       const types = Array.isArray(p.data?.disabilityTypes)
         ? p.data.disabilityTypes
         : [];
       const effective = types.length ? types : ["unspecified"];
       effective.forEach((t) => {
         typeSet.add(t);
-        byBarangay[barangay][t] = (byBarangay[barangay][t] || 0) + 1;
+        byGroup[key][t] = (byGroup[key][t] || 0) + 1;
       });
     });
     const known = Object.keys(DISABILITY_LABELS).filter((t) => typeSet.has(t));
@@ -178,11 +198,11 @@ export default function PdaoDashboard() {
       label: t === "unspecified" ? "Unspecified" : DISABILITY_LABELS[t] || t,
       color: DISABILITY_COLORS[t] || "#94a3b8",
     }));
-    const data = Object.values(byBarangay).sort((a, b) =>
+    const data = Object.values(byGroup).sort((a, b) =>
       a.name.localeCompare(b.name)
     );
     return { data, series };
-  }, [profs]);
+  }, [profs, chartMunicipality]);
 
   return (
     <div className="space-y-6">
@@ -285,16 +305,33 @@ export default function PdaoDashboard() {
         </div>
       </section>
 
-      <section>
+      <section className="space-y-3">
+        <div className="flex justify-end">
+          <label className="flex items-center gap-2 text-sm text-[color:var(--gov-muted)]">
+            Municipality
+            <select
+              value={chartMunicipality}
+              onChange={(e) => setChartMunicipality(e.target.value)}
+              className="gov-card rounded-[var(--radius-md)] border border-[color:var(--gov-border)] bg-[color:var(--gov-surface)] px-3 py-2 text-sm text-[color:var(--gov-text)]"
+            >
+              <option value="all">All municipalities</option>
+              {chartMunicipalities.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
         <StackedBarChartCard
-          title="Registered PWDs per barangay by disability type"
-          subtitle={
-            isLoading
-              ? "Loading…"
-              : `${profs.length} registered`
+          title={
+            chartMunicipality === "all"
+              ? "Registered PWDs per municipality by disability type"
+              : `Registered PWDs in ${chartMunicipality} per barangay by disability type`
           }
-          data={disabilityByBarangay.data}
-          series={disabilityByBarangay.series}
+          subtitle={isLoading ? "Loading…" : `${profs.length} registered`}
+          data={disabilityByLocality.data}
+          series={disabilityByLocality.series}
           empty="No registered PWDs yet. Approve applications to populate this chart."
         />
       </section>

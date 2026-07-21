@@ -47,15 +47,22 @@ function disabilityTargetText(types: string[] | null): string {
   return types.map((t) => DISABILITY_LABELS[t] || t).join(", ");
 }
 
-// A profile matches the announcement's targeting when its barangay is in the
-// target barangays (or all) AND it has one of the target disability types (or
-// all). Empty/null targets mean "everyone".
+// A profile matches the announcement's targeting when its municipality is in
+// the target municipalities (or all) AND its barangay is in the target
+// barangays (or all) AND it has one of the target disability types (or all).
+// Empty/null targets mean "everyone".
 function matchesTarget(
+  municipality: string | null | undefined,
   barangay: string | null | undefined,
   types: unknown,
+  targetMunicipalities: string[] | null,
   targetBarangays: string[] | null,
   targetTypes: string[] | null,
 ): boolean {
+  const municipalityOk =
+    !targetMunicipalities ||
+    targetMunicipalities.length === 0 ||
+    (municipality ? targetMunicipalities.includes(municipality) : false);
   const barangayOk =
     !targetBarangays ||
     targetBarangays.length === 0 ||
@@ -64,7 +71,7 @@ function matchesTarget(
     !targetTypes ||
     targetTypes.length === 0 ||
     (Array.isArray(types) && types.some((t) => targetTypes.includes(t)));
-  return barangayOk && typesOk;
+  return municipalityOk && barangayOk && typesOk;
 }
 
 // Normalize a PH mobile number to 09xxxxxxxxx, or null if invalid.
@@ -121,7 +128,7 @@ function announcementHtml(
       : "";
   const whenBlock = line("When", whenText, 6);
   const itemBlock = line("Item / Assistance", itemText, 6);
-  const areaBlock = line("Barangay", areaText, 6);
+  const areaBlock = line("Area", areaText, 6);
   const forBlock = line("For", forText, 14);
   return `
     <div style="font-family:system-ui,Segoe UI,Arial,sans-serif;max-width:560px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:16px;background:#ffffff">
@@ -142,7 +149,7 @@ function announcementHtml(
 function announcementSms(title: string, message: string, whenText: string, itemText: string, forText: string, areaText: string): string {
   const when = whenText ? ` (When: ${whenText})` : "";
   const item = itemText ? ` [Item: ${itemText}]` : "";
-  const area = areaText ? ` [Barangay: ${areaText}]` : "";
+  const area = areaText ? ` [Area: ${areaText}]` : "";
   const target = forText ? ` [For: ${forText}]` : "";
   const base = `[PDAO Loreto] ${title}${when}${item}${area}${target}: ${message}`;
   const text = base.length > 300 ? `${base.slice(0, 297)}...` : base;
@@ -228,6 +235,11 @@ Deno.serve(async (req) => {
       ? body.disabilityTypes.filter((t: unknown) => typeof t === "string" && t)
       : [];
     const disabilityTypes = rawTargets.length ? rawTargets : null;
+    // Optional target municipalities (null / empty = all municipalities).
+    const rawMunicipalities = Array.isArray(body.municipalities)
+      ? body.municipalities.filter((m: unknown) => typeof m === "string" && m)
+      : [];
+    const municipalities = rawMunicipalities.length ? rawMunicipalities : null;
     // Optional target barangays (null / empty = all barangays).
     const rawBarangays = Array.isArray(body.barangays)
       ? body.barangays.filter((b: unknown) => typeof b === "string" && b)
@@ -240,7 +252,13 @@ Deno.serve(async (req) => {
     const whenText = buildWhen(eventDate, startTime, endTime);
     const itemText = itemType ?? "";
     const forText = disabilityTargetText(disabilityTypes);
-    const areaText = barangays ? barangays.join(", ") : "";
+    // Area line shows municipality and/or barangay targets.
+    const areaText = [
+      municipalities ? municipalities.join(", ") : "",
+      barangays ? barangays.join(", ") : "",
+    ]
+      .filter(Boolean)
+      .join(" — ");
 
     // Create the announcement (this is what every portal already reads).
     const { data: announcement, error: insErr } = await admin
@@ -253,6 +271,7 @@ Deno.serve(async (req) => {
         end_time: endTime,
         item_type: itemType,
         disability_types: disabilityTypes,
+        municipalities,
         barangays,
         created_by: caller.user.id,
       })
@@ -269,7 +288,14 @@ Deno.serve(async (req) => {
 
     const recipients = (rows ?? [])
       .filter((r) =>
-        matchesTarget(r.barangay, r.data?.disabilityTypes, barangays, disabilityTypes)
+        matchesTarget(
+          r.data?.municipality,
+          r.barangay,
+          r.data?.disabilityTypes,
+          municipalities,
+          barangays,
+          disabilityTypes,
+        )
       )
       .map((r) => ({
         email: String(r.personal_email ?? "").trim(),
@@ -329,7 +355,16 @@ Deno.serve(async (req) => {
       .eq("contact_verified", true)
       .not("contact_number", "is", null);
     for (const r of pwdRows ?? []) {
-      if (!matchesTarget(r.barangay, r.data?.disabilityTypes, barangays, disabilityTypes)) {
+      if (
+        !matchesTarget(
+          r.data?.municipality,
+          r.barangay,
+          r.data?.disabilityTypes,
+          municipalities,
+          barangays,
+          disabilityTypes,
+        )
+      ) {
         continue;
       }
       const n = normalizePhone(String(r.contact_number ?? ""));
@@ -342,10 +377,17 @@ Deno.serve(async (req) => {
       .from("guardian_ward_links")
       .select("guardian_id, ward:pwd_id(barangay, data)");
     for (const link of links ?? []) {
-      const ward = (link as { ward?: { barangay?: string; data?: { disabilityTypes?: unknown } } }).ward;
+      const ward = (link as { ward?: { barangay?: string; data?: { municipality?: string; disabilityTypes?: unknown } } }).ward;
       if (
         ward &&
-        matchesTarget(ward.barangay, ward.data?.disabilityTypes, barangays, disabilityTypes)
+        matchesTarget(
+          ward.data?.municipality,
+          ward.barangay,
+          ward.data?.disabilityTypes,
+          municipalities,
+          barangays,
+          disabilityTypes,
+        )
       ) {
         matchingGuardianIds.add((link as { guardian_id: string }).guardian_id);
       }

@@ -53,6 +53,7 @@ export default function AddRecipientsModal({ excludeIds, onAdd, onClose }) {
       return (
         (p.full_name || "").toLowerCase().includes(term) ||
         (p.barangay || "").toLowerCase().includes(term) ||
+        (p.data?.municipality || "").toLowerCase().includes(term) ||
         displayId(p).toLowerCase().includes(term)
       );
     });
@@ -108,7 +109,7 @@ export default function AddRecipientsModal({ excludeIds, onAdd, onClose }) {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, barangay, or ID"
+            placeholder="Search by name, barangay, municipality, or ID"
             className="gov-input pl-9"
           />
         </div>
@@ -146,7 +147,11 @@ export default function AddRecipientsModal({ excludeIds, onAdd, onClose }) {
                     </p>
                     <p className="truncate text-xs text-[color:var(--gov-muted)]">
                       {displayId(p)}
-                      {p.barangay ? ` · ${p.barangay}` : ""}
+                      {[p.barangay, p.data?.municipality].filter(Boolean).length
+                        ? ` · ${[p.barangay, p.data?.municipality]
+                            .filter(Boolean)
+                            .join(", ")}`
+                        : ""}
                       {` · ${disabilityLabel(p.data?.disabilityTypes)}`}
                     </p>
                   </div>

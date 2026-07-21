@@ -59,7 +59,7 @@ export default function DigitalIdCard({ profile }) {
           <div className="flex-1 text-center text-[11px] font-semibold leading-tight">
             <p>Republic of the Philippines</p>
             <p>Province of Agusan del Sur</p>
-            <p>Municipality of Loreto</p>
+            <p>Municipality of {data.municipality || "Loreto"}</p>
             <p>
               Barangay <span className="underline">{profile.barangay || "—"}</span>
             </p>
