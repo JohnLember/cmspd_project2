@@ -13,6 +13,15 @@ import { PWD_REQUIREMENTS as requirements } from "../../constants/requirements.j
 // municipality/barangay are chosen from PSGC and postal is auto-filled.
 const FIXED_PROVINCE = "Agusan del Sur";
 
+// Government IDs shown only after the applicant ticks the ones they hold.
+const govIdFields = [
+  { key: "sssNo", label: "SSS no." },
+  { key: "gisNo", label: "GIS no." },
+  { key: "pagibigNo", label: "PAG-IBIG no." },
+  { key: "psnNo", label: "PSN no." },
+  { key: "philhealthNo", label: "PhilHealth no." },
+];
+
 // Visual markers for form labels.
 const Req = () => <span className="text-[color:var(--gov-danger-fg)]"> *</span>;
 const Optional = () => (
@@ -104,6 +113,7 @@ export default function BeneficiaryApply() {
     contactPerson: "",
     telNos: "",
     officeAddress: "",
+    govIds: [],
     sssNo: "",
     gisNo: "",
     pagibigNo: "",
@@ -1088,7 +1098,18 @@ export default function BeneficiaryApply() {
                       id="employment-status"
                       name="employmentStatus"
                       value={formData.employmentStatus}
-                      onChange={handleInputChange}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const employed =
+                          value === "employed" || value === "self-employed";
+                        // Type/category only apply to the employed; clear otherwise.
+                        setFormData((prev) => ({
+                          ...prev,
+                          employmentStatus: value,
+                          employmentType: employed ? prev.employmentType : "",
+                          employmentCategory: employed ? prev.employmentCategory : "",
+                        }));
+                      }}
                       className="gov-input mt-2"
                     >
                       <option value="">Select status</option>
@@ -1098,41 +1119,46 @@ export default function BeneficiaryApply() {
                       <option value="student">Student</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium" htmlFor="employment-type">
-                      Types of employment
-                    </label>
-                    <select
-                      id="employment-type"
-                      name="employmentType"
-                      value={formData.employmentType}
-                      onChange={handleInputChange}
-                      className="gov-input mt-2"
-                    >
-                      <option value="">Select type</option>
-                      <option value="full-time">Full-time</option>
-                      <option value="part-time">Part-time</option>
-                      <option value="contractual">Contractual</option>
-                      <option value="seasonal">Seasonal</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium" htmlFor="employment-category">
-                      Category of employment
-                    </label>
-                    <select
-                      id="employment-category"
-                      name="employmentCategory"
-                      value={formData.employmentCategory}
-                      onChange={handleInputChange}
-                      className="gov-input mt-2"
-                    >
-                      <option value="">Select category</option>
-                      <option value="government">Government</option>
-                      <option value="private">Private</option>
-                      <option value="ngo">NGO / Cooperative</option>
-                    </select>
-                  </div>
+                  {formData.employmentStatus === "employed" ||
+                  formData.employmentStatus === "self-employed" ? (
+                    <>
+                      <div>
+                        <label className="text-sm font-medium" htmlFor="employment-type">
+                          Types of employment
+                        </label>
+                        <select
+                          id="employment-type"
+                          name="employmentType"
+                          value={formData.employmentType}
+                          onChange={handleInputChange}
+                          className="gov-input mt-2"
+                        >
+                          <option value="">Select type</option>
+                          <option value="full-time">Full-time</option>
+                          <option value="part-time">Part-time</option>
+                          <option value="contractual">Contractual</option>
+                          <option value="seasonal">Seasonal</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium" htmlFor="employment-category">
+                          Category of employment
+                        </label>
+                        <select
+                          id="employment-category"
+                          name="employmentCategory"
+                          value={formData.employmentCategory}
+                          onChange={handleInputChange}
+                          className="gov-input mt-2"
+                        >
+                          <option value="">Select category</option>
+                          <option value="government">Government</option>
+                          <option value="private">Private</option>
+                          <option value="ngo">NGO / Cooperative</option>
+                        </select>
+                      </div>
+                    </>
+                  ) : null}
                   <div className="sm:col-span-2">
                     <p className="text-sm font-medium">Occupation</p>
                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -1256,70 +1282,75 @@ export default function BeneficiaryApply() {
                       className="gov-input mt-2"
                     />
                   </div>
-                  <div>
-                    <label className="text-sm font-medium" htmlFor="sss-no">
-                      SSS no.
-                    </label>
-                    <input
-                      id="sss-no"
-                      type="text"
-                      name="sssNo"
-                      value={formData.sssNo}
-                      onChange={handleInputChange}
-                      className="gov-input mt-2"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium" htmlFor="gis-no">
-                      GIS no.
-                    </label>
-                    <input
-                      id="gis-no"
-                      type="text"
-                      name="gisNo"
-                      value={formData.gisNo}
-                      onChange={handleInputChange}
-                      className="gov-input mt-2"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium" htmlFor="pagibig-no">
-                      PAG-IBIG no.
-                    </label>
-                    <input
-                      id="pagibig-no"
-                      type="text"
-                      name="pagibigNo"
-                      value={formData.pagibigNo}
-                      onChange={handleInputChange}
-                      className="gov-input mt-2"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium" htmlFor="psn-no">
-                      PSN no.
-                    </label>
-                    <input
-                      id="psn-no"
-                      type="text"
-                      name="psnNo"
-                      value={formData.psnNo}
-                      onChange={handleInputChange}
-                      className="gov-input mt-2"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium" htmlFor="philhealth-no">
-                      PhilHealth no.
-                    </label>
-                    <input
-                      id="philhealth-no"
-                      type="text"
-                      name="philhealthNo"
-                      value={formData.philhealthNo}
-                      onChange={handleInputChange}
-                      className="gov-input mt-2"
-                    />
+                  <div className="sm:col-span-2">
+                    <p className="text-sm font-medium">
+                      Government IDs / memberships
+                      <Optional />
+                    </p>
+                    <p className="mt-1 text-xs text-[color:var(--gov-muted)]">
+                      Pick the ones you have — a field to enter each number
+                      appears below.
+                    </p>
+                    {govIdFields.some((f) => !formData.govIds.includes(f.key)) ? (
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          const key = e.target.value;
+                          if (key) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              govIds: [...prev.govIds, key],
+                            }));
+                          }
+                        }}
+                        className="gov-input mt-3 sm:max-w-xs"
+                      >
+                        <option value="">Add a government ID…</option>
+                        {govIdFields
+                          .filter((f) => !formData.govIds.includes(f.key))
+                          .map((f) => (
+                            <option key={f.key} value={f.key}>
+                              {f.label}
+                            </option>
+                          ))}
+                      </select>
+                    ) : null}
+                    {formData.govIds.length ? (
+                      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        {govIdFields
+                          .filter((item) => formData.govIds.includes(item.key))
+                          .map((item) => (
+                            <div key={item.key}>
+                              <div className="flex items-center justify-between">
+                                <label className="text-sm font-medium" htmlFor={item.key}>
+                                  {item.label}
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      govIds: prev.govIds.filter((k) => k !== item.key),
+                                      [item.key]: "", // drop the value too
+                                    }))
+                                  }
+                                  className="text-xs text-[color:var(--gov-muted)] hover:text-[color:var(--gov-danger-fg)]"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                              <input
+                                id={item.key}
+                                type="text"
+                                name={item.key}
+                                value={formData[item.key]}
+                                onChange={handleInputChange}
+                                className="gov-input mt-2"
+                              />
+                            </div>
+                          ))}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
 
