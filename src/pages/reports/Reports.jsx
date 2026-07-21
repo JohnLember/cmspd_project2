@@ -5,16 +5,29 @@ import BarChartCard from "../../components/charts/BarChartCard.jsx";
 import StatCard from "../../components/cards/StatCard.jsx";
 import ExportReportModal from "../../components/reports/ExportReportModal.jsx";
 import { getProfiles } from "../../services/supabase/profile.js";
+import { getAllRecipients } from "../../services/supabase/recipients.js";
 import { DISABILITY_LABELS } from "../../constants/disability.js";
 import { exportAgeProfilePdf } from "../../utils/ReportsPDF.js";
+import { exportAssistancePdf } from "../../utils/AssistancePDF.js";
 import { profileMunicipality, UNSPECIFIED } from "../../utils/locality.js";
+
+const fmtDate = (iso) =>
+  iso
+    ? new Date(iso).toLocaleDateString("en-PH", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : "";
 
 export default function Reports() {
   const [profiles, setProfiles] = useState([]);
+  const [recipients, setRecipients] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [exportMode, setExportMode] = useState("age"); // "age" | "assistance"
   // "all" = province summary grouped by municipality; a name = drill into that
   // municipality's barangays.
   const [viewMunicipality, setViewMunicipality] = useState("all");
@@ -25,10 +38,12 @@ export default function Reports() {
   useEffect(() => {
     let isMounted = true;
     (async () => {
-      const { profiles: rows, error: fetchError } = await getProfiles();
+      const [{ profiles: rows, error: fetchError }, { recipients: recs }] =
+        await Promise.all([getProfiles(), getAllRecipients()]);
       if (!isMounted) return;
       if (fetchError) setError(fetchError.message || "Unable to load report data.");
       else setProfiles(rows);
+      setRecipients(recs || []);
       setIsLoading(false);
     })();
     return () => {
@@ -137,6 +152,39 @@ export default function Reports() {
     });
   }, [profiles, exportMunicipality, exportBarangay, exportType]);
 
+  // pwd_id -> assistance records (from every distribution).
+  const recipientsByPwd = useMemo(() => {
+    const map = new Map();
+    recipients.forEach((r) => {
+      if (!map.has(r.pwd_id)) map.set(r.pwd_id, []);
+      map.get(r.pwd_id).push(r);
+    });
+    return map;
+  }, [recipients]);
+
+  // One row per assistance item; PWDs in the filter with none get a placeholder
+  // row so the report shows who has NOT been reached.
+  const buildAssistanceRows = () =>
+    exportMatches.flatMap((p) => {
+      const base = { name: p.full_name || "—", municipality: profileMunicipality(p), barangay: p.barangay || "" };
+      const recs = recipientsByPwd.get(p.id) || [];
+      if (!recs.length) {
+        return [{ ...base, item: "—", qty: "", status: "No assistance yet", detail: "" }];
+      }
+      return recs.map((r) => {
+        const claimed = r.status === "received";
+        return {
+          ...base,
+          item: r.announcement?.item_type || r.announcement?.title || "Assistance",
+          qty: r.quantity ?? 1,
+          status: claimed ? "Claimed" : "Unclaimed",
+          detail: claimed
+            ? [fmtDate(r.received_at), r.receipt_number].filter(Boolean).join(" · ")
+            : "",
+        };
+      });
+    });
+
   const handleExportPdf = async () => {
     setIsExporting(true);
     try {
@@ -149,7 +197,11 @@ export default function Reports() {
       // Single-municipality export names it in the PDF header; else province-wide.
       const municipalityScope =
         exportMunicipality === "all" ? null : exportMunicipality;
-      await exportAgeProfilePdf(exportMatches, scopeText, municipalityScope);
+      if (exportMode === "assistance") {
+        await exportAssistancePdf(buildAssistanceRows(), scopeText, municipalityScope);
+      } else {
+        await exportAgeProfilePdf(exportMatches, scopeText, municipalityScope);
+      }
       setShowExport(false);
     } catch (err) {
       toast.error(err?.message || "Unable to generate the PDF report.");
@@ -187,12 +239,27 @@ export default function Reports() {
           </select>
           <button
             type="button"
-            onClick={() => setShowExport(true)}
+            onClick={() => {
+              setExportMode("age");
+              setShowExport(true);
+            }}
+            disabled={isLoading || report.total === 0}
+            className="btn btn-secondary h-10 px-4 text-xs"
+          >
+            <FileDown className="h-4 w-4" aria-hidden="true" />
+            Age-profile PDF
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setExportMode("assistance");
+              setShowExport(true);
+            }}
             disabled={isLoading || report.total === 0}
             className="btn btn-primary h-10 px-4 text-xs"
           >
             <FileDown className="h-4 w-4" aria-hidden="true" />
-            Export PDF
+            Assistance PDF
           </button>
         </div>
       </header>
@@ -317,6 +384,17 @@ export default function Reports() {
 
       {showExport ? (
         <ExportReportModal
+          title={
+            exportMode === "assistance"
+              ? "Export assistance record"
+              : "Export report"
+          }
+          subtitle={
+            exportMode === "assistance"
+              ? "Choose municipality, barangay and disability type, then export the PWD assistance/subsidy record (claimed & unclaimed)."
+              : "Choose a barangay and disability type, then export the age-profile PDF."
+          }
+          ctaLabel={exportMode === "assistance" ? "Export record" : "Export PDF"}
           municipalities={municipalities}
           barangays={exportBarangays}
           typeColumns={report.typeColumns}

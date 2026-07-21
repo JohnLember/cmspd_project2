@@ -27,6 +27,18 @@ export async function getRecipients(announcementId) {
   return { recipients: data ?? [], error };
 }
 
+// PDAO reports: every assistance record across all distributions, each with its
+// parent announcement's item/title so a report can group by PWD. PDAO-gated by
+// the same RLS as getRecipients.
+export async function getAllRecipients() {
+  const { data, error } = await supabase
+    .from("announcement_recipients")
+    .select(
+      "pwd_id, quantity, status, received_at, receipt_number, announcement:announcement_id(title, item_type, event_date)"
+    );
+  return { recipients: data ?? [], error };
+}
+
 // PWD portal: the assistance the signed-in PWD has been given, with the parent
 // announcement (item/title/date) so the portal can list and reprint receipts.
 export async function getMyAssistance() {

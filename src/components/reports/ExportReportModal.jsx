@@ -19,6 +19,9 @@ export default function ExportReportModal({
   onExport,
   onClose,
   exporting = false,
+  title = "Export report",
+  subtitle = "Choose a barangay and disability type, then export the age-profile PDF.",
+  ctaLabel = "Export PDF",
 }) {
   useEffect(() => {
     const onKeyDown = (e) => {
@@ -44,11 +47,8 @@ export default function ExportReportModal({
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="text-lg font-semibold">Export report</h3>
-            <p className="text-sm text-[color:var(--gov-muted)]">
-              Choose a barangay and disability type, then export the age-profile
-              PDF.
-            </p>
+            <h3 className="text-lg font-semibold">{title}</h3>
+            <p className="text-sm text-[color:var(--gov-muted)]">{subtitle}</p>
           </div>
           <button
             type="button"
@@ -132,7 +132,7 @@ export default function ExportReportModal({
               className="btn btn-primary"
             >
               <FileDown className="h-4 w-4" aria-hidden="true" />
-              {exporting ? "Generating…" : "Export PDF"}
+              {exporting ? "Generating…" : ctaLabel}
             </button>
           </div>
         </div>
