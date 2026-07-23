@@ -92,18 +92,12 @@ export default function PdaoDashboard() {
   // Live disability distribution as profiles are created/updated.
   useRealtime("profiles", load);
 
-  // Year filter: everything on the dashboard derives from these two arrays, so
-  // filtering them once here flows through stats, charts, and tables.
+  // Year filter: fixed rolling 5-years-back range, not just years with data,
+  // so the dropdown stays stable regardless of what's been submitted yet.
   const years = useMemo(() => {
-    const set = new Set();
-    applications.forEach((r) => {
-      if (r.submitted_at) set.add(new Date(r.submitted_at).getFullYear());
-    });
-    profiles.forEach((p) => {
-      if (p.created_at) set.add(new Date(p.created_at).getFullYear());
-    });
-    return Array.from(set).sort((a, b) => b - a);
-  }, [applications, profiles]);
+    const current = new Date().getFullYear();
+    return Array.from({ length: 6 }, (_, i) => current - i);
+  }, []);
 
   const apps = useMemo(
     () =>
