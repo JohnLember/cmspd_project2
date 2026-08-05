@@ -516,6 +516,7 @@ export default function EventManage() {
 
       {showAdd ? (
         <AddRecipientsModal
+          announcement={announcement}
           excludeIds={recipients.map((r) => r.pwd_id)}
           onAdd={handleAdd}
           onClose={() => setShowAdd(false)}

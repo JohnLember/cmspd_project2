@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Search, X } from "lucide-react";
 import { getProfiles } from "../../services/supabase/profile.js";
 import { disabilityLabel } from "../../constants/disability.js";
+import { announcementMatches } from "../../utils/announcementTargeting.js";
+import { profileMunicipality } from "../../utils/locality.js";
 
 const displayId = (p) =>
   p.pwd_id_number ||
@@ -9,13 +11,24 @@ const displayId = (p) =>
   `PWD-${p.id.slice(0, 8).toUpperCase()}`;
 
 // Modal to pick registered PWDs (excluding those already on the program) and
-// add them as recipients.
-export default function AddRecipientsModal({ excludeIds, onAdd, onClose }) {
+// add them as recipients. Defaults to the PWDs the announcement already targets
+// so a distribution's recipient list is one "Select all" away.
+export default function AddRecipientsModal({ announcement, excludeIds, onAdd, onClose }) {
   const [profiles, setProfiles] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [picked, setPicked] = useState(() => new Set());
   const [saving, setSaving] = useState(false);
+  const [onlyTargeted, setOnlyTargeted] = useState(true);
+
+  // An announcement with no municipality/barangay/disability target is for
+  // everyone, so there is nothing to narrow down.
+  const hasTargeting = Boolean(
+    announcement &&
+      ((announcement.municipalities?.length ?? 0) > 0 ||
+        (announcement.barangays?.length ?? 0) > 0 ||
+        (announcement.disability_types?.length ?? 0) > 0)
+  );
 
   useEffect(() => {
     const onKeyDown = (e) => {
@@ -49,6 +62,17 @@ export default function AddRecipientsModal({ excludeIds, onAdd, onClose }) {
     const term = search.trim().toLowerCase();
     return profiles.filter((p) => {
       if (exclude.has(p.id)) return false;
+      if (
+        hasTargeting &&
+        onlyTargeted &&
+        !announcementMatches(
+          announcement,
+          profileMunicipality(p),
+          p.barangay,
+          p.data?.disabilityTypes
+        )
+      )
+        return false;
       if (!term) return true;
       return (
         (p.full_name || "").toLowerCase().includes(term) ||
@@ -57,7 +81,9 @@ export default function AddRecipientsModal({ excludeIds, onAdd, onClose }) {
         displayId(p).toLowerCase().includes(term)
       );
     });
-  }, [profiles, excludeIds, search]);
+  }, [profiles, excludeIds, search, announcement, hasTargeting, onlyTargeted]);
+
+  const allPicked = available.length > 0 && available.every((p) => picked.has(p.id));
 
   const toggle = (id) =>
     setPicked((prev) => {
@@ -87,7 +113,8 @@ export default function AddRecipientsModal({ excludeIds, onAdd, onClose }) {
           <div>
             <h3 className="text-lg font-semibold">Add recipients</h3>
             <p className="text-sm text-[color:var(--gov-muted)]">
-              Pick registered PWDs to add to this program.
+              Pick registered PWDs to add to this distribution. They stay
+              “Unclaimed” in the assistance report until they check in.
             </p>
           </div>
           <button
@@ -114,6 +141,34 @@ export default function AddRecipientsModal({ excludeIds, onAdd, onClose }) {
           />
         </div>
 
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          {hasTargeting ? (
+            <label className="flex cursor-pointer items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={onlyTargeted}
+                onChange={(e) => setOnlyTargeted(e.target.checked)}
+                className="h-4 w-4"
+              />
+              Only PWDs this announcement targets
+            </label>
+          ) : (
+            <span className="text-sm text-[color:var(--gov-muted)]">
+              This announcement targets everyone.
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() =>
+              setPicked(allPicked ? new Set() : new Set(available.map((p) => p.id)))
+            }
+            disabled={available.length === 0}
+            className="btn btn-ghost h-9 px-3 text-xs"
+          >
+            {allPicked ? "Clear" : `Select all (${available.length})`}
+          </button>
+        </div>
+
         <div className="mt-4 flex-1 space-y-2 overflow-y-auto">
           {isLoading ? (
             [0, 1, 2].map((i) => <div key={i} className="gov-skeleton h-14 w-full" />)
@@ -121,7 +176,9 @@ export default function AddRecipientsModal({ excludeIds, onAdd, onClose }) {
             <p className="py-8 text-center text-sm text-[color:var(--gov-muted)]">
               {profiles.length === 0
                 ? "No registered PWDs yet."
-                : "No PWDs match — everyone may already be added."}
+                : hasTargeting && onlyTargeted
+                  ? "No PWDs match this announcement’s target — untick the box above to pick from everyone."
+                  : "No PWDs match — everyone may already be added."}
             </p>
           ) : (
             available.map((p) => {

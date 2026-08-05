@@ -142,6 +142,14 @@ export default function ExportReportModal({
           </div>
         </div>
 
+        {subsidyTypes && matchCount === 0 ? (
+          <p className="mt-4 rounded-[var(--radius-md)] bg-[color:var(--gov-warning-soft)] p-3 text-xs text-[color:var(--gov-warning-fg)]">
+            Nothing to export. The assistance record is built from recipient
+            lists, not from announcements — open the distribution under Events
+            and add recipients first.
+          </p>
+        ) : null}
+
         <div className="mt-5 flex items-center justify-between gap-2 border-t border-[color:var(--gov-border)] pt-4">
           <span className="text-sm text-[color:var(--gov-muted)]">
             {matchCount} {matchNoun}
