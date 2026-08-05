@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { Activity, FileDown, MapPin, Users } from "lucide-react";
 import BarChartCard from "../../components/charts/BarChartCard.jsx";
+import StackedBarChartCard from "../../components/charts/StackedBarChartCard.jsx";
 import StatCard from "../../components/cards/StatCard.jsx";
 import ExportReportModal from "../../components/reports/ExportReportModal.jsx";
 import { getProfiles } from "../../services/supabase/profile.js";
@@ -24,6 +25,7 @@ export default function Reports() {
   // "all" = province summary grouped by municipality; a name = drill into that
   // municipality's barangays.
   const [viewMunicipality, setViewMunicipality] = useState("all");
+  const [chartBarangay, setChartBarangay] = useState("all");
   const [exportMunicipality, setExportMunicipality] = useState("all");
   const [exportBarangay, setExportBarangay] = useState("all");
   const [exportType, setExportType] = useState("all");
@@ -113,6 +115,44 @@ export default function Reports() {
   }, [profiles, viewMunicipality, municipalities]);
 
   const label = (t) => DISABILITY_LABELS[t] || "Unspecified";
+
+  // Recipient rows only carry pwd_id, so the locality comes from the profile.
+  const profileById = useMemo(
+    () => new Map(profiles.map((p) => [p.id, p])),
+    [profiles]
+  );
+
+  // Derive the barangay drill instead of resetting it: switching municipality
+  // strands the old barangay, which then falls back to "all" on its own.
+  const barangayScope =
+    viewMunicipality !== "all" && report.groups.includes(chartBarangay)
+      ? chartBarangay
+      : "all";
+
+  // Assistance per subsidy type, split claimed vs not, scoped to the viewed
+  // municipality and (when drilled in) barangay.
+  const subsidyChart = useMemo(() => {
+    const rows = new Map();
+    recipients.forEach((r) => {
+      const p = profileById.get(r.pwd_id);
+      if (!p) return;
+      if (viewMunicipality !== "all" && profileMunicipality(p) !== viewMunicipality)
+        return;
+      if (
+        barangayScope !== "all" &&
+        ((p.barangay || "").trim() || UNSPECIFIED) !== barangayScope
+      )
+        return;
+      const name = r.announcement?.subsidy_type || UNSPECIFIED;
+      if (!rows.has(name)) rows.set(name, { name, received: 0, pending: 0 });
+      const bucket = rows.get(name);
+      if (r.status === "received") bucket.received += 1;
+      else bucket.pending += 1;
+    });
+    return [...rows.values()].sort(
+      (a, b) => b.received + b.pending - (a.received + a.pending)
+    );
+  }, [recipients, profileById, viewMunicipality, barangayScope]);
 
   // Barangays available in the export modal, scoped to the chosen municipality.
   const exportBarangays = useMemo(() => {
@@ -307,6 +347,41 @@ export default function Reports() {
               data={report.perTypeChart}
             />
           </section>
+
+          <StackedBarChartCard
+            title={
+              viewMunicipality === "all"
+                ? "Assistance by subsidy type — province-wide"
+                : `Assistance by subsidy type — ${viewMunicipality}${
+                    barangayScope === "all" ? "" : `, ${barangayScope}`
+                  }`
+            }
+            subtitle={
+              viewMunicipality === "all" ? (
+                "Pick a municipality above to drill down"
+              ) : (
+                <select
+                  value={barangayScope}
+                  onChange={(e) => setChartBarangay(e.target.value)}
+                  className="gov-input h-9 py-0 text-xs"
+                  aria-label="Filter the subsidy chart by barangay"
+                >
+                  <option value="all">All barangays</option>
+                  {report.groups.map((g) => (
+                    <option key={g} value={g}>
+                      {g}
+                    </option>
+                  ))}
+                </select>
+              )
+            }
+            data={subsidyChart}
+            series={[
+              { key: "received", label: "Received", color: "var(--gov-success)" },
+              { key: "pending", label: "Not received", color: "var(--gov-warning)" },
+            ]}
+            empty="No assistance records here yet. Add recipients to a distribution under Events."
+          />
 
           <section className="gov-card p-5">
             <h3 className="font-semibold text-[color:var(--gov-text)]">
