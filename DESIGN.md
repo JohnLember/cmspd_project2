@@ -31,6 +31,17 @@ All tokens authored in **OKLCH**, preserving the established civic-blue identity
 
 **Rule:** muted gray never carries body text on a colored fill; use the fill's own darker hue or a transparency of the ink. Placeholders use `--gov-muted` (AA), never lighter.
 
+## Data visualization
+
+Charts get their **own** color slots (`--chart-*` in `src/index.css`), never the `--gov-*` state tokens. The semantic tokens are tuned for badge text on a soft fill; used as large chart fills they read harsh and over-saturated. Chart steps sit lower in chroma (~0.11–0.17 vs 0.21) and inside a controlled lightness band.
+
+- **Categorical** — `--chart-1` … `--chart-10`, assigned in **fixed order and never cycled**. A type keeps its color when a filter drops other types. `--chart-neutral` / `--chart-neutral-faint` carry "Other" and "Unspecified"; an 11th category folds to neutral rather than getting a generated hue. Mapped in `constants/disability.js`.
+- **Binary state** — `--chart-received` (blue) / `--chart-pending` (amber). Deliberately **not** green/amber: the blue–yellow axis survives protanopia (adjacent ΔE 27 vs 7). Semantics are carried by the legend wording, not the hue.
+- **Chrome** — `--chart-grid` for gridlines, `--chart-cursor` for the hover band. Recessive by design.
+- **Dark mode is selected, not flipped.** The same hues are re-pitched into the dark lightness band (L 0.48–0.67) against `--gov-card`; light steps sit in L 0.43–0.77.
+- **Every slot is validated, not eyeballed** — lightness band, chroma floor, adjacent-pair CVD separation (deutan/protan/tritan), normal-vision floor, and ≥3:1 non-text contrast against the card surface, per mode.
+- **Marks** — 4px radius on the data-end only, `maxBarSize` 40, a 2px `--gov-card` stroke between stacked segments so neighbors stay separable, legend always present for ≥2 series.
+
 ## Elevation (replaces the ghost-card pattern)
 
 Pick **one** language per element — never 1px border + wide shadow together.

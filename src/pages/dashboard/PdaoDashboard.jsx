@@ -190,7 +190,7 @@ export default function PdaoDashboard() {
     const series = orderedTypes.map((t) => ({
       key: t,
       label: t === "unspecified" ? "Unspecified" : DISABILITY_LABELS[t] || t,
-      color: DISABILITY_COLORS[t] || "#94a3b8",
+      color: DISABILITY_COLORS[t] || "var(--chart-neutral-faint)",
     }));
     const data = Object.values(byGroup).sort((a, b) =>
       a.name.localeCompare(b.name)

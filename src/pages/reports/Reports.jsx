@@ -377,8 +377,8 @@ export default function Reports() {
             }
             data={subsidyChart}
             series={[
-              { key: "received", label: "Received", color: "var(--gov-success)" },
-              { key: "pending", label: "Not received", color: "var(--gov-warning)" },
+              { key: "received", label: "Received", color: "var(--chart-received)" },
+              { key: "pending", label: "Not received", color: "var(--chart-pending)" },
             ]}
             empty="No assistance records here yet. Add recipients to a distribution under Events."
           />

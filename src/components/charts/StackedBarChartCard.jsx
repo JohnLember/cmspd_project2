@@ -38,7 +38,7 @@ export default function StackedBarChartCard({
         {hasData ? (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} maxBarSize={40}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--gov-border)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
               <XAxis
                 dataKey="name"
                 stroke="var(--gov-muted)"
@@ -50,7 +50,7 @@ export default function StackedBarChartCard({
               />
               <YAxis stroke="var(--gov-muted)" fontSize={12} allowDecimals={false} />
               <Tooltip
-                cursor={{ fill: "rgba(148, 163, 184, 0.15)" }}
+                cursor={{ fill: "var(--chart-cursor)" }}
                 contentStyle={{
                   background: "var(--gov-surface)",
                   border: "1px solid var(--gov-border)",
@@ -66,9 +66,13 @@ export default function StackedBarChartCard({
                   key={s.key}
                   dataKey={s.key}
                   name={s.label}
-                  stackId="disability"
+                  stackId="stack"
                   fill={s.color}
-                  radius={i === series.length - 1 ? [6, 6, 0, 0] : [0, 0, 0, 0]}
+                  // 2px card-coloured gap so adjacent segments stay readable
+                  // even when two fills are close in hue.
+                  stroke="var(--gov-card)"
+                  strokeWidth={2}
+                  radius={i === series.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
                 />
               ))}
             </BarChart>

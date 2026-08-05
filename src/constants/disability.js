@@ -17,20 +17,24 @@ export const DISABILITY_OPTIONS = Object.entries(DISABILITY_LABELS).map(
   ([key, label]) => ({ key, label })
 );
 
-// Distinct chart colours per disability type (used by stacked bar charts).
+// Chart colours per disability type. These are the shared --chart-* slots from
+// index.css (light + dark steps behind one name), assigned in this fixed order
+// so a type keeps its colour when a filter drops other types, and so adjacent
+// stacked segments stay separable for colour-blind readers. "Other" and
+// "Unspecified" fold to neutral rather than taking a hue of their own.
 export const DISABILITY_COLORS = {
-  deaf: "#2563eb",
-  intellectual: "#7c3aed",
-  learning: "#db2777",
-  mental: "#dc2626",
-  physical: "#ea580c",
-  psychosocial: "#d97706",
-  speech: "#0d9488",
-  visual: "#16a34a",
-  cancer: "#0891b2",
-  rare: "#4f46e5",
-  other: "#64748b",
-  unspecified: "#94a3b8",
+  deaf: "var(--chart-1)",
+  intellectual: "var(--chart-2)",
+  learning: "var(--chart-3)",
+  mental: "var(--chart-4)",
+  physical: "var(--chart-5)",
+  psychosocial: "var(--chart-6)",
+  speech: "var(--chart-7)",
+  visual: "var(--chart-8)",
+  cancer: "var(--chart-9)",
+  rare: "var(--chart-10)",
+  other: "var(--chart-neutral)",
+  unspecified: "var(--chart-neutral-faint)",
 };
 
 // Turns a profile's stored disabilityTypes array into a readable string.

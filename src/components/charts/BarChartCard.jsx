@@ -20,7 +20,7 @@ export default function BarChartCard({ title, data, subtitle = "Last 6 months" }
       <div className="mt-4 h-72">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} barSize={24}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--gov-border)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
             <XAxis
               dataKey="name"
               stroke="var(--gov-muted)"
@@ -37,7 +37,7 @@ export default function BarChartCard({ title, data, subtitle = "Last 6 months" }
             />
 
             <Tooltip
-              cursor={{ fill: "rgba(148, 163, 184, 0.15)" }}
+              cursor={{ fill: "var(--chart-cursor)" }}
               contentStyle={{
                 background: "var(--gov-surface)",
                 border: "1px solid var(--gov-border)",
@@ -45,7 +45,7 @@ export default function BarChartCard({ title, data, subtitle = "Last 6 months" }
               }}
               labelStyle={{ color: "var(--gov-text)" }}
             />
-            <Bar dataKey="value" fill="var(--gov-primary)" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="value" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

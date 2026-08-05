@@ -47,6 +47,33 @@
 		/* Focus ring */
 		--gov-ring: oklch(0.55 0.2 264);
 
+		/* ------------------------------------------------------------------
+		   Data viz — chart-only steps, assigned in fixed order and never
+		   cycled. Deliberately NOT the --gov-* state tokens: those are tuned
+		   for badge text and read harsh as large fills. Each mode is picked
+		   for its own surface, not flipped. Validated per mode for lightness
+		   band, chroma floor, adjacent CVD separation and >=3:1 vs --gov-card.
+		   ------------------------------------------------------------------ */
+		--chart-1: oklch(0.5 0.15 262);
+		--chart-2: oklch(0.65 0.13 78);
+		--chart-3: oklch(0.47 0.16 320);
+		--chart-4: oklch(0.64 0.12 190);
+		--chart-5: oklch(0.52 0.17 12);
+		--chart-6: oklch(0.63 0.13 128);
+		--chart-7: oklch(0.45 0.13 285);
+		--chart-8: oklch(0.64 0.11 215);
+		--chart-9: oklch(0.48 0.13 30);
+		--chart-10: oklch(0.61 0.11 155);
+		/* "Other" / "Unspecified" fold to neutral — never a generated hue. */
+		--chart-neutral: oklch(0.62 0.02 257);
+		--chart-neutral-faint: oklch(0.74 0.015 257);
+		/* Binary state pair. Blue/amber, not green/amber: the blue-yellow axis
+		   survives protanopia (ΔE 27 vs 7) and the legend carries the wording. */
+		--chart-received: oklch(0.5 0.14 258);
+		--chart-pending: oklch(0.655 0.13 72);
+		--chart-grid: oklch(0.918 0.007 255);
+		--chart-cursor: oklch(0.62 0.028 257 / 0.12);
+
 		/* Elevation — pick ONE per element, never border + wide shadow together */
 		--elev-1: 0 1px 2px -1px oklch(0.23 0.035 259 / 0.12),
 			0 2px 8px -2px oklch(0.23 0.035 259 / 0.1);
@@ -134,6 +161,25 @@
 		--gov-info-soft: oklch(0.34 0.07 240);
 
 		--gov-ring: oklch(0.74 0.14 258);
+
+		/* Data viz — own steps for the dark canvas, not a flip of the light
+		   ramp: same hues re-pitched into the dark lightness band. */
+		--chart-1: oklch(0.6 0.13 262);
+		--chart-2: oklch(0.66 0.12 78);
+		--chart-3: oklch(0.56 0.14 320);
+		--chart-4: oklch(0.66 0.11 190);
+		--chart-5: oklch(0.58 0.14 12);
+		--chart-6: oklch(0.66 0.12 128);
+		--chart-7: oklch(0.58 0.15 285);
+		--chart-8: oklch(0.66 0.12 215);
+		--chart-9: oklch(0.58 0.13 30);
+		--chart-10: oklch(0.67 0.11 155);
+		--chart-neutral: oklch(0.62 0.02 257);
+		--chart-neutral-faint: oklch(0.48 0.02 257);
+		--chart-received: oklch(0.62 0.13 258);
+		--chart-pending: oklch(0.66 0.12 72);
+		--chart-grid: oklch(0.34 0.03 260);
+		--chart-cursor: oklch(0.73 0.028 252 / 0.14);
 
 		--elev-1: 0 1px 2px -1px oklch(0 0 0 / 0.5), 0 2px 10px -2px oklch(0 0 0 / 0.45);
 		--elev-2: 0 6px 16px -6px oklch(0 0 0 / 0.6), 0 16px 40px -10px oklch(0 0 0 / 0.55);
