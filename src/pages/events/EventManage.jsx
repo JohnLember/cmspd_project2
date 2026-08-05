@@ -119,8 +119,20 @@ export default function EventManage() {
 
   const saveEdit = async (e) => {
     e.preventDefault();
-    if (!form.title.trim() || !form.body.trim()) {
-      toast.error("Title and message are required.");
+    if (
+      !form.title.trim() ||
+      !form.body.trim() ||
+      !form.eventDate ||
+      !form.startTime ||
+      !form.endTime ||
+      !form.subsidyType ||
+      !form.itemType.trim()
+    ) {
+      toast.error("All fields are required.");
+      return;
+    }
+    if (form.endTime <= form.startTime) {
+      toast.error("End time must be after the start time.");
       return;
     }
     setSavingEdit(true);
@@ -283,17 +295,17 @@ export default function EventManage() {
         {editing ? (
           <form className="grid gap-4 sm:grid-cols-2" onSubmit={saveEdit}>
             <div className="sm:col-span-2">
-              <label className="mb-2 block text-sm font-medium">Title</label>
+              <label className="mb-2 block text-sm font-medium">Title *</label>
               <input type="text" value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} className="gov-input" />
             </div>
             <div className="sm:col-span-2">
-              <label className="mb-2 block text-sm font-medium">Message</label>
+              <label className="mb-2 block text-sm font-medium">Message *</label>
               <textarea rows={3} value={form.body} onChange={(e) => setForm((p) => ({ ...p, body: e.target.value }))} className="gov-input" />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium">Subsidy type</label>
+              <label className="mb-2 block text-sm font-medium">Subsidy type *</label>
               <select value={form.subsidyType} onChange={(e) => setForm((p) => ({ ...p, subsidyType: e.target.value }))} className="gov-input">
-                <option value="">Not a subsidy / not applicable</option>
+                <option value="">Select a subsidy type</option>
                 {SUBSIDY_TYPES.map((s) => (
                   <option key={s} value={s}>
                     {s}
@@ -302,19 +314,19 @@ export default function EventManage() {
               </select>
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium">Item / assistance</label>
+              <label className="mb-2 block text-sm font-medium">Item / assistance *</label>
               <input type="text" value={form.itemType} onChange={(e) => setForm((p) => ({ ...p, itemType: e.target.value }))} className="gov-input" placeholder="e.g. Wheelchair, Rice (5kg), Cash (₱500)" />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium">When</label>
+              <label className="mb-2 block text-sm font-medium">When *</label>
               <input type="date" value={form.eventDate} onChange={(e) => setForm((p) => ({ ...p, eventDate: e.target.value }))} className="gov-input" />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium">Start time</label>
+              <label className="mb-2 block text-sm font-medium">Start time *</label>
               <input type="time" value={form.startTime} onChange={(e) => setForm((p) => ({ ...p, startTime: e.target.value }))} className="gov-input" />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium">End time</label>
+              <label className="mb-2 block text-sm font-medium">End time *</label>
               <input type="time" value={form.endTime} onChange={(e) => setForm((p) => ({ ...p, endTime: e.target.value }))} className="gov-input" />
             </div>
             <div className="sm:col-span-2 flex gap-2">

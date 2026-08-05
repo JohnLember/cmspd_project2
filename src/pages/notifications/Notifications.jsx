@@ -168,8 +168,22 @@ export default function Notifications() {
   const handlePost = async (e) => {
     e.preventDefault();
     setError("");
-    if (!title.trim() || !body.trim()) {
-      setError("Title and message are required.");
+    // Every field is required. The three targeting toggles always carry a value
+    // ("All Municipalities" / "All Barangay" / "All Types"), so nothing to check.
+    if (
+      !title.trim() ||
+      !body.trim() ||
+      !eventDate ||
+      !startTime ||
+      !endTime ||
+      !subsidyType ||
+      !itemType.trim()
+    ) {
+      setError("All fields are required.");
+      return;
+    }
+    if (endTime <= startTime) {
+      setError("End time must be after the start time.");
       return;
     }
     setPosting(true);
@@ -390,7 +404,7 @@ export default function Notifications() {
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
               <label className="mb-2 block text-sm font-medium" htmlFor="ann-when">
-                When
+                When<span className="text-[color:var(--gov-danger-fg)]"> *</span>
               </label>
               <input
                 id="ann-when"
@@ -402,7 +416,7 @@ export default function Notifications() {
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium" htmlFor="ann-start">
-                Start time
+                Start time<span className="text-[color:var(--gov-danger-fg)]"> *</span>
               </label>
               <input
                 id="ann-start"
@@ -414,7 +428,7 @@ export default function Notifications() {
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium" htmlFor="ann-end">
-                End time
+                End time<span className="text-[color:var(--gov-danger-fg)]"> *</span>
               </label>
               <input
                 id="ann-end"
@@ -427,11 +441,11 @@ export default function Notifications() {
           </div>
           <p className="-mt-2 text-xs text-[color:var(--gov-muted)]">
             The date and time the event happens. Shown on the Events calendar and
-            in the email. Optional.
+            in the email.
           </p>
           <div>
             <label className="mb-2 block text-sm font-medium" htmlFor="ann-subsidy">
-              Subsidy type
+              Subsidy type<span className="text-[color:var(--gov-danger-fg)]"> *</span>
             </label>
             <select
               id="ann-subsidy"
@@ -439,7 +453,7 @@ export default function Notifications() {
               onChange={(e) => setSubsidyType(e.target.value)}
               className="gov-input w-full sm:max-w-xs"
             >
-              <option value="">Not a subsidy / not applicable</option>
+              <option value="">Select a subsidy type</option>
               {SUBSIDY_TYPES.map((s) => (
                 <option key={s} value={s}>
                   {s}
@@ -447,12 +461,12 @@ export default function Notifications() {
               ))}
             </select>
             <p className="mt-1 text-xs text-[color:var(--gov-muted)]">
-              Classifies this distribution in the assistance report. Optional.
+              Classifies this announcement in the assistance report.
             </p>
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium" htmlFor="ann-item">
-              Item / assistance given
+              Item / assistance given<span className="text-[color:var(--gov-danger-fg)]"> *</span>
             </label>
             <input
               id="ann-item"
@@ -463,9 +477,8 @@ export default function Notifications() {
               placeholder="e.g. Wheelchair, Rice (5kg), Cash (₱500)"
             />
             <p className="mt-1 text-xs text-[color:var(--gov-muted)]">
-              Only for distribution events. Enables recipient check-in and
-              receipts. Include the amount/detail here (e.g. “Cash (₱500)”, “Rice
-              (5kg)”). Optional.
+              Enables recipient check-in and receipts. Include the amount/detail
+              here (e.g. “Cash (₱500)”, “Rice (5kg)”).
             </p>
           </div>
           <div>
