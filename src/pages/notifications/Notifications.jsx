@@ -12,6 +12,7 @@ import { useRealtime } from "../../hooks/useRealtime.js";
 import { fmtEventDate, fmtTimeRange } from "../../utils/eventFormat.js";
 import TargetToggle from "../../components/ui/TargetToggle.jsx";
 import { DISABILITY_OPTIONS, targetLabel } from "../../constants/disability.js";
+import { SUBSIDY_TYPES } from "../../constants/subsidy.js";
 import { getAgusanMunicipalities, getBarangays } from "../../services/psgc.js";
 
 const areaLabel = (list) =>
@@ -72,6 +73,7 @@ export default function Notifications() {
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [itemType, setItemType] = useState("");
+  const [subsidyType, setSubsidyType] = useState("");
   const [targetTypes, setTargetTypes] = useState(null); // null = All Types
   const [targetMunicipalities, setTargetMunicipalities] = useState(null); // null = All
   const [targetBarangays, setTargetBarangays] = useState(null); // null = All Barangay
@@ -187,6 +189,7 @@ export default function Notifications() {
       startTime,
       endTime,
       itemType,
+      subsidyType,
       disabilityTypes: targetTypes,
       municipalities: targetMunicipalities,
       barangays: targetBarangays,
@@ -208,6 +211,7 @@ export default function Notifications() {
       setStartTime("");
       setEndTime("");
       setItemType("");
+      setSubsidyType("");
       setTargetTypes(null);
       setTargetMunicipalities(null);
       setTargetBarangays(null);
@@ -425,6 +429,27 @@ export default function Notifications() {
             The date and time the event happens. Shown on the Events calendar and
             in the email. Optional.
           </p>
+          <div>
+            <label className="mb-2 block text-sm font-medium" htmlFor="ann-subsidy">
+              Subsidy type
+            </label>
+            <select
+              id="ann-subsidy"
+              value={subsidyType}
+              onChange={(e) => setSubsidyType(e.target.value)}
+              className="gov-input w-full sm:max-w-xs"
+            >
+              <option value="">Not a subsidy / not applicable</option>
+              {SUBSIDY_TYPES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-[color:var(--gov-muted)]">
+              Classifies this distribution in the assistance report. Optional.
+            </p>
+          </div>
           <div>
             <label className="mb-2 block text-sm font-medium" htmlFor="ann-item">
               Item / assistance given
@@ -680,6 +705,11 @@ export default function Notifications() {
                       </div>
                     </div>
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[color:var(--gov-muted)]">
+                      {item.subsidy_type ? (
+                        <span className="gov-badge gov-badge--success">
+                          {item.subsidy_type}
+                        </span>
+                      ) : null}
                       {item.item_type ? (
                         <span className="gov-badge gov-badge--info">
                           <Package className="h-3 w-3" aria-hidden="true" />

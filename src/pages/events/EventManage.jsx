@@ -25,6 +25,7 @@ import {
   updateRecipientQuantity,
 } from "../../services/supabase/recipients.js";
 import { disabilityLabel } from "../../constants/disability.js";
+import { SUBSIDY_TYPES } from "../../constants/subsidy.js";
 import { fmtEventWhen } from "../../utils/eventFormat.js";
 import { exportRecipientReceipt } from "../../utils/receiptPdf.js";
 import StatCard from "../../components/cards/StatCard.jsx";
@@ -58,6 +59,7 @@ export default function EventManage() {
     title: "",
     body: "",
     itemType: "",
+    subsidyType: "",
     eventDate: "",
     startTime: "",
     endTime: "",
@@ -107,6 +109,7 @@ export default function EventManage() {
       title: announcement.title || "",
       body: announcement.body || "",
       itemType: announcement.item_type || "",
+      subsidyType: announcement.subsidy_type || "",
       eventDate: announcement.event_date || "",
       startTime: announcement.start_time ? announcement.start_time.slice(0, 5) : "",
       endTime: announcement.end_time ? announcement.end_time.slice(0, 5) : "",
@@ -125,6 +128,7 @@ export default function EventManage() {
       title: form.title.trim(),
       body: form.body.trim(),
       itemType: form.itemType.trim(),
+      subsidyType: form.subsidyType,
       eventDate: form.eventDate,
       startTime: form.startTime,
       endTime: form.endTime,
@@ -287,6 +291,17 @@ export default function EventManage() {
               <textarea rows={3} value={form.body} onChange={(e) => setForm((p) => ({ ...p, body: e.target.value }))} className="gov-input" />
             </div>
             <div>
+              <label className="mb-2 block text-sm font-medium">Subsidy type</label>
+              <select value={form.subsidyType} onChange={(e) => setForm((p) => ({ ...p, subsidyType: e.target.value }))} className="gov-input">
+                <option value="">Not a subsidy / not applicable</option>
+                {SUBSIDY_TYPES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
               <label className="mb-2 block text-sm font-medium">Item / assistance</label>
               <input type="text" value={form.itemType} onChange={(e) => setForm((p) => ({ ...p, itemType: e.target.value }))} className="gov-input" placeholder="e.g. Wheelchair, Rice (5kg), Cash (₱500)" />
             </div>
@@ -318,6 +333,11 @@ export default function EventManage() {
                 <h2 className="text-2xl font-semibold tracking-[-0.01em]">
                   {announcement.title}
                 </h2>
+                {announcement.subsidy_type ? (
+                  <span className="gov-badge gov-badge--success">
+                    {announcement.subsidy_type}
+                  </span>
+                ) : null}
                 {announcement.item_type ? (
                   <span className="gov-badge gov-badge--info">
                     <Package className="h-3 w-3" aria-hidden="true" />

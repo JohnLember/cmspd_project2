@@ -12,7 +12,12 @@ export default function ExportReportModal({
   municipality = "all",
   barangay,
   type,
+  // Assistance export only: pass the list to show a subsidy-type filter.
+  subsidyTypes = null,
+  subsidy = "all",
+  onSubsidyChange,
   matchCount,
+  matchNoun = "PWD",
   onMunicipalityChange,
   onBarangayChange,
   onTypeChange,
@@ -61,6 +66,26 @@ export default function ExportReportModal({
         </div>
 
         <div className="mt-5 space-y-4">
+          {subsidyTypes ? (
+            <div>
+              <label className="mb-1 block text-sm font-medium" htmlFor="export-subsidy">
+                Subsidy type
+              </label>
+              <select
+                id="export-subsidy"
+                value={subsidy}
+                onChange={(e) => onSubsidyChange(e.target.value)}
+                className="gov-input"
+              >
+                <option value="all">All subsidy types</option>
+                {subsidyTypes.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
           <div>
             <label className="mb-1 block text-sm font-medium" htmlFor="export-municipality">
               Municipality
@@ -119,7 +144,8 @@ export default function ExportReportModal({
 
         <div className="mt-5 flex items-center justify-between gap-2 border-t border-[color:var(--gov-border)] pt-4">
           <span className="text-sm text-[color:var(--gov-muted)]">
-            {matchCount} PWD{matchCount === 1 ? "" : "s"} match
+            {matchCount} {matchNoun}
+            {matchCount === 1 ? "" : "s"} match
           </span>
           <div className="flex gap-2">
             <button type="button" onClick={onClose} className="btn btn-secondary">

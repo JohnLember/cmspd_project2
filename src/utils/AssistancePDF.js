@@ -11,8 +11,8 @@ const toDataUrl = async (url) => {
   });
 };
 
-// rows: [{ name, municipality, barangay, item, qty, status, detail }]
-// status is "Claimed" | "Unclaimed" | "No assistance yet".
+// rows: [{ name, municipality, barangay, subsidy, item, qty, status, detail }]
+// status is "Claimed" | "Unclaimed".
 export async function exportAssistancePdf(rows, scopeText = "", municipalityScope = null) {
   const headerLocality = municipalityScope
     ? `Municipality of ${municipalityScope}`
@@ -82,6 +82,7 @@ export async function exportAssistancePdf(rows, scopeText = "", municipalityScop
     r.name || "—",
     r.municipality || "—",
     r.barangay || "—",
+    r.subsidy || "—",
     r.item || "—",
     r.qty === "" || r.qty == null ? "" : String(r.qty),
     r.status,
@@ -91,23 +92,21 @@ export async function exportAssistancePdf(rows, scopeText = "", municipalityScop
   autoTable(doc, {
     startY: scopeText ? 138 : 128,
     head: [
-      ["#", "PWD Name", "Municipality", "Barangay", "Item / Assistance", "Qty", "Status", "Date / Receipt"],
+      ["#", "PWD Name", "Municipality", "Barangay", "Subsidy Type", "Item / Assistance", "Qty / Amount", "Status", "Date / Receipt"],
     ],
     body,
-    styles: { fontSize: 8.5, cellPadding: 4 },
+    styles: { fontSize: 7.5, cellPadding: 3, overflow: "linebreak" },
     headStyles: { fillColor: [30, 64, 175], textColor: 255, halign: "center" },
     columnStyles: {
-      0: { halign: "center", cellWidth: 22 },
-      5: { halign: "center", cellWidth: 30 },
-      6: { halign: "center", cellWidth: 62 },
+      0: { halign: "center", cellWidth: 18 },
+      6: { halign: "center", cellWidth: 46 },
+      7: { halign: "center", cellWidth: 48 },
     },
-    // Colour the status cell: green claimed, amber unclaimed, grey none.
+    // Colour the status cell: green claimed, amber unclaimed.
     didParseCell: (data) => {
-      if (data.section === "body" && data.column.index === 6) {
-        const v = data.cell.raw;
-        if (v === "Claimed") data.cell.styles.textColor = [21, 128, 61];
-        else if (v === "Unclaimed") data.cell.styles.textColor = [180, 83, 9];
-        else data.cell.styles.textColor = [120, 120, 120];
+      if (data.section === "body" && data.column.index === 7) {
+        data.cell.styles.textColor =
+          data.cell.raw === "Claimed" ? [21, 128, 61] : [180, 83, 9];
       }
     },
   });

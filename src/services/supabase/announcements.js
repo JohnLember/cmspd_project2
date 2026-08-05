@@ -29,6 +29,7 @@ export async function createAnnouncement({
   startTime,
   endTime,
   itemType,
+  subsidyType,
   disabilityTypes,
   municipalities,
   barangays,
@@ -50,6 +51,7 @@ export async function createAnnouncement({
       startTime: startTime || null,
       endTime: endTime || null,
       itemType: itemType || null,
+      subsidyType: subsidyType || null,
       disabilityTypes: targets,
       municipalities: targetMunicipalities,
       barangays: targetBarangays,
@@ -79,8 +81,10 @@ export async function createAnnouncement({
   let announcement = data?.announcement ?? null;
   // Safety net: if the edge function version in use doesn't persist item_type /
   // disability_types yet, set them with a follow-up update (PDAO-gated by RLS).
+  // subsidy_type is only ever written here — the deployed EF doesn't know it.
   const followUp = {};
   if (itemType) followUp.item_type = itemType;
+  if (subsidyType) followUp.subsidy_type = subsidyType;
   if (targets) followUp.disability_types = targets;
   if (targetMunicipalities) followUp.municipalities = targetMunicipalities;
   if (targetBarangays) followUp.barangays = targetBarangays;
@@ -106,7 +110,7 @@ export async function createAnnouncement({
   };
 }
 
-export async function updateAnnouncement(id, { title, body, eventDate, startTime, endTime, itemType, disabilityTypes, municipalities, barangays }) {
+export async function updateAnnouncement(id, { title, body, eventDate, startTime, endTime, itemType, subsidyType, disabilityTypes, municipalities, barangays }) {
   const updates = {};
   if (title !== undefined) updates.title = title;
   if (body !== undefined) updates.body = body;
@@ -115,6 +119,7 @@ export async function updateAnnouncement(id, { title, body, eventDate, startTime
   if (startTime !== undefined) updates.start_time = startTime || null;
   if (endTime !== undefined) updates.end_time = endTime || null;
   if (itemType !== undefined) updates.item_type = itemType || null;
+  if (subsidyType !== undefined) updates.subsidy_type = subsidyType || null;
   if (disabilityTypes !== undefined) {
     updates.disability_types =
       Array.isArray(disabilityTypes) && disabilityTypes.length

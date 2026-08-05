@@ -34,7 +34,7 @@ export async function getAllRecipients() {
   const { data, error } = await supabase
     .from("announcement_recipients")
     .select(
-      "pwd_id, quantity, status, received_at, receipt_number, announcement:announcement_id(title, item_type, event_date)"
+      "pwd_id, quantity, status, received_at, receipt_number, announcement:announcement_id(title, item_type, subsidy_type, event_date)"
     );
   return { recipients: data ?? [], error };
 }

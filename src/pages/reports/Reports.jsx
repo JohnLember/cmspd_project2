@@ -9,16 +9,9 @@ import { getAllRecipients } from "../../services/supabase/recipients.js";
 import { DISABILITY_LABELS } from "../../constants/disability.js";
 import { exportAgeProfilePdf } from "../../utils/ReportsPDF.js";
 import { exportAssistancePdf } from "../../utils/AssistancePDF.js";
+import { buildAssistanceRows } from "../../utils/assistanceRows.js";
+import { SUBSIDY_TYPES } from "../../constants/subsidy.js";
 import { profileMunicipality, UNSPECIFIED } from "../../utils/locality.js";
-
-const fmtDate = (iso) =>
-  iso
-    ? new Date(iso).toLocaleDateString("en-PH", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      })
-    : "";
 
 export default function Reports() {
   const [profiles, setProfiles] = useState([]);
@@ -34,6 +27,7 @@ export default function Reports() {
   const [exportMunicipality, setExportMunicipality] = useState("all");
   const [exportBarangay, setExportBarangay] = useState("all");
   const [exportType, setExportType] = useState("all");
+  const [exportSubsidy, setExportSubsidy] = useState("all");
 
   useEffect(() => {
     let isMounted = true;
@@ -162,28 +156,16 @@ export default function Reports() {
     return map;
   }, [recipients]);
 
-  // One row per assistance item; PWDs in the filter with none get a placeholder
-  // row so the report shows who has NOT been reached.
-  const buildAssistanceRows = () =>
-    exportMatches.flatMap((p) => {
-      const base = { name: p.full_name || "—", municipality: profileMunicipality(p), barangay: p.barangay || "" };
-      const recs = recipientsByPwd.get(p.id) || [];
-      if (!recs.length) {
-        return [{ ...base, item: "—", qty: "", status: "No assistance yet", detail: "" }];
-      }
-      return recs.map((r) => {
-        const claimed = r.status === "received";
-        return {
-          ...base,
-          item: r.announcement?.item_type || r.announcement?.title || "Assistance",
-          qty: r.quantity ?? 1,
-          status: claimed ? "Claimed" : "Unclaimed",
-          detail: claimed
-            ? [fmtDate(r.received_at), r.receipt_number].filter(Boolean).join(" · ")
-            : "",
-        };
-      });
-    });
+  const assistanceRows = useMemo(
+    () =>
+      buildAssistanceRows(
+        exportMatches,
+        recipientsByPwd,
+        exportSubsidy,
+        profileMunicipality
+      ),
+    [exportMatches, recipientsByPwd, exportSubsidy]
+  );
 
   const handleExportPdf = async () => {
     setIsExporting(true);
@@ -193,12 +175,14 @@ export default function Reports() {
         parts.push(`Municipality: ${exportMunicipality}`);
       if (exportBarangay !== "all") parts.push(`Barangay: ${exportBarangay}`);
       if (exportType !== "all") parts.push(`Disability: ${label(exportType)}`);
+      if (exportMode === "assistance" && exportSubsidy !== "all")
+        parts.push(`Subsidy: ${exportSubsidy}`);
       const scopeText = parts.join("   •   ");
       // Single-municipality export names it in the PDF header; else province-wide.
       const municipalityScope =
         exportMunicipality === "all" ? null : exportMunicipality;
       if (exportMode === "assistance") {
-        await exportAssistancePdf(buildAssistanceRows(), scopeText, municipalityScope);
+        await exportAssistancePdf(assistanceRows, scopeText, municipalityScope);
       } else {
         await exportAgeProfilePdf(exportMatches, scopeText, municipalityScope);
       }
@@ -391,7 +375,7 @@ export default function Reports() {
           }
           subtitle={
             exportMode === "assistance"
-              ? "Choose municipality, barangay and disability type, then export the PWD assistance/subsidy record (claimed & unclaimed)."
+              ? "Choose the subsidy type, municipality, barangay and disability type, then export the PWD assistance/subsidy record (claimed & unclaimed)."
               : "Choose a barangay and disability type, then export the age-profile PDF."
           }
           ctaLabel={exportMode === "assistance" ? "Export record" : "Export PDF"}
@@ -401,7 +385,15 @@ export default function Reports() {
           municipality={exportMunicipality}
           barangay={exportBarangay}
           type={exportType}
-          matchCount={exportMatches.length}
+          subsidyTypes={exportMode === "assistance" ? SUBSIDY_TYPES : null}
+          subsidy={exportSubsidy}
+          onSubsidyChange={setExportSubsidy}
+          matchCount={
+            exportMode === "assistance"
+              ? assistanceRows.length
+              : exportMatches.length
+          }
+          matchNoun={exportMode === "assistance" ? "record" : "PWD"}
           exporting={isExporting}
           onMunicipalityChange={(m) => {
             setExportMunicipality(m);
