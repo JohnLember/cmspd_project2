@@ -12,10 +12,12 @@ export default function ExportReportModal({
   municipality = "all",
   barangay,
   type,
-  // Assistance export only: pass the list to show a subsidy-type filter.
+  // Assistance export only: pass the list to show subsidy-type + status filters.
   subsidyTypes = null,
   subsidy = "all",
   onSubsidyChange,
+  status = "all",
+  onStatusChange,
   matchCount,
   matchNoun = "PWD",
   onMunicipalityChange,
@@ -83,6 +85,23 @@ export default function ExportReportModal({
                     {s}
                   </option>
                 ))}
+              </select>
+            </div>
+          ) : null}
+          {subsidyTypes ? (
+            <div>
+              <label className="mb-1 block text-sm font-medium" htmlFor="export-status">
+                Claim status
+              </label>
+              <select
+                id="export-status"
+                value={status}
+                onChange={(e) => onStatusChange(e.target.value)}
+                className="gov-input"
+              >
+                <option value="all">Claimed &amp; unclaimed</option>
+                <option value="claimed">Claimed only</option>
+                <option value="unclaimed">Unclaimed only</option>
               </select>
             </div>
           ) : null}

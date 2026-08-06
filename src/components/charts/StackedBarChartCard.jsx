@@ -13,11 +13,13 @@ import {
 // coloured segments per series (e.g. disability type). Segment height shows how
 // many of each type, and the full bar height is the category total.
 // `series` is an array of { key, label, color }.
+// Pass `grouped` to put each series in its own side-by-side bar instead.
 export default function StackedBarChartCard({
   title,
   data,
   series,
   subtitle,
+  grouped = false,
   empty = "No data yet.",
 }) {
   const hasData = Array.isArray(data) && data.length > 0 && series.length > 0;
@@ -66,13 +68,18 @@ export default function StackedBarChartCard({
                   key={s.key}
                   dataKey={s.key}
                   name={s.label}
-                  stackId="stack"
+                  stackId={grouped ? undefined : "stack"}
                   fill={s.color}
-                  // 2px card-coloured gap so adjacent segments stay readable
-                  // even when two fills are close in hue.
-                  stroke="var(--gov-card)"
-                  strokeWidth={2}
-                  radius={i === series.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                  // Stacked: 2px card-coloured gap so adjacent segments stay
+                  // readable even when two fills are close in hue. Grouped bars
+                  // are already separated, so no stroke.
+                  stroke={grouped ? undefined : "var(--gov-card)"}
+                  strokeWidth={grouped ? 0 : 2}
+                  radius={
+                    grouped || i === series.length - 1
+                      ? [4, 4, 0, 0]
+                      : [0, 0, 0, 0]
+                  }
                 />
               ))}
             </BarChart>

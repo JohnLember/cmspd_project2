@@ -1,7 +1,14 @@
 // Rows for the assistance/subsidy PDF: one per assistance record. PWDs with no
 // records produce nothing — the report only lists claimed/unclaimed assistance.
 // `recipientsByPwd` maps profile id -> recipient rows (with .announcement).
-export function buildAssistanceRows(profiles, recipientsByPwd, subsidyFilter = "all", municipalityOf = () => "") {
+// `statusFilter` is "all" | "claimed" | "unclaimed".
+export function buildAssistanceRows(
+  profiles,
+  recipientsByPwd,
+  subsidyFilter = "all",
+  municipalityOf = () => "",
+  statusFilter = "all"
+) {
   const fmtDate = (iso) =>
     iso
       ? new Date(iso).toLocaleDateString("en-PH", {
@@ -16,8 +23,10 @@ export function buildAssistanceRows(profiles, recipientsByPwd, subsidyFilter = "
     return recs
       .filter(
         (r) =>
-          subsidyFilter === "all" ||
-          (r.announcement?.subsidy_type || "") === subsidyFilter
+          (subsidyFilter === "all" ||
+            (r.announcement?.subsidy_type || "") === subsidyFilter) &&
+          (statusFilter === "all" ||
+            (r.status === "received") === (statusFilter === "claimed"))
       )
       .map((r) => {
         const claimed = r.status === "received";

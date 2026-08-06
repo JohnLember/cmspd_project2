@@ -45,6 +45,21 @@ test("subsidy filter keeps only that category", () => {
   assert.equal(rows[0].detail, ""); // unclaimed rows carry no receipt
 });
 
+test("status filter keeps only claimed or only unclaimed", () => {
+  const claimed = buildAssistanceRows(profiles, byPwd, "all", undefined, "claimed");
+  assert.deepEqual(claimed.map((r) => r.status), ["Claimed"]);
+
+  const unclaimed = buildAssistanceRows(profiles, byPwd, "all", undefined, "unclaimed");
+  assert.deepEqual(unclaimed.map((r) => r.status), ["Unclaimed"]);
+
+  // stacks with the subsidy filter
+  assert.equal(
+    buildAssistanceRows(profiles, byPwd, "Medical Assistance", undefined, "unclaimed")
+      .length,
+    0
+  );
+});
+
 test("claimed rows carry date and receipt; municipality comes from the resolver", () => {
   const rows = buildAssistanceRows(profiles, byPwd, "all", () => "Loreto");
   const claimed = rows.find((r) => r.status === "Claimed");

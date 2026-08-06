@@ -30,6 +30,7 @@ export default function Reports() {
   const [exportBarangay, setExportBarangay] = useState("all");
   const [exportType, setExportType] = useState("all");
   const [exportSubsidy, setExportSubsidy] = useState("all");
+  const [exportStatus, setExportStatus] = useState("all"); // all | claimed | unclaimed
 
   useEffect(() => {
     let isMounted = true;
@@ -202,9 +203,10 @@ export default function Reports() {
         exportMatches,
         recipientsByPwd,
         exportSubsidy,
-        profileMunicipality
+        profileMunicipality,
+        exportStatus
       ),
-    [exportMatches, recipientsByPwd, exportSubsidy]
+    [exportMatches, recipientsByPwd, exportSubsidy, exportStatus]
   );
 
   const handleExportPdf = async () => {
@@ -217,6 +219,8 @@ export default function Reports() {
       if (exportType !== "all") parts.push(`Disability: ${label(exportType)}`);
       if (exportMode === "assistance" && exportSubsidy !== "all")
         parts.push(`Subsidy: ${exportSubsidy}`);
+      if (exportMode === "assistance" && exportStatus !== "all")
+        parts.push(exportStatus === "claimed" ? "Claimed only" : "Unclaimed only");
       const scopeText = parts.join("   •   ");
       // Single-municipality export names it in the PDF header; else province-wide.
       const municipalityScope =
@@ -376,6 +380,7 @@ export default function Reports() {
               )
             }
             data={subsidyChart}
+            grouped
             series={[
               { key: "received", label: "Received", color: "var(--chart-received)" },
               { key: "pending", label: "Not received", color: "var(--chart-pending)" },
@@ -450,7 +455,7 @@ export default function Reports() {
           }
           subtitle={
             exportMode === "assistance"
-              ? "Choose the subsidy type, municipality, barangay and disability type, then export the PWD assistance/subsidy record (claimed & unclaimed)."
+              ? "Choose the subsidy type, claim status, municipality, barangay and disability type, then export the PWD assistance/subsidy record."
               : "Choose a barangay and disability type, then export the age-profile PDF."
           }
           ctaLabel={exportMode === "assistance" ? "Export record" : "Export PDF"}
@@ -462,6 +467,8 @@ export default function Reports() {
           type={exportType}
           subsidyTypes={exportMode === "assistance" ? SUBSIDY_TYPES : null}
           subsidy={exportSubsidy}
+          status={exportStatus}
+          onStatusChange={setExportStatus}
           onSubsidyChange={setExportSubsidy}
           matchCount={
             exportMode === "assistance"
